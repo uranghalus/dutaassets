@@ -94,6 +94,7 @@ model Department {
 
 model Divisi {
   id_divisi     String     @id
+  nama_divisi   String     @db.Text
   department_id String
   department_fk Department @relation(fields: [department_id], references: [id_department], onDelete: Cascade)
   ext_tlp       String     @db.Text

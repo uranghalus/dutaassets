@@ -117,3 +117,20 @@ export async function deleteDepartmentsBulk(departmentIds: string[]) {
   // sesuaikan path dengan route halaman department kamu
   revalidatePath('/department');
 }
+export async function getDepartmentsSimple() {
+  const session = await getServerSession();
+  if (!session) {
+    throw new Error('Unauthorized');
+  }
+
+  return prisma.department.findMany({
+    select: {
+      id_department: true,
+      nama_department: true,
+      kode_department: true,
+    },
+    orderBy: {
+      nama_department: 'asc',
+    },
+  });
+}

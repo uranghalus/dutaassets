@@ -81,6 +81,7 @@ CREATE TABLE `Department` (
 -- CreateTable
 CREATE TABLE `Divisi` (
     `id_divisi` VARCHAR(191) NOT NULL,
+    `nama_divisi` TEXT NOT NULL,
     `department_id` VARCHAR(191) NOT NULL,
     `ext_tlp` TEXT NOT NULL,
 

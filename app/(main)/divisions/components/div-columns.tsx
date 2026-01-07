@@ -1,7 +1,9 @@
 import { DataTableColumnHeader } from '@/components/datatable/datatable-column-header'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Divisi } from '@/generated/prisma/client'
+import { cn } from '@/lib/utils'
 import { Column, ColumnDef } from '@tanstack/react-table'
+import { DivRowActions } from './div-row-action'
 
 type DivisiWithDepartment = Divisi & {
     department_fk: {
@@ -99,4 +101,19 @@ export const divColumns: ColumnDef<DivisiWithDepartment>[] = [
         ),
         size: 80,
     },
+    {
+        id: 'actions',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Aksi" className="ml-auto" />,
+        size: 48,
+        minSize: 48,
+        maxSize: 48,
+        enableResizing: false,
+        cell: DivRowActions,
+        meta: {
+            className: cn(
+                'sticky right-0 z-10 w-[60px] px-2',
+                'bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted transition-colors duration-200',
+            ),
+        },
+    }
 ]

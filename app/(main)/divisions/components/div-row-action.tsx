@@ -7,9 +7,15 @@ import { useDialog } from '@/context/dialog-provider'
 import { ButtonGroup } from '@/components/ui/button-group'
 import { Divisi } from '@/generated/prisma/client'
 
+type DivisiWithDepartment = Divisi & {
+    department_fk: {
+        nama_department: string
+        kode_department: string
+    }
+}
 
 type DataTableRowActionsProps = {
-    row: Row<Divisi>
+    row: Row<DivisiWithDepartment>
 }
 
 export function DivRowActions({ row }: DataTableRowActionsProps) {

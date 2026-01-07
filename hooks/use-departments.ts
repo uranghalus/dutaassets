@@ -3,6 +3,7 @@ import {
   deleteDepartment,
   deleteDepartmentsBulk,
   getDepartments,
+  getDepartmentsSimple,
   updateDepartment,
 } from '@/action/dept-action';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -91,5 +92,24 @@ export function useDeleteDepartmentsBulk() {
         queryKey: ['departments'],
       });
     },
+  });
+}
+export function useDepartmentOptions() {
+  return useQuery({
+    queryKey: ['department-options'],
+    queryFn: async () => {
+      const res = await getDepartments({
+        page: 1,
+        pageSize: 1000, // ambil semua (aman untuk dropdown)
+      });
+      return res.data;
+    },
+  });
+}
+
+export function useDepartmentsSimple() {
+  return useQuery({
+    queryKey: ['departments-simple'],
+    queryFn: () => getDepartmentsSimple(),
   });
 }

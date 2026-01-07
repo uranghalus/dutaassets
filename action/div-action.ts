@@ -46,13 +46,23 @@ export async function createDivision(formData: FormData) {
   if (!session) {
     throw new Error('Unauthorized');
   }
-  const data = {
-    id_divisi: formData.get('id_divisi') as string,
-    nama_divisi: formData.get('nama_divisi') as string,
-    department_id: formData.get('department_id') as string,
-    ext_tlp: formData.get('ext_tlp') as string,
-  };
-  const divisi = await prisma.divisi.create({ data });
+
+  const nama_divisi = formData.get('nama_divisi');
+  const department_id = formData.get('department_id');
+  const ext_tlp = formData.get('ext_tlp');
+
+  if (!nama_divisi || !department_id) {
+    throw new Error('Required fields are missing');
+  }
+
+  const divisi = await prisma.divisi.create({
+    data: {
+      nama_divisi: nama_divisi as string,
+      department_id: department_id as string,
+      ext_tlp: (ext_tlp as string) ?? '',
+    },
+  });
+
   revalidatePath('/divisions');
   return divisi;
 }

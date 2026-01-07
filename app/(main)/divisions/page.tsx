@@ -1,6 +1,9 @@
 import { Main } from '@/components/main'
 import { DialogProvider } from '@/context/dialog-provider'
 import React from 'react'
+import DivisiDialogs from './components/div-dialogs'
+import { DivisiTable } from './components/div-table'
+import DivPrimaryButton from './components/div-primary-button'
 
 export default function DivisionPage() {
     return (
@@ -16,11 +19,11 @@ export default function DivisionPage() {
                             Pengelolaan data divisi
                         </p>
                     </div>
-                    {/* <DeptPrimaryButton /> */}
+                    <DivPrimaryButton />
                 </div>
-                {/* <DepartmentTable /> */}
+                <DivisiTable />
             </Main>
-            {/* <DepartmentDialogs /> */}
+            <DivisiDialogs />
         </DialogProvider>
     )
 }

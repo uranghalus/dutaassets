@@ -27,7 +27,7 @@ export function DivisiDeleteDialog({
     const deleteMutation = useDeleteDivision()
 
     const handleDelete = async () => {
-        if (value.trim() !== currentRow.id_divisi) return
+        if (value.trim() !== currentRow.nama_divisi) return
 
         await deleteMutation.mutateAsync(currentRow.id_divisi)
         setValue('')
@@ -43,7 +43,7 @@ export function DivisiDeleteDialog({
             }}
             handleConfirm={handleDelete}
             disabled={
-                value.trim() !== currentRow.id_divisi ||
+                value.trim() !== currentRow.nama_divisi ||
                 deleteMutation.isPending
             }
             title={
@@ -67,7 +67,7 @@ export function DivisiDeleteDialog({
 
                     <Label className="space-y-2">
                         <span>
-                            Type <strong>{currentRow.id_divisi}</strong> to confirm:
+                            Type <strong>{currentRow.nama_divisi}</strong> to confirm:
                         </span>
                         <Input
                             value={value}

@@ -1,7 +1,10 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client'
 
+import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import { Check, ChevronsUpDown } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -20,22 +23,21 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command'
 
 import { Department, Divisi } from '@/generated/prisma/client'
-
-
 import { useCreateDivision, useUpdateDivision } from '@/hooks/use-divisions'
-import { DivisionForm, divisionFormSchema } from '@/schema/div-schema'
 import { useDepartmentOptions } from '@/hooks/use-departments'
-
+import { DivisionForm, divisionFormSchema } from '@/schema/div-schema'
 
 type Props = {
     open: boolean
@@ -54,15 +56,34 @@ export function DivisionActionDialog({
     const updateMutation = useUpdateDivision()
     const { data: departments, isLoading } = useDepartmentOptions()
 
+    const [openDept, setOpenDept] = useState(false)
+    const [mounted, setMounted] = useState(false)
+
     const form = useForm<DivisionForm>({
         resolver: zodResolver(divisionFormSchema),
-        defaultValues: {
-            nama_divisi: currentRow?.nama_divisi || '',
-            department_id: currentRow?.department_id || '',
-            ext_tlp: currentRow?.ext_tlp || '',
-            isEdit,
-        },
     })
+
+    /**
+     * 🔥 FIX HYDRATION
+     * Reset form ONLY after dialog opened
+     */
+    useEffect(() => {
+        if (open) {
+            form.reset({
+                nama_divisi: currentRow?.nama_divisi ?? '',
+                department_id: currentRow?.department_id ?? '',
+                ext_tlp: currentRow?.ext_tlp ?? '',
+                isEdit,
+            })
+        }
+    }, [open, currentRow, isEdit, form])
+
+    /**
+     * 🔥 Prevent SSR mismatch (Popover / async data)
+     */
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     const isPending =
         createMutation.isPending || updateMutation.isPending
@@ -90,7 +111,7 @@ export function DivisionActionDialog({
         <Dialog
             open={open}
             onOpenChange={(state) => {
-                form.reset()
+                if (!state) form.reset()
                 onOpenChange(state)
             }}
         >
@@ -112,7 +133,9 @@ export function DivisionActionDialog({
                         onSubmit={form.handleSubmit(onSubmit)}
                         className="space-y-4"
                     >
-                        {/* Nama Divisi */}
+                        {/* =========================
+               NAMA DIVISI
+            ========================= */}
                         <FormField
                             control={form.control}
                             name="nama_divisi"
@@ -127,40 +150,85 @@ export function DivisionActionDialog({
                             )}
                         />
 
-                        {/* Department Dropdown */}
+                        {/* =========================
+               DEPARTMENT DROPDOWN
+            ========================= */}
                         <FormField
                             control={form.control}
                             name="department_id"
                             render={({ field }) => (
-                                <FormItem>
+                                <FormItem className="flex flex-col">
                                     <FormLabel>Department</FormLabel>
-                                    <Select
-                                        value={field.value}
-                                        onValueChange={field.onChange}
-                                        disabled={isLoading}
+
+                                    <Popover
+                                        open={openDept}
+                                        onOpenChange={setOpenDept}
                                     >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select department" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {departments?.map((dept: Department) => (
-                                                <SelectItem
-                                                    key={dept.id_department}
-                                                    value={dept.id_department}
-                                                >
-                                                    {dept.nama_department}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                disabled={isLoading}
+                                                className="justify-between"
+                                            >
+                                                {mounted && field.value
+                                                    ? departments?.find(
+                                                        (dept: Department) =>
+                                                            dept.id_department === field.value
+                                                    )?.nama_department
+                                                    : 'Select department'}
+
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+
+                                        <PopoverContent className="p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Search department..." />
+                                                <CommandList>
+                                                    <CommandEmpty>
+                                                        No department found.
+                                                    </CommandEmpty>
+
+                                                    <CommandGroup>
+                                                        {departments?.map(
+                                                            (dept: Department) => (
+                                                                <CommandItem
+                                                                    key={dept.id_department}
+                                                                    value={dept.nama_department}
+                                                                    onSelect={() => {
+                                                                        field.onChange(
+                                                                            dept.id_department
+                                                                        )
+                                                                        setOpenDept(false)
+                                                                    }}
+                                                                >
+                                                                    {dept.nama_department}
+
+                                                                    <Check
+                                                                        className={`ml-auto h-4 w-4 ${field.value ===
+                                                                            dept.id_department
+                                                                            ? 'opacity-100'
+                                                                            : 'opacity-0'
+                                                                            }`}
+                                                                    />
+                                                                </CommandItem>
+                                                            )
+                                                        )}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
 
-                        {/* Ext Tlp */}
+                        {/* =========================
+               EXT TLP
+            ========================= */}
                         <FormField
                             control={form.control}
                             name="ext_tlp"

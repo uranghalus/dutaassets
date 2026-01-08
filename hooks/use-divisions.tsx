@@ -2,6 +2,7 @@ import {
     createDivision,
     deleteDivision,
     deleteDivisionBulk,
+    getDivisionOptions,
     getDivisions,
     updateDivisi,
 } from '@/action/div-action'
@@ -102,5 +103,15 @@ export function useDeleteDivisionBulk() {
                 queryKey: ['divisions'],
             })
         },
+    })
+}
+/* =======================
+   OPTIONS (DROPDOWN)
+======================= */
+export function useDivisionOptions() {
+    return useQuery({
+        queryKey: ['division-options'],
+        queryFn: () => getDivisionOptions(),
+        staleTime: 1000 * 60 * 5, // 5 menit
     })
 }

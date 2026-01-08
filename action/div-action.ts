@@ -115,3 +115,17 @@ export async function deleteDivisionBulk(id_divisi: string[]) {
   });
   revalidatePath('/divisions');
 }
+export async function getDivisionOptions() {
+  const session = await getServerSession();
+  if (!session) throw new Error('Unauthorized');
+
+  return prisma.divisi.findMany({
+    orderBy: {
+      nama_divisi: 'asc',
+    },
+    select: {
+      id_divisi: true,
+      nama_divisi: true,
+    },
+  });
+}

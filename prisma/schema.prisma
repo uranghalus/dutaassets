@@ -84,7 +84,7 @@ model Verification {
 }
 
 model Department {
-  id_department   String @id
+  id_department   String @id @default(uuid())
   kode_department String @db.Text
   nama_department String @db.Text
   id_hod          String @db.Text
@@ -103,7 +103,7 @@ model Divisi {
 }
 
 model Karyawan {
-  id_karyawan     String   @id
+  id_karyawan     String   @id @default(cuid())
   nik             String   @db.Char(50)
   nama            String   @db.Text
   nama_alias      String

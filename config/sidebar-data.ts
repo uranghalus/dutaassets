@@ -19,6 +19,7 @@ import {
   UserCircle,
   Sliders,
   Upload,
+  Building2,
 } from 'lucide-react';
 
 import { SidebarData } from '@/types';
@@ -126,6 +127,11 @@ export const sidebarData: SidebarData = {
     {
       title: 'Organisasi & SDM',
       items: [
+        {
+          title: 'Unit Bisnis',
+          url: '/organizations',
+          icon: Building2,
+        },
         {
           title: 'Pengguna',
           url: '/users',

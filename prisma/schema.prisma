@@ -30,6 +30,9 @@ model User {
   sessions        Session[]
   accounts        Account[]
 
+  members     Member[]
+  invitations Invitation[]
+
   @@unique([email])
   @@map("user")
 }
@@ -45,6 +48,8 @@ model Session {
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   impersonatedBy String?  @db.Text
+
+  activeOrganizationId String? @db.Text
 
   @@unique([token])
   @@index([userId(length: 191)])
@@ -85,42 +90,56 @@ model Verification {
 
 model Department {
   id_department   String @id @default(uuid())
+  organization_id String
+
   kode_department String @db.Text
   nama_department String @db.Text
   id_hod          String @db.Text
 
   divisis Divisi[]
+
+  @@unique([organization_id, kode_department(length: 191)])
+  @@index([organization_id])
 }
 
 model Divisi {
-  id_divisi     String     @id @default(uuid())
-  nama_divisi   String     @db.Text
-  department_id String
+  id_divisi       String @id @default(uuid())
+  organization_id String
+  department_id   String
+
+  nama_divisi String @db.Text
+  ext_tlp     String @db.Text
+
   department_fk Department @relation(fields: [department_id], references: [id_department], onDelete: Cascade)
-  ext_tlp       String     @db.Text
 
   karyawans Karyawan[]
+
+  @@index([organization_id, department_id])
 }
 
 model Karyawan {
-  id_karyawan     String   @id @default(cuid())
-  nik             String   @db.Char(50)
-  nama            String   @db.Text
-  nama_alias      String
-  alamat          String   @db.LongText
-  no_ktp          String   @db.Char(16)
-  telp            String   @db.Text
+  id_karyawan     String @id @default(cuid())
+  organization_id String
   divisi_id       String
-  divisi_fk       Divisi   @relation(fields: [divisi_id], references: [id_divisi], onDelete: Cascade)
-  jabatan         String   @db.Text
-  call_sign       String   @db.Char(150)
-  status_karyawan String   @db.Char(50)
-  keterangan      String   @db.Char(150)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
 
-  @@unique([nik])
-  @@unique([no_ktp])
+  nik             String @db.Char(50)
+  nama            String @db.Text
+  nama_alias      String
+  alamat          String @db.LongText
+  no_ktp          String @db.Char(16)
+  telp            String @db.Text
+  jabatan         String @db.Text
+  call_sign       String @db.Char(150)
+  status_karyawan String @db.Char(50)
+  keterangan      String @db.Char(150)
+
+  divisi_fk Divisi @relation(fields: [divisi_id], references: [id_divisi], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organization_id, nik])
+  @@unique([organization_id, no_ktp])
 }
 
 model Inventory {
@@ -148,4 +167,49 @@ model Inventory {
   create_id_user        String?   @db.Char(50)
   modified_date         DateTime?
   modified_id_user      String?   @db.Char(50)
+}
+
+model Organization {
+  id          String       @id
+  name        String       @db.Text
+  slug        String
+  logo        String?      @db.Text
+  createdAt   DateTime
+  metadata    String?      @db.Text
+  members     Member[]
+  invitations Invitation[]
+
+  @@unique([slug])
+  @@map("organization")
+}
+
+model Member {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String       @db.Text
+  createdAt      DateTime
+
+  @@index([organizationId(length: 191)])
+  @@index([userId(length: 191)])
+  @@map("member")
+}
+
+model Invitation {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String       @db.Text
+  role           String?      @db.Text
+  status         String       @db.Text
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  inviterId      String
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId(length: 191)])
+  @@index([email(length: 191)])
+  @@map("invitation")
 }

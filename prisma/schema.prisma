@@ -96,7 +96,8 @@ model Department {
   nama_department String @db.Text
   id_hod          String @db.Text
 
-  divisis Divisi[]
+  divisis    Divisi[]
+  inventorys Inventory[]
 
   @@unique([organization_id, kode_department(length: 191)])
   @@index([organization_id])
@@ -112,7 +113,8 @@ model Divisi {
 
   department_fk Department @relation(fields: [department_id], references: [id_department], onDelete: Cascade)
 
-  karyawans Karyawan[]
+  karyawans   Karyawan[]
+  inventories Inventory[]
 
   @@index([organization_id, department_id])
 }
@@ -135,18 +137,29 @@ model Karyawan {
 
   divisi_fk Divisi @relation(fields: [divisi_id], references: [id_divisi], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  inventories Inventory[]
 
   @@unique([organization_id, nik])
   @@unique([organization_id, no_ktp])
 }
 
 model Inventory {
-  id_barang             String    @id @default(uuid())
-  kode_barang           String    @unique @db.Char(50)
-  nama_barang           String    @db.Text
-  kelompok_barang       String    @db.Char(100)
+  id_barang String @id @default(uuid())
+
+  /// MULTI TENANT
+  organization_id String
+  department_id   String
+
+  /// OPTIONAL ASSIGNMENT
+  divisi_id   String?
+  karyawan_id String?
+
+  kode_barang     String @db.Char(50)
+  nama_barang     String @db.Text
+  kelompok_barang String @db.Char(100)
+
   deskripsi_barang      String?   @db.Text
   merk                  String?   @db.Char(100)
   tipe_path_number      String?   @db.Char(100)
@@ -154,19 +167,27 @@ model Inventory {
   tgl_pembelian         DateTime?
   harga                 Float?
   tempat_pembelian      String?   @db.Char(100)
-  id_penanggungjawab    String?   @db.Char(50)
   status_kondisi_barang String?   @db.Char(50)
-  department_permilik   String?   @db.Char(100)
-  tempat_jokasi_barang  String?   @db.Char(200)
+  tempat_lokasi_barang  String?   @db.Char(200)
   tgl_exp_paramsi       DateTime?
-  path_folder           String?   @db.Text
-  gambar                String?   @db.Text
-  expand_data           Json?
-  keterangan            String?   @db.Text
-  create_date           DateTime  @default(now())
-  create_id_user        String?   @db.Char(50)
-  modified_date         DateTime?
-  modified_id_user      String?   @db.Char(50)
+
+  path_folder String? @db.Text
+  gambar      String? @db.Text
+  expand_data Json?
+  keterangan  String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// RELATIONS (STYLE SAMA)
+  department_fk Department @relation(fields: [department_id], references: [id_department], onDelete: Cascade)
+
+  divisi_fk Divisi? @relation(fields: [divisi_id], references: [id_divisi], onDelete: Cascade)
+
+  karyawan_fk Karyawan? @relation(fields: [karyawan_id], references: [id_karyawan], onDelete: Cascade)
+
+  @@unique([organization_id, kode_barang])
+  @@index([organization_id, department_id])
 }
 
 model Organization {

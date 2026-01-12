@@ -132,3 +132,20 @@ export async function getOrganizationDetail({
   });
   return data;
 }
+export async function getOrganizationsSimple() {
+  const session = await getServerSession();
+  if (!session) {
+    throw new Error('Unauthorized');
+  }
+
+  const organizations = await auth.api.listOrganizations({
+    headers: await headers(),
+  });
+
+  // normalize data (biar aman dipakai di UI)
+  return organizations.map((org) => ({
+    id: org.id,
+    name: org.name,
+    slug: org.slug,
+  }));
+}

@@ -47,46 +47,68 @@ export async function createDivision(formData: FormData) {
     throw new Error('Unauthorized');
   }
 
-  const nama_divisi = formData.get('nama_divisi');
-  const department_id = formData.get('department_id');
-  const ext_tlp = formData.get('ext_tlp');
+  const nama_divisi = formData.get('nama_divisi')?.toString();
+  const department_id = formData.get('department_id')?.toString();
+  const organization_id = formData.get('organization_id')?.toString();
+  const ext_tlp = formData.get('ext_tlp')?.toString() ?? '';
 
-  if (!nama_divisi || !department_id) {
+  if (!nama_divisi || !department_id || !organization_id) {
     throw new Error('Required fields are missing');
   }
 
   const divisi = await prisma.divisi.create({
     data: {
-      nama_divisi: nama_divisi as string,
-      department_id: department_id as string,
-      ext_tlp: (ext_tlp as string) ?? '',
+      nama_divisi,
+      department_id,
+      organization_id,
+      ext_tlp,
     },
   });
 
+  // ✅ ganti sesuai halaman divisi kamu
   revalidatePath('/divisions');
+
   return divisi;
 }
+/* =========================
+   UPDATE DIVISION
+========================= */
 export async function updateDivisi(divisiId: string, formData: FormData) {
+  console.log('Form Data', formData);
   const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  if (!session) {
+    throw new Error('Unauthorized');
+  }
 
   const oldDivisi = await prisma.divisi.findUnique({
     where: { id_divisi: divisiId },
   });
 
-  if (!oldDivisi) throw new Error('Divisi not found');
+  if (!oldDivisi) {
+    throw new Error('Divisi not found');
+  }
 
-  const data = {
-    nama_divisi: formData.get('nama_divisi') as string,
-    department_id: formData.get('department_id') as string,
-    ext_tlp: formData.get('ext_tlp') as string,
-  };
+  const nama_divisi = formData.get('nama_divisi')?.toString();
+  const department_id = formData.get('department_id')?.toString();
+  const organization_id = formData.get('organization_id')?.toString();
+  const ext_tlp = formData.get('ext_tlp')?.toString() ?? '';
+
+  if (!nama_divisi || !department_id || !organization_id) {
+    throw new Error('Required fields are missing');
+  }
 
   const updated = await prisma.divisi.update({
     where: { id_divisi: divisiId },
-    data,
+    data: {
+      nama_divisi,
+      department_id,
+      organization_id,
+      ext_tlp,
+    },
   });
+
   revalidatePath('/divisions');
+
   return updated;
 }
 export async function deleteDivision(id_divisi: string) {

@@ -1,4 +1,4 @@
-import { createOrganization, deleteOrganization, deleteOrganizationsBulk, getOrganizationDetail, getOrganizations, updateOrganization } from "@/action/organization-action";
+import { createOrganization, deleteOrganization, deleteOrganizationsBulk, getOrganizationDetail, getOrganizations, getOrganizationsSimple, updateOrganization } from "@/action/organization-action";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 type UseOrganizationDetailParams = {
     organizationId?: string
@@ -103,5 +103,12 @@ export function useOrganizationDetail({
                 membersLimit: membersLimit,
             }),
         enabled: Boolean(organizationId || organizationSlug),
+    })
+}
+export function useOrganizationOptions() {
+    return useQuery({
+        queryKey: ['organization-options'],
+        queryFn: () => getOrganizationsSimple(),
+        staleTime: 1000 * 60 * 5, // 5 menit
     })
 }

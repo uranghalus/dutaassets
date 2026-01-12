@@ -2,6 +2,7 @@ import {
   createDepartment,
   deleteDepartment,
   deleteDepartmentsBulk,
+  getDepartmentOptions,
   getDepartments,
   getDepartmentsSimple,
   updateDepartment,
@@ -94,16 +95,12 @@ export function useDeleteDepartmentsBulk() {
     },
   });
 }
-export function useDepartmentOptions() {
+export function useDepartmentOptions(organizationId?: string) {
   return useQuery({
-    queryKey: ['department-options'],
-    queryFn: async () => {
-      const res = await getDepartments({
-        page: 1,
-        pageSize: 1000, // ambil semua (aman untuk dropdown)
-      });
-      return res.data;
-    },
+    queryKey: ['department-options', organizationId],
+    queryFn: () => getDepartmentOptions({ organizationId }),
+    enabled: !!organizationId, // ⬅️ penting
+    staleTime: 1000 * 60 * 5,
   });
 }
 

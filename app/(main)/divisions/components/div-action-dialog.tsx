@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/set-state-in-effect */
 'use client'
 
@@ -34,10 +35,12 @@ import {
     CommandList,
 } from '@/components/ui/command'
 
-import { Department, Divisi } from '@/generated/prisma/client'
+import { Divisi, Department } from '@/generated/prisma/client'
 import { useCreateDivision, useUpdateDivision } from '@/hooks/use-divisions'
 import { useDepartmentOptions } from '@/hooks/use-departments'
+
 import { DivisionForm, divisionFormSchema } from '@/schema/div-schema'
+import { useOrganizationOptions } from '@/hooks/use-organization'
 
 type Props = {
     open: boolean
@@ -54,33 +57,39 @@ export function DivisionActionDialog({
 
     const createMutation = useCreateDivision()
     const updateMutation = useUpdateDivision()
-    const { data: departments, isLoading } = useDepartmentOptions()
 
-    const [openDept, setOpenDept] = useState(false)
-    const [mounted, setMounted] = useState(false)
+    const { data: orgData } = useOrganizationOptions()
+    const organizations = orgData ?? []
 
     const form = useForm<DivisionForm>({
         resolver: zodResolver(divisionFormSchema),
     })
 
+    const organizationId = form.watch('organization_id')
+
+    const { data: departments = [], isLoading } =
+        useDepartmentOptions(organizationId)
+
+    const [openOrg, setOpenOrg] = useState(false)
+    const [openDept, setOpenDept] = useState(false)
+    const [mounted, setMounted] = useState(false)
+
     /**
-     * 🔥 FIX HYDRATION
-     * Reset form ONLY after dialog opened
+     * 🔥 Fix hydration + reset saat dialog dibuka
      */
     useEffect(() => {
         if (open) {
             form.reset({
-                nama_divisi: currentRow?.nama_divisi ?? '',
+                organization_id:
+                    currentRow?.organization_id ?? '',
                 department_id: currentRow?.department_id ?? '',
+                nama_divisi: currentRow?.nama_divisi ?? '',
                 ext_tlp: currentRow?.ext_tlp ?? '',
                 isEdit,
             })
         }
     }, [open, currentRow, isEdit, form])
 
-    /**
-     * 🔥 Prevent SSR mismatch (Popover / async data)
-     */
     useEffect(() => {
         setMounted(true)
     }, [])
@@ -90,6 +99,8 @@ export function DivisionActionDialog({
 
     const onSubmit = async (values: DivisionForm) => {
         const formData = new FormData()
+        console.log('Comp', formData.values());
+
         formData.append('nama_divisi', values.nama_divisi)
         formData.append('department_id', values.department_id)
         formData.append('ext_tlp', values.ext_tlp ?? '')
@@ -134,25 +145,90 @@ export function DivisionActionDialog({
                         className="space-y-4"
                     >
                         {/* =========================
-               NAMA DIVISI
-            ========================= */}
+                            ORGANIZATION
+                        ========================= */}
                         <FormField
                             control={form.control}
-                            name="nama_divisi"
+                            name="organization_id"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nama Divisi</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="IT Support" {...field} />
-                                    </FormControl>
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Organization</FormLabel>
+
+                                    <Popover
+                                        open={openOrg}
+                                        onOpenChange={setOpenOrg}
+                                    >
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className="justify-between"
+                                            >
+                                                {mounted && field.value
+                                                    ? organizations.find(
+                                                        (o: any) =>
+                                                            o.id ===
+                                                            field.value
+                                                    )?.name
+                                                    : 'Select organization'}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+
+                                        <PopoverContent className="p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Search organization..." />
+                                                <CommandList>
+                                                    <CommandEmpty>
+                                                        No organization found.
+                                                    </CommandEmpty>
+
+                                                    <CommandGroup>
+                                                        {organizations.map(
+                                                            (org: any) => (
+                                                                <CommandItem
+                                                                    key={org.id}
+                                                                    value={
+                                                                        org.name
+                                                                    }
+                                                                    onSelect={() => {
+                                                                        field.onChange(
+                                                                            org.id
+                                                                        )
+                                                                        form.setValue(
+                                                                            'department_id',
+                                                                            ''
+                                                                        )
+                                                                        setOpenOrg(
+                                                                            false
+                                                                        )
+                                                                    }}
+                                                                >
+                                                                    {org.name}
+                                                                    <Check
+                                                                        className={`ml-auto h-4 w-4 ${field.value ===
+                                                                            org.id
+                                                                            ? 'opacity-100'
+                                                                            : 'opacity-0'
+                                                                            }`}
+                                                                    />
+                                                                </CommandItem>
+                                                            )
+                                                        )}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
 
                         {/* =========================
-               DEPARTMENT DROPDOWN
-            ========================= */}
+                            DEPARTMENT
+                        ========================= */}
                         <FormField
                             control={form.control}
                             name="department_id"
@@ -168,16 +244,21 @@ export function DivisionActionDialog({
                                             <Button
                                                 variant="outline"
                                                 role="combobox"
-                                                disabled={isLoading}
+                                                disabled={
+                                                    !organizationId ||
+                                                    isLoading
+                                                }
                                                 className="justify-between"
                                             >
                                                 {mounted && field.value
-                                                    ? departments?.find(
-                                                        (dept: Department) =>
-                                                            dept.id_department === field.value
+                                                    ? departments.find(
+                                                        (
+                                                            d: any
+                                                        ) =>
+                                                            d.id_department ===
+                                                            field.value
                                                     )?.nama_department
                                                     : 'Select department'}
-
                                                 <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
                                             </Button>
                                         </PopoverTrigger>
@@ -191,20 +272,29 @@ export function DivisionActionDialog({
                                                     </CommandEmpty>
 
                                                     <CommandGroup>
-                                                        {departments?.map(
-                                                            (dept: Department) => (
+                                                        {departments.map(
+                                                            (
+                                                                dept: any
+                                                            ) => (
                                                                 <CommandItem
-                                                                    key={dept.id_department}
-                                                                    value={dept.nama_department}
+                                                                    key={
+                                                                        dept.id_department
+                                                                    }
+                                                                    value={
+                                                                        dept.nama_department
+                                                                    }
                                                                     onSelect={() => {
                                                                         field.onChange(
                                                                             dept.id_department
                                                                         )
-                                                                        setOpenDept(false)
+                                                                        setOpenDept(
+                                                                            false
+                                                                        )
                                                                     }}
                                                                 >
-                                                                    {dept.nama_department}
-
+                                                                    {
+                                                                        dept.nama_department
+                                                                    }
                                                                     <Check
                                                                         className={`ml-auto h-4 w-4 ${field.value ===
                                                                             dept.id_department
@@ -227,8 +317,28 @@ export function DivisionActionDialog({
                         />
 
                         {/* =========================
-               EXT TLP
-            ========================= */}
+                            NAMA DIVISI
+                        ========================= */}
+                        <FormField
+                            control={form.control}
+                            name="nama_divisi"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nama Divisi</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="IT Support"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* =========================
+                            EXT TLP
+                        ========================= */}
                         <FormField
                             control={form.control}
                             name="ext_tlp"

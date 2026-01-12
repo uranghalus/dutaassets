@@ -47,12 +47,14 @@ export async function createDepartment(formData: FormData) {
   if (!session) throw new Error('Unauthorized');
 
   const kode_department = formData.get('kode_department') as string;
+  const organization_id = formData.get('organization_id') as string;
   const nama_department = formData.get('nama_department') as string;
   const id_hod = formData.get('id_hod') as string | null;
 
   await prisma.department.create({
     data: {
       id_department: crypto.randomUUID(),
+      organization_id,
       kode_department,
       nama_department,
       id_hod: id_hod || '',
@@ -131,6 +133,26 @@ export async function getDepartmentsSimple() {
     },
     orderBy: {
       nama_department: 'asc',
+    },
+  });
+}
+export async function getDepartmentOptions({
+  organizationId,
+}: {
+  organizationId?: string;
+}) {
+  const session = await getServerSession();
+  if (!session) throw new Error('Unauthorized');
+
+  return prisma.department.findMany({
+    where: organizationId ? { organization_id: organizationId } : undefined,
+    orderBy: {
+      nama_department: 'asc',
+    },
+    select: {
+      id_department: true,
+      nama_department: true,
+      organization_id: true,
     },
   });
 }

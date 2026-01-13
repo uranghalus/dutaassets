@@ -15,28 +15,38 @@ export type employeeArgs = {
 /* =======================
    GET (PAGINATION)
 ======================= */
+/* =======================
+   GET (PAGINATION)
+======================= */
 export async function getEmployees({ page, pageSize }: employeeArgs) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
+  const organizationId = session.session.activeOrganizationId;
+  if (!organizationId) throw new Error('No active organization');
+
   const safePage = Math.max(1, page);
   const safePageSize = Math.max(1, pageSize);
-
   const skip = (safePage - 1) * safePageSize;
   const take = safePageSize;
 
   const [data, total] = await Promise.all([
     prisma.karyawan.findMany({
+      where: {
+        organization_id: organizationId, // 🔐 MULTI TENANT
+      },
       skip,
       take,
-      orderBy: {
-        nama: 'asc',
-      },
+      orderBy: { nama: 'asc' },
       include: {
         divisi_fk: true,
       },
     }),
-    prisma.karyawan.count(),
+    prisma.karyawan.count({
+      where: {
+        organization_id: organizationId,
+      },
+    }),
   ]);
 
   return {
@@ -55,35 +65,37 @@ export async function createEmployee(formData: FormData) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
-  const nik = formData.get('nik');
-  const nama = formData.get('nama');
-  const nama_alias = formData.get('nama_alias');
-  const alamat = formData.get('alamat');
-  const no_ktp = formData.get('no_ktp');
-  const telp = formData.get('telp');
-  const divisi_id = formData.get('divisi_id');
-  const jabatan = formData.get('jabatan');
-  const call_sign = formData.get('call_sign');
-  const status_karyawan = formData.get('status_karyawan');
-  const keterangan = formData.get('keterangan');
+  const nik = formData.get('nik')?.toString();
+  const nama = formData.get('nama')?.toString();
+  const nama_alias = formData.get('nama_alias')?.toString() ?? '';
+  const alamat = formData.get('alamat')?.toString() ?? '';
+  const no_ktp = formData.get('no_ktp')?.toString() ?? '';
+  const telp = formData.get('telp')?.toString() ?? '';
+  const divisi_id = formData.get('divisi_id')?.toString();
+  const organization_id = formData.get('organization_id')?.toString(); // ✅ ADD
+  const jabatan = formData.get('jabatan')?.toString() ?? '';
+  const call_sign = formData.get('call_sign')?.toString() ?? '';
+  const status_karyawan = formData.get('status_karyawan')?.toString() ?? '';
+  const keterangan = formData.get('keterangan')?.toString() ?? '';
 
-  if (!nik || !nama || !divisi_id) {
+  if (!nik || !nama || !divisi_id || !organization_id) {
     throw new Error('Required fields are missing');
   }
 
   const employee = await prisma.karyawan.create({
     data: {
-      nik: nik as string,
-      nama: nama as string,
-      nama_alias: (nama_alias as string) ?? '',
-      alamat: (alamat as string) ?? '',
-      no_ktp: (no_ktp as string) ?? '',
-      telp: (telp as string) ?? '',
-      divisi_id: divisi_id as string,
-      jabatan: (jabatan as string) ?? '',
-      call_sign: (call_sign as string) ?? '',
-      status_karyawan: (status_karyawan as string) ?? '',
-      keterangan: (keterangan as string) ?? '',
+      nik,
+      nama,
+      nama_alias,
+      alamat,
+      no_ktp,
+      telp,
+      divisi_id,
+      organization_id, // ✅ SAVE
+      jabatan,
+      call_sign,
+      status_karyawan,
+      keterangan,
     },
   });
 
@@ -104,23 +116,31 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
 
   if (!oldEmployee) throw new Error('Employee not found');
 
-  const data = {
-    nik: formData.get('nik') as string,
-    nama: formData.get('nama') as string,
-    nama_alias: formData.get('nama_alias') as string,
-    alamat: formData.get('alamat') as string,
-    no_ktp: formData.get('no_ktp') as string,
-    telp: formData.get('telp') as string,
-    divisi_id: formData.get('divisi_id') as string,
-    jabatan: formData.get('jabatan') as string,
-    call_sign: formData.get('call_sign') as string,
-    status_karyawan: formData.get('status_karyawan') as string,
-    keterangan: formData.get('keterangan') as string,
-  };
+  const nik = formData.get('nik')?.toString();
+  const nama = formData.get('nama')?.toString();
+  const divisi_id = formData.get('divisi_id')?.toString();
+  const organization_id = formData.get('organization_id')?.toString(); // ✅ ADD
+
+  if (!nik || !nama || !divisi_id || !organization_id) {
+    throw new Error('Required fields are missing');
+  }
 
   const updated = await prisma.karyawan.update({
     where: { id_karyawan },
-    data,
+    data: {
+      nik,
+      nama,
+      nama_alias: formData.get('nama_alias')?.toString() ?? '',
+      alamat: formData.get('alamat')?.toString() ?? '',
+      no_ktp: formData.get('no_ktp')?.toString() ?? '',
+      telp: formData.get('telp')?.toString() ?? '',
+      divisi_id,
+      organization_id, // ✅ UPDATE
+      jabatan: formData.get('jabatan')?.toString() ?? '',
+      call_sign: formData.get('call_sign')?.toString() ?? '',
+      status_karyawan: formData.get('status_karyawan')?.toString() ?? '',
+      keterangan: formData.get('keterangan')?.toString() ?? '',
+    },
   });
 
   revalidatePath('/employees');

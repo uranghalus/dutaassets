@@ -2,13 +2,14 @@
 
 import { DataTableColumnHeader } from '@/components/datatable/datatable-column-header'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Karyawan } from '@/generated/prisma/client'
+
 import { cn } from '@/lib/utils'
 import { Column, ColumnDef } from '@tanstack/react-table'
 import EmployeesRowActions from './employees-row-action'
+import { EmployeeWithDivisi } from '@/types/employee'
 
 
-export const employeesColumns: ColumnDef<Karyawan>[] = [
+export const employeesColumns: ColumnDef<EmployeeWithDivisi>[] = [
     /* =====================
      * SELECT
      ===================== */
@@ -43,12 +44,12 @@ export const employeesColumns: ColumnDef<Karyawan>[] = [
      ===================== */
     {
         accessorKey: 'nik',
-        header: ({ column }: { column: Column<Karyawan, unknown> }) => (
+        header: ({ column }: { column: Column<EmployeeWithDivisi, unknown> }) => (
             <DataTableColumnHeader column={column} title="NIK" />
         ),
         cell: ({ cell }) => (
             <div className="font-medium ps-2">
-                {cell.getValue<Karyawan['nik']>()}
+                {cell.getValue<EmployeeWithDivisi['nik']>()}
             </div>
         ),
         size: 120,
@@ -59,12 +60,12 @@ export const employeesColumns: ColumnDef<Karyawan>[] = [
      ===================== */
     {
         accessorKey: 'nama',
-        header: ({ column }: { column: Column<Karyawan, unknown> }) => (
+        header: ({ column }: { column: Column<EmployeeWithDivisi, unknown> }) => (
             <DataTableColumnHeader column={column} title="Nama" />
         ),
         cell: ({ cell }) => (
             <div className="font-medium ps-2">
-                {cell.getValue<Karyawan['nama']>()}
+                {cell.getValue<EmployeeWithDivisi['nama']>()}
             </div>
         ),
         meta: {
@@ -78,44 +79,42 @@ export const employeesColumns: ColumnDef<Karyawan>[] = [
      ===================== */
     {
         accessorKey: 'jabatan',
-        header: ({ column }: { column: Column<Karyawan, unknown> }) => (
+        header: ({ column }: { column: Column<EmployeeWithDivisi, unknown> }) => (
             <DataTableColumnHeader column={column} title="Jabatan" />
         ),
         cell: ({ cell }) => (
             <div className="ps-2">
-                {cell.getValue<Karyawan['jabatan']>()}
+                {cell.getValue<EmployeeWithDivisi['jabatan']>()}
             </div>
         ),
         size: 150,
     },
 
-    /* =====================
-     * DIVISI
-     ===================== */
     {
-        accessorKey: 'divisi_id',
-        header: ({ column }: { column: Column<Karyawan, unknown> }) => (
+        id: 'divisi',
+        header: ({ column }) => (
             <DataTableColumnHeader column={column} title="Divisi" />
         ),
+        accessorFn: (row) => row.divisi_fk?.nama_divisi ?? '-',
         cell: ({ row }) => (
             <div className="ps-2">
-                {row.original.divisi_id ?? '-'}
+                {row.original.divisi_fk?.nama_divisi ?? '-'}
             </div>
         ),
         size: 160,
     },
 
     /* =====================
-     * STATUS
-     ===================== */
+    * STATUS
+    ===================== */
     {
         accessorKey: 'status_karyawan',
-        header: ({ column }: { column: Column<Karyawan, unknown> }) => (
+        header: ({ column }: { column: Column<EmployeeWithDivisi, unknown> }) => (
             <DataTableColumnHeader column={column} title="Status" />
         ),
         cell: ({ cell }) => (
             <div className="ps-2">
-                {cell.getValue<Karyawan['status_karyawan']>()}
+                {cell.getValue<EmployeeWithDivisi['status_karyawan']>()}
             </div>
         ),
         size: 120,

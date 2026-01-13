@@ -27,14 +27,12 @@ export function EmployeeTable() {
         pageSize: pagination.pageSize,
     })
 
-    const { data: divisions = [], isLoading: isLoadingDiv } =
-        useDivisionOptions()
+    const { data: divisions = [] } = useDivisionOptions()
 
     const { table } = useDataTable({
         data: data?.data ?? [],
-        columns: employeesColumns as any,
+        columns: employeesColumns,
         columnResizeMode: 'onEnd',
-
         pageCount: data?.pageCount ?? 0,
         pagination,
         onPaginationChange: setPagination,
@@ -48,23 +46,18 @@ export function EmployeeTable() {
                 searchPlaceholder="Search employee..."
                 filters={[
                     {
-                        columnId: 'divisi',
+                        columnId: 'divisi', // ✅ HARUS SAMA
                         title: 'Divisi',
-                        options: divisions.map((div: any) => ({
+                        options: divisions.map((div) => ({
                             label: div.nama_divisi,
-                            value: div.nama_divisi,
+                            value: div.nama_divisi, // ✅ MATCH accessorFn
                         })),
                     },
                 ]}
             />
 
             <DataTable table={table} loading={isLoading} />
-
-            <DataTablePagination
-                table={table}
-                pageCount={data?.pageCount ?? 0}
-            />
-
+            <DataTablePagination table={table} pageCount={data?.pageCount ?? 0} />
             <EmployeeBulkActions table={table} />
         </div>
     )

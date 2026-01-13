@@ -137,17 +137,17 @@ export async function deleteDivisionBulk(id_divisi: string[]) {
   });
   revalidatePath('/divisions');
 }
-export async function getDivisionOptions() {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
-
+export async function getDivisionOptions(organizationId: string) {
   return prisma.divisi.findMany({
-    orderBy: {
-      nama_divisi: 'asc',
+    where: {
+      organization_id: organizationId, // ✅ FILTER
     },
     select: {
       id_divisi: true,
       nama_divisi: true,
+    },
+    orderBy: {
+      nama_divisi: 'asc',
     },
   });
 }

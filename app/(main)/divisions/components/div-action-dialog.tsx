@@ -99,10 +99,10 @@ export function DivisionActionDialog({
 
     const onSubmit = async (values: DivisionForm) => {
         const formData = new FormData()
-        console.log('Comp', formData.values());
 
-        formData.append('nama_divisi', values.nama_divisi)
+        formData.append('organization_id', values.organization_id) // ✅ FIX
         formData.append('department_id', values.department_id)
+        formData.append('nama_divisi', values.nama_divisi)
         formData.append('ext_tlp', values.ext_tlp ?? '')
 
         if (isEdit && currentRow) {

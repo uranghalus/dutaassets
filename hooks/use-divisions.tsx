@@ -108,10 +108,11 @@ export function useDeleteDivisionBulk() {
 /* =======================
    OPTIONS (DROPDOWN)
 ======================= */
-export function useDivisionOptions() {
+export function useDivisionOptions(organizationId?: string) {
     return useQuery({
-        queryKey: ['division-options'],
-        queryFn: () => getDivisionOptions(),
+        queryKey: ['division-options', organizationId], // ✅ scoped cache
+        queryFn: () => getDivisionOptions(organizationId!), // ✅ param
+        enabled: !!organizationId, // ✅ fetch hanya jika ada org
         staleTime: 1000 * 60 * 5, // 5 menit
     })
 }

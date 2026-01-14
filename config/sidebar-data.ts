@@ -20,6 +20,10 @@ import {
   Sliders,
   Upload,
   Building2,
+  ClipboardList,
+  Truck,
+  Warehouse,
+  ArrowDownUp,
 } from 'lucide-react';
 
 import { SidebarData } from '@/types';
@@ -52,9 +56,9 @@ export const sidebarData: SidebarData = {
       ],
     },
 
-    // ---------- ASSET ----------
+    // ---------- ASSET MANAGEMENT ----------
     {
-      title: 'Asset',
+      title: 'Asset Management',
       items: [
         {
           title: 'Daftar Aset',
@@ -76,20 +80,13 @@ export const sidebarData: SidebarData = {
           url: '/asset-locations',
           icon: MapPin,
         },
-      ],
-    },
-
-    // ---------- OPERASIONAL ----------
-    {
-      title: 'Operasional',
-      items: [
         {
           title: 'Peminjaman Aset',
           url: '/asset-loans',
           icon: Handshake,
         },
         {
-          title: 'Maintenance',
+          title: 'Maintenance Aset',
           url: '/maintenance',
           icon: Wrench,
         },
@@ -97,6 +94,61 @@ export const sidebarData: SidebarData = {
           title: 'Mutasi Aset',
           url: '/asset-transfers',
           icon: Move,
+        },
+        {
+          title: 'Riwayat Aset',
+          url: '/asset-history',
+          icon: History,
+        },
+      ],
+    },
+    // ---------- INVENTORY CONTROL ----------
+    {
+      title: 'Inventory Control',
+      items: [
+        {
+          title: 'Master Item',
+          url: '/inventory/items',
+          icon: Package,
+        },
+        {
+          title: 'Kategori Item',
+          url: '/inventory/categories',
+          icon: Tags,
+        },
+        {
+          title: 'Gudang',
+          url: '/inventory/warehouses',
+          icon: Warehouse,
+        },
+        {
+          title: 'Requisition',
+          icon: ClipboardList,
+          items: [
+            {
+              title: 'Permintaan Barang',
+              url: '/inventory/requisition',
+            },
+            {
+              title: 'Persetujuan Permintaan',
+              url: '/inventory/requisition/approval',
+            },
+          ],
+        },
+        {
+          title: 'Penerimaan Barang',
+          url: '/inventory/receipts',
+          icon: Truck,
+        },
+        {
+          title: 'Penyesuaian Stok',
+          url: '/inventory/adjustments',
+          icon: ArrowDownUp,
+        },
+        {
+          title: 'Stok Barang',
+          url: '/inventory/stocks',
+          icon: Boxes,
         },
       ],
     },

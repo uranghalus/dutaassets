@@ -7,8 +7,12 @@ import {
   getDepartmentsSimple,
   updateDepartment,
 } from '@/action/dept-action';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+/* =======================
+   GET (PAGINATION)
+======================= */
 export function useDepartments({
   page,
   pageSize,
@@ -23,8 +27,10 @@ export function useDepartments({
         page,
         pageSize,
       }),
+    placeholderData: (previousData) => previousData,
   });
 }
+
 /* =======================
    CREATE
 ======================= */
@@ -37,6 +43,12 @@ export function useCreateDepartment() {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['departments'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['department-options'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['departments-simple'],
       });
     },
   });
@@ -55,11 +67,21 @@ export function useUpdateDepartment() {
     }: {
       departmentId: string;
       formData: FormData;
-    }) => updateDepartment({ departmentId: departmentId, formData: formData }),
+    }) =>
+      updateDepartment({
+        departmentId,
+        formData,
+      }),
 
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['departments'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['department-options'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['departments-simple'],
       });
     },
   });
@@ -78,9 +100,19 @@ export function useDeleteDepartment() {
       queryClient.invalidateQueries({
         queryKey: ['departments'],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['department-options'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['departments-simple'],
+      });
     },
   });
 }
+
+/* =======================
+   BULK DELETE
+======================= */
 export function useDeleteDepartmentsBulk() {
   const queryClient = useQueryClient();
 
@@ -92,21 +124,34 @@ export function useDeleteDepartmentsBulk() {
       queryClient.invalidateQueries({
         queryKey: ['departments'],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['department-options'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['departments-simple'],
+      });
     },
   });
 }
-export function useDepartmentOptions(organizationId?: string) {
+
+/* =======================
+   OPTIONS (FORM / FILTER)
+======================= */
+export function useDepartmentOptions() {
   return useQuery({
-    queryKey: ['department-options', organizationId],
-    queryFn: () => getDepartmentOptions({ organizationId }),
-    enabled: !!organizationId, // ⬅️ penting
-    staleTime: 1000 * 60 * 5,
+    queryKey: ['department-options'],
+    queryFn: () => getDepartmentOptions(),
+    staleTime: 1000 * 60 * 5, // 5 menit
   });
 }
 
+/* =======================
+   SIMPLE (DROPDOWN)
+======================= */
 export function useDepartmentsSimple() {
   return useQuery({
     queryKey: ['departments-simple'],
     queryFn: () => getDepartmentsSimple(),
+    staleTime: 1000 * 60 * 5,
   });
 }

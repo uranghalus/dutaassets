@@ -29,5 +29,12 @@ export const auth = betterAuth({
       },
     },
   },
-  plugins: [nextCookies(), username(), adminPg(), organization()],
+  plugins: [
+    nextCookies(),
+    username(),
+    adminPg(),
+    organization({
+      allowUserToCreateOrganization: true,
+    }),
+  ],
 });

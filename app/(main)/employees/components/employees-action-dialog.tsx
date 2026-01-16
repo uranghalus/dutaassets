@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/incompatible-library */
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -40,7 +39,7 @@ import { Karyawan } from '@/generated/prisma/client'
 import { EmployeeForm, employeeFormSchema } from '@/schema/employee-schema'
 import { useCreateEmployee, useUpdateEmployee } from '@/hooks/use-employee'
 import { useDivisionOptions } from '@/hooks/use-divisions'
-import { useOrganizationOptions } from '@/hooks/use-organization'
+import { formatPhone } from '@/lib/utils'
 
 type Props = {
     open: boolean
@@ -52,7 +51,24 @@ type DivisionOption = {
     id_divisi: string
     nama_divisi: string
 }
-
+// LINK status_karyawan
+const EMPLOYEE_STATUSES = [
+    'Aktif',
+    'Kontrak',
+    'Magang',
+    'Nonaktif',
+]
+// LINK jabatan
+const JOB_TITLES = [
+    'Staff',
+    'Supervisor',
+    'Koordinator',
+    'Asisten Manager',
+    'Manager',
+    'Senior Manager',
+    'Head of Department',
+    'Direktur',
+]
 export function EmployeeActionDialog({
     open,
     onOpenChange,
@@ -62,31 +78,37 @@ export function EmployeeActionDialog({
 
     const createMutation = useCreateEmployee()
     const updateMutation = useUpdateEmployee()
-
-    const { data: organizations = [] } = useOrganizationOptions()
+    const [openStatus, setOpenStatus] = useState(false)
+    const [openJob, setOpenJob] = useState(false)
 
     const form = useForm<EmployeeForm>({
         resolver: zodResolver(employeeFormSchema),
+        defaultValues: {
+            nik: currentRow?.nik ?? '',
+            nama: currentRow?.nama ?? '',
+            nama_alias: currentRow?.nama_alias ?? '',
+            alamat: currentRow?.alamat ?? '',
+            no_ktp: currentRow?.no_ktp ?? '',
+            telp: currentRow?.telp ?? '',
+            divisi_id: currentRow?.divisi_id ?? '',
+            jabatan: currentRow?.jabatan ?? '',
+            call_sign: currentRow?.call_sign ?? '',
+            status_karyawan: currentRow?.status_karyawan ?? '',
+            keterangan: currentRow?.keterangan ?? '',
+            isEdit,
+        },
     })
-
-    const organizationId = form.watch('organization_id')
 
     const {
         data: divisions = [],
         isLoading: isLoadingDivision,
-    } = useDivisionOptions(organizationId)
+    } = useDivisionOptions()
 
-    const [openOrg, setOpenOrg] = useState(false)
     const [openDiv, setOpenDiv] = useState(false)
 
-    /**
-     * 🔥 Reset & hydrate saat dialog dibuka
-     */
     useEffect(() => {
         if (open) {
             form.reset({
-                organization_id:
-                    currentRow?.organization_id ?? '',
                 nik: currentRow?.nik ?? '',
                 nama: currentRow?.nama ?? '',
                 nama_alias: currentRow?.nama_alias ?? '',
@@ -96,8 +118,7 @@ export function EmployeeActionDialog({
                 divisi_id: currentRow?.divisi_id ?? '',
                 jabatan: currentRow?.jabatan ?? '',
                 call_sign: currentRow?.call_sign ?? '',
-                status_karyawan:
-                    currentRow?.status_karyawan ?? '',
+                status_karyawan: currentRow?.status_karyawan ?? '',
                 keterangan: currentRow?.keterangan ?? '',
                 isEdit,
             })
@@ -156,89 +177,8 @@ export function EmployeeActionDialog({
                         className="grid grid-cols-2 gap-4"
                     >
                         {/* =========================
-                            ORGANIZATION
-                        ========================= */}
-                        <FormField
-                            control={form.control}
-                            name="organization_id"
-                            render={({ field }) => (
-                                <FormItem className="col-span-2 flex flex-col">
-                                    <FormLabel>Organization</FormLabel>
-
-                                    <Popover
-                                        open={openOrg}
-                                        onOpenChange={setOpenOrg}
-                                    >
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                className="justify-between"
-                                            >
-                                                {field.value
-                                                    ? organizations.find(
-                                                        (o: any) =>
-                                                            o.id ===
-                                                            field.value
-                                                    )?.name
-                                                    : 'Select organization'}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-
-                                        <PopoverContent className="p-0">
-                                            <Command>
-                                                <CommandInput placeholder="Search organization..." />
-                                                <CommandList>
-                                                    <CommandEmpty>
-                                                        No organization found.
-                                                    </CommandEmpty>
-                                                    <CommandGroup>
-                                                        {organizations.map(
-                                                            (org: any) => (
-                                                                <CommandItem
-                                                                    key={org.id}
-                                                                    value={
-                                                                        org.name
-                                                                    }
-                                                                    onSelect={() => {
-                                                                        field.onChange(
-                                                                            org.id
-                                                                        )
-                                                                        form.setValue(
-                                                                            'divisi_id',
-                                                                            ''
-                                                                        )
-                                                                        setOpenOrg(
-                                                                            false
-                                                                        )
-                                                                    }}
-                                                                >
-                                                                    {org.name}
-                                                                    <Check
-                                                                        className={`ml-auto h-4 w-4 ${field.value ===
-                                                                            org.id
-                                                                            ? 'opacity-100'
-                                                                            : 'opacity-0'
-                                                                            }`}
-                                                                    />
-                                                                </CommandItem>
-                                                            )
-                                                        )}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
-
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        {/* =========================
-                            DIVISI
-                        ========================= */}
+                DIVISI
+            ========================= */}
                         <FormField
                             control={form.control}
                             name="divisi_id"
@@ -254,21 +194,15 @@ export function EmployeeActionDialog({
                                             <Button
                                                 variant="outline"
                                                 role="combobox"
-                                                disabled={
-                                                    !organizationId ||
-                                                    isLoadingDivision
-                                                }
+                                                disabled={isLoadingDivision}
                                                 className="justify-between"
                                             >
                                                 {field.value
                                                     ? divisions.find(
-                                                        (
-                                                            d: DivisionOption
-                                                        ) =>
-                                                            d.id_divisi ===
-                                                            field.value
+                                                        (d: DivisionOption) =>
+                                                            d.id_divisi === field.value
                                                     )?.nama_divisi
-                                                    : 'Select divisi'}
+                                                    : 'Pilih divisi'}
                                                 <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
                                             </Button>
                                         </PopoverTrigger>
@@ -278,35 +212,22 @@ export function EmployeeActionDialog({
                                                 <CommandInput placeholder="Search divisi..." />
                                                 <CommandList>
                                                     <CommandEmpty>
-                                                        No divisi found.
+                                                        Divisi tidak ditemukan.
                                                     </CommandEmpty>
                                                     <CommandGroup>
                                                         {divisions.map(
-                                                            (
-                                                                div: DivisionOption
-                                                            ) => (
+                                                            (div: DivisionOption) => (
                                                                 <CommandItem
-                                                                    key={
-                                                                        div.id_divisi
-                                                                    }
-                                                                    value={
-                                                                        div.nama_divisi
-                                                                    }
+                                                                    key={div.id_divisi}
+                                                                    value={div.nama_divisi}
                                                                     onSelect={() => {
-                                                                        field.onChange(
-                                                                            div.id_divisi
-                                                                        )
-                                                                        setOpenDiv(
-                                                                            false
-                                                                        )
+                                                                        field.onChange(div.id_divisi)
+                                                                        setOpenDiv(false)
                                                                     }}
                                                                 >
-                                                                    {
-                                                                        div.nama_divisi
-                                                                    }
+                                                                    {div.nama_divisi}
                                                                     <Check
-                                                                        className={`ml-auto h-4 w-4 ${field.value ===
-                                                                            div.id_divisi
+                                                                        className={`ml-auto h-4 w-4 ${field.value === div.id_divisi
                                                                             ? 'opacity-100'
                                                                             : 'opacity-0'
                                                                             }`}
@@ -326,8 +247,8 @@ export function EmployeeActionDialog({
                         />
 
                         {/* =========================
-                            NIK
-                        ========================= */}
+                NIK
+            ========================= */}
                         <FormField
                             control={form.control}
                             name="nik"
@@ -343,8 +264,8 @@ export function EmployeeActionDialog({
                         />
 
                         {/* =========================
-                            NO KTP
-                        ========================= */}
+                NO KTP
+            ========================= */}
                         <FormField
                             control={form.control}
                             name="no_ktp"
@@ -360,8 +281,8 @@ export function EmployeeActionDialog({
                         />
 
                         {/* =========================
-                            NAMA
-                        ========================= */}
+                NAMA
+            ========================= */}
                         <FormField
                             control={form.control}
                             name="nama"
@@ -377,8 +298,8 @@ export function EmployeeActionDialog({
                         />
 
                         {/* =========================
-                            ALAMAT
-                        ========================= */}
+                ALAMAT
+            ========================= */}
                         <FormField
                             control={form.control}
                             name="alamat"
@@ -388,6 +309,195 @@ export function EmployeeActionDialog({
                                     <FormControl>
                                         <Textarea {...field} />
                                     </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        {/* =========================
+    TELEPON
+========================= */}
+                        <FormField
+                            control={form.control}
+                            name="telp"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>No. Telepon</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="0812-3456-789"
+                                            value={field.value ?? ''}
+                                            onChange={(e) =>
+                                                field.onChange(
+                                                    formatPhone(e.target.value)
+                                                )
+                                            }
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* =========================
+    JABATAN
+========================= */}
+                        <FormField
+                            control={form.control}
+                            name="jabatan"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Jabatan</FormLabel>
+
+                                    <Popover
+                                        open={openJob}
+                                        onOpenChange={setOpenJob}
+                                    >
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className="justify-between"
+                                            >
+                                                {field.value || 'Pilih jabatan'}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+
+                                        <PopoverContent className="p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Cari jabatan..." />
+                                                <CommandList>
+                                                    <CommandEmpty>
+                                                        Jabatan tidak ditemukan.
+                                                    </CommandEmpty>
+
+                                                    <CommandGroup>
+                                                        {JOB_TITLES.map((job) => (
+                                                            <CommandItem
+                                                                key={job}
+                                                                value={job}
+                                                                onSelect={() => {
+                                                                    field.onChange(job)
+                                                                    setOpenJob(false)
+                                                                }}
+                                                            >
+                                                                {job}
+                                                                <Check
+                                                                    className={`ml-auto h-4 w-4 ${field.value === job
+                                                                        ? 'opacity-100'
+                                                                        : 'opacity-0'
+                                                                        }`}
+                                                                />
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+
+                        {/* =========================
+    CALL SIGN
+========================= */}
+                        <FormField
+                            control={form.control}
+                            name="call_sign"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Call Sign</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Radio / ID internal" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* =========================
+    STATUS KARYAWAN
+========================= */}
+                        <FormField
+                            control={form.control}
+                            name="status_karyawan"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Status Karyawan</FormLabel>
+
+                                    <Popover
+                                        open={openStatus}
+                                        onOpenChange={setOpenStatus}
+                                    >
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className="justify-between"
+                                            >
+                                                {field.value || 'Pilih status'}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+
+                                        <PopoverContent className="p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Cari status..." />
+                                                <CommandList>
+                                                    <CommandEmpty>
+                                                        Status tidak ditemukan.
+                                                    </CommandEmpty>
+
+                                                    <CommandGroup>
+                                                        {EMPLOYEE_STATUSES.map((status) => (
+                                                            <CommandItem
+                                                                key={status}
+                                                                value={status}
+                                                                onSelect={() => {
+                                                                    field.onChange(status)
+                                                                    setOpenStatus(false)
+                                                                }}
+                                                            >
+                                                                {status}
+                                                                <Check
+                                                                    className={`ml-auto h-4 w-4 ${field.value === status
+                                                                        ? 'opacity-100'
+                                                                        : 'opacity-0'
+                                                                        }`}
+                                                                />
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+
+                        {/* =========================
+    KETERANGAN
+========================= */}
+                        <FormField
+                            control={form.control}
+                            name="keterangan"
+                            render={({ field }) => (
+                                <FormItem className="col-span-2">
+                                    <FormLabel>Keterangan</FormLabel>
+                                    <FormControl>
+                                        <Textarea
+                                            placeholder="Catatan tambahan"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
                                 </FormItem>
                             )}
                         />

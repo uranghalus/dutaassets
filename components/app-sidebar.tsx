@@ -9,41 +9,35 @@ import {
     SidebarRail,
 } from '@/components/ui/sidebar'
 
-
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
-import { TeamSwitcher } from './team-switcher'
+import { OrganizationSwitcher } from '@/components/organization-switcher'
+
 import { sidebarData } from '@/config/sidebar-data'
-// import { AppTitle } from './app-title'
 
 export function AppSidebar() {
     const { collapsible, variant } = useLayout()
 
     return (
         <Sidebar collapsible={collapsible} variant={variant}>
-            {/* HEADER */}
+            {/* ================= HEADER ================= */}
             <SidebarHeader>
-                <TeamSwitcher teams={sidebarData.teams} />
-
-                {/* 
-          Gunakan ini jika TIDAK pakai organization / team
-          <AppTitle /> 
-        */}
+                <OrganizationSwitcher />
             </SidebarHeader>
 
-            {/* CONTENT */}
+            {/* ================= CONTENT ================= */}
             <SidebarContent>
                 {sidebarData.navGroups.map((group) => (
                     <NavGroup key={group.title} {...group} />
                 ))}
             </SidebarContent>
 
-            {/* FOOTER */}
+            {/* ================= FOOTER ================= */}
             <SidebarFooter>
                 <NavUser />
             </SidebarFooter>
 
-            {/* COLLAPSE RAIL */}
+            {/* ================= COLLAPSE RAIL ================= */}
             <SidebarRail />
         </Sidebar>
     )

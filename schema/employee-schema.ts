@@ -2,11 +2,6 @@ import { z } from 'zod';
 
 export const employeeFormSchema = z.object({
   /** =========================
-   *  ORGANIZATION
-   *  ========================= */
-  organization_id: z.string().min(1, 'Organization is required'),
-
-  /** =========================
    *  CORE
    *  ========================= */
   nik: z.string().min(1, 'NIK is required'),

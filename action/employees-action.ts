@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 /* =======================
    TYPES
 ======================= */
-export type employeeArgs = {
+export type EmployeeArgs = {
   page: number;
   pageSize: number;
 };
@@ -15,10 +15,7 @@ export type employeeArgs = {
 /* =======================
    GET (PAGINATION)
 ======================= */
-/* =======================
-   GET (PAGINATION)
-======================= */
-export async function getEmployees({ page, pageSize }: employeeArgs) {
+export async function getEmployees({ page, pageSize }: EmployeeArgs) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
@@ -33,15 +30,22 @@ export async function getEmployees({ page, pageSize }: employeeArgs) {
   const [data, total] = await Promise.all([
     prisma.karyawan.findMany({
       where: {
-        organization_id: organizationId, // 🔐 MULTI TENANT
+        organization_id: organizationId,
       },
       skip,
       take,
-      orderBy: { nama: 'asc' },
+      orderBy: {
+        nama: 'asc',
+      },
       include: {
-        divisi_fk: true,
+        divisi_fk: {
+          include: {
+            department_fk: true,
+          },
+        },
       },
     }),
+
     prisma.karyawan.count({
       where: {
         organization_id: organizationId,
@@ -65,20 +69,14 @@ export async function createEmployee(formData: FormData) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
+  const organizationId = session.session.activeOrganizationId;
+  if (!organizationId) throw new Error('No active organization');
+
   const nik = formData.get('nik')?.toString();
   const nama = formData.get('nama')?.toString();
-  const nama_alias = formData.get('nama_alias')?.toString() ?? '';
-  const alamat = formData.get('alamat')?.toString() ?? '';
-  const no_ktp = formData.get('no_ktp')?.toString() ?? '';
-  const telp = formData.get('telp')?.toString() ?? '';
   const divisi_id = formData.get('divisi_id')?.toString();
-  const organization_id = formData.get('organization_id')?.toString(); // ✅ ADD
-  const jabatan = formData.get('jabatan')?.toString() ?? '';
-  const call_sign = formData.get('call_sign')?.toString() ?? '';
-  const status_karyawan = formData.get('status_karyawan')?.toString() ?? '';
-  const keterangan = formData.get('keterangan')?.toString() ?? '';
 
-  if (!nik || !nama || !divisi_id || !organization_id) {
+  if (!nik || !nama || !divisi_id) {
     throw new Error('Required fields are missing');
   }
 
@@ -86,16 +84,16 @@ export async function createEmployee(formData: FormData) {
     data: {
       nik,
       nama,
-      nama_alias,
-      alamat,
-      no_ktp,
-      telp,
       divisi_id,
-      organization_id, // ✅ SAVE
-      jabatan,
-      call_sign,
-      status_karyawan,
-      keterangan,
+      organization_id: organizationId, // 🔒 AUTO
+      nama_alias: formData.get('nama_alias')?.toString() ?? '',
+      alamat: formData.get('alamat')?.toString() ?? '',
+      no_ktp: formData.get('no_ktp')?.toString() ?? '',
+      telp: formData.get('telp')?.toString() ?? '',
+      jabatan: formData.get('jabatan')?.toString() ?? '',
+      call_sign: formData.get('call_sign')?.toString() ?? '',
+      status_karyawan: formData.get('status_karyawan')?.toString() ?? '',
+      keterangan: formData.get('keterangan')?.toString() ?? '',
     },
   });
 
@@ -110,32 +108,28 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
-  const oldEmployee = await prisma.karyawan.findUnique({
-    where: { id_karyawan },
+  const organizationId = session.session.activeOrganizationId;
+  if (!organizationId) throw new Error('No active organization');
+
+  const oldEmployee = await prisma.karyawan.findFirst({
+    where: {
+      id_karyawan,
+      organization_id: organizationId, // 🔒 ownership check
+    },
   });
 
   if (!oldEmployee) throw new Error('Employee not found');
 
-  const nik = formData.get('nik')?.toString();
-  const nama = formData.get('nama')?.toString();
-  const divisi_id = formData.get('divisi_id')?.toString();
-  const organization_id = formData.get('organization_id')?.toString(); // ✅ ADD
-
-  if (!nik || !nama || !divisi_id || !organization_id) {
-    throw new Error('Required fields are missing');
-  }
-
   const updated = await prisma.karyawan.update({
     where: { id_karyawan },
     data: {
-      nik,
-      nama,
+      nik: formData.get('nik')?.toString() ?? oldEmployee.nik,
+      nama: formData.get('nama')?.toString() ?? oldEmployee.nama,
+      divisi_id: formData.get('divisi_id')?.toString() ?? oldEmployee.divisi_id,
       nama_alias: formData.get('nama_alias')?.toString() ?? '',
       alamat: formData.get('alamat')?.toString() ?? '',
       no_ktp: formData.get('no_ktp')?.toString() ?? '',
       telp: formData.get('telp')?.toString() ?? '',
-      divisi_id,
-      organization_id, // ✅ UPDATE
       jabatan: formData.get('jabatan')?.toString() ?? '',
       call_sign: formData.get('call_sign')?.toString() ?? '',
       status_karyawan: formData.get('status_karyawan')?.toString() ?? '',
@@ -148,14 +142,20 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
 }
 
 /* =======================
-   DELETE
+   DELETE (SINGLE)
 ======================= */
 export async function deleteEmployee(id_karyawan: string) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
-  await prisma.karyawan.delete({
-    where: { id_karyawan },
+  const organizationId = session.session.activeOrganizationId;
+  if (!organizationId) throw new Error('No active organization');
+
+  await prisma.karyawan.deleteMany({
+    where: {
+      id_karyawan,
+      organization_id: organizationId, // 🔒 SAFE
+    },
   });
 
   revalidatePath('/employees');
@@ -168,6 +168,9 @@ export async function deleteEmployeeBulk(ids: string[]) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
+  const organizationId = session.session.activeOrganizationId;
+  if (!organizationId) throw new Error('No active organization');
+
   if (!ids || ids.length === 0) return;
 
   await prisma.karyawan.deleteMany({
@@ -175,6 +178,7 @@ export async function deleteEmployeeBulk(ids: string[]) {
       id_karyawan: {
         in: ids,
       },
+      organization_id: organizationId, // 🔒 SAFE
     },
   });
 

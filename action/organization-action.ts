@@ -2,6 +2,7 @@
 
 import { auth } from '@/lib/auth';
 import { getServerSession } from '@/lib/get-session';
+import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 
@@ -148,4 +149,30 @@ export async function getOrganizationsSimple() {
     name: org.name,
     slug: org.slug,
   }));
+}
+export async function getActiveOrganizationWithRole() {
+  const session = await getServerSession();
+  if (!session) throw new Error('Unauthorized');
+
+  const organizationId = session.session.activeOrganizationId;
+  if (!organizationId) {
+    throw new Error('No active organization');
+  }
+
+  const member = await prisma.member.findFirst({
+    where: {
+      organizationId,
+      userId: session.user.id,
+    },
+  });
+
+  if (!member) {
+    throw new Error('You are not a member of this organization');
+  }
+
+  return {
+    organizationId,
+    role: member.role as 'owner' | 'admin' | 'member',
+    userId: session.user.id,
+  };
 }

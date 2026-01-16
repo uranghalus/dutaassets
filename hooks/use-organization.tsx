@@ -29,10 +29,15 @@ export function useCreateOrganization() {
         mutationFn: (formData: FormData) =>
             createOrganization(formData),
 
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ['organizations'],
-            })
+        onSuccess: async () => {
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: ['organizations'],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ['organization-options'],
+                }),
+            ])
         },
     })
 }
@@ -50,10 +55,15 @@ export function useUpdateOrganization() {
         }) =>
             updateOrganization(organizationId, formData),
 
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ['organizations'],
-            })
+        onSuccess: async () => {
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: ['organizations'],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ['organization-options'],
+                }),
+            ])
         },
     })
 }
@@ -64,10 +74,15 @@ export function useDeleteOrganization() {
         mutationFn: (organizationId: string) =>
             deleteOrganization(organizationId),
 
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ['organizations'],
-            })
+        onSuccess: async () => {
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: ['organizations'],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ['organization-options'],
+                }),
+            ])
         },
     })
 }
@@ -78,10 +93,15 @@ export function useDeleteOrganizationsBulk() {
         mutationFn: (organizationIds: string[]) =>
             deleteOrganizationsBulk(organizationIds),
 
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ['organizations'],
-            })
+        onSuccess: async () => {
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: ['organizations'],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ['organization-options'],
+                }),
+            ])
         },
     })
 }

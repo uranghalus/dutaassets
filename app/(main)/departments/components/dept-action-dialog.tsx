@@ -4,6 +4,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import { useEffect } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -23,19 +24,19 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
 
 import { Department } from '@/generated/prisma/client'
-import { useCreateDepartment, useUpdateDepartment } from '@/hooks/use-departments'
-import { DepartmentForm, departmentFormSchema } from '@/schema/dept-schema'
-import { useOrganizationOptions } from '@/hooks/use-organization'
-import { useEffect } from 'react'
+import {
+    useCreateDepartment,
+    useUpdateDepartment,
+} from '@/hooks/use-departments'
+
+import {
+    DepartmentForm,
+    departmentFormSchema,
+} from '@/schema/dept-schema'
+
+import { authClient } from '@/lib/auth-client'
 import { getDepartmentCode } from '@/lib/department-code'
 
 type Props = {
@@ -51,7 +52,8 @@ export function DepartmentActionDialog({
 }: Props) {
     const isEdit = !!currentRow
 
-    const { data: organizations = [], isLoading } = useOrganizationOptions()
+    const { data: activeOrganization } =
+        authClient.useActiveOrganization()
 
     const createMutation = useCreateDepartment()
     const updateMutation = useUpdateDepartment()
@@ -62,25 +64,28 @@ export function DepartmentActionDialog({
             kode_department: currentRow?.kode_department ?? '',
             nama_department: currentRow?.nama_department ?? '',
             id_hod: currentRow?.id_hod ?? '',
-            organization_id: (currentRow as any)?.organization_id ?? '',
             isEdit,
         },
     })
-    const orgId = form.watch('organization_id')
+
     const deptName = form.watch('nama_department')
 
+    /* =======================
+       AUTO GENERATE CODE
+    ======================= */
     useEffect(() => {
-        if (!orgId || !deptName) return
+        if (!activeOrganization || !deptName) return
 
-        const org = organizations.find((o) => o.id === orgId)
-        if (!org) return
-
-        const kode = getDepartmentCode(org.slug, deptName)
+        const kode = getDepartmentCode(
+            activeOrganization.slug,
+            deptName
+        )
 
         form.setValue('kode_department', kode, {
             shouldValidate: true,
         })
-    }, [orgId, deptName, organizations, form])
+    }, [deptName, activeOrganization, form])
+
     const isPending =
         createMutation.isPending || updateMutation.isPending
 
@@ -90,7 +95,6 @@ export function DepartmentActionDialog({
         formData.append('kode_department', values.kode_department)
         formData.append('nama_department', values.nama_department)
         formData.append('id_hod', values.id_hod ?? '')
-        formData.append('organization_id', values.organization_id)
 
         if (isEdit && currentRow) {
             await updateMutation.mutateAsync({
@@ -104,6 +108,8 @@ export function DepartmentActionDialog({
         form.reset()
         onOpenChange(false)
     }
+
+    if (!activeOrganization) return null
 
     return (
         <Dialog
@@ -121,7 +127,7 @@ export function DepartmentActionDialog({
                     <DialogDescription>
                         {isEdit
                             ? 'Update department data.'
-                            : 'Create a new department.'}
+                            : `Create a new department for ${activeOrganization.name}.`}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -131,44 +137,6 @@ export function DepartmentActionDialog({
                         onSubmit={form.handleSubmit(onSubmit)}
                         className="space-y-4"
                     >
-                        {/* UNIT BISNIS */}
-                        <FormField
-                            control={form.control}
-                            name="organization_id"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Unit Bisnis</FormLabel>
-                                    <Select
-                                        value={field.value}
-                                        onValueChange={field.onChange}
-                                        disabled={isLoading}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue
-                                                    placeholder={
-                                                        isLoading
-                                                            ? 'Loading...'
-                                                            : 'Pilih unit bisnis'
-                                                    }
-                                                />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {organizations.map((org: any) => (
-                                                <SelectItem
-                                                    key={org.id}
-                                                    value={org.id}
-                                                >
-                                                    {org.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
                         {/* NAMA */}
                         <FormField
                             control={form.control}
@@ -186,6 +154,7 @@ export function DepartmentActionDialog({
                                 </FormItem>
                             )}
                         />
+
                         {/* KODE */}
                         <FormField
                             control={form.control}
@@ -205,8 +174,6 @@ export function DepartmentActionDialog({
                                 </FormItem>
                             )}
                         />
-
-
 
                         {/* HOD */}
                         <FormField

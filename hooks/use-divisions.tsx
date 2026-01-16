@@ -35,13 +35,10 @@ export function useCreateDivision() {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: (formData: FormData) =>
-            createDivision(formData),
-
+        mutationFn: (formData: FormData) => createDivision(formData),
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ['divisions'],
-            })
+            queryClient.invalidateQueries({ queryKey: ['divisions'] })
+            queryClient.invalidateQueries({ queryKey: ['division-options'] })
         },
     })
 }
@@ -59,13 +56,11 @@ export function useUpdateDivision() {
         }: {
             divisiId: string
             formData: FormData
-        }) =>
-            updateDivisi(divisiId, formData),
+        }) => updateDivisi(divisiId, formData),
 
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ['divisions'],
-            })
+            queryClient.invalidateQueries({ queryKey: ['divisions'] })
+            queryClient.invalidateQueries({ queryKey: ['division-options'] })
         },
     })
 }
@@ -77,13 +72,10 @@ export function useDeleteDivision() {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: (id_divisi: string) =>
-            deleteDivision(id_divisi),
-
+        mutationFn: (id_divisi: string) => deleteDivision(id_divisi),
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ['divisions'],
-            })
+            queryClient.invalidateQueries({ queryKey: ['divisions'] })
+            queryClient.invalidateQueries({ queryKey: ['division-options'] })
         },
     })
 }
@@ -95,24 +87,21 @@ export function useDeleteDivisionBulk() {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: (ids: string[]) =>
-            deleteDivisionBulk(ids),
-
+        mutationFn: (ids: string[]) => deleteDivisionBulk(ids),
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ['divisions'],
-            })
+            queryClient.invalidateQueries({ queryKey: ['divisions'] })
+            queryClient.invalidateQueries({ queryKey: ['division-options'] })
         },
     })
 }
+
 /* =======================
    OPTIONS (DROPDOWN)
 ======================= */
-export function useDivisionOptions(organizationId?: string) {
+export function useDivisionOptions() {
     return useQuery({
-        queryKey: ['division-options', organizationId], // ✅ scoped cache
-        queryFn: () => getDivisionOptions(organizationId!), // ✅ param
-        enabled: !!organizationId, // ✅ fetch hanya jika ada org
-        staleTime: 1000 * 60 * 5, // 5 menit
+        queryKey: ['division-options'],
+        queryFn: () => getDivisionOptions(),
+        staleTime: 1000 * 60 * 5,
     })
 }

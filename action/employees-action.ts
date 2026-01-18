@@ -1,8 +1,10 @@
 'use server';
 
+import { auth } from '@/lib/auth';
 import { getServerSession } from '@/lib/get-session';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 
 /* =======================
    TYPES
@@ -37,12 +39,21 @@ export async function getEmployees({ page, pageSize }: EmployeeArgs) {
       orderBy: {
         nama: 'asc',
       },
-      include: {
+      select: {
+        id_karyawan: true,
+        nik: true,
+        nama: true,
+        nama_alias: true,
+        jabatan: true,
+        status_karyawan: true,
+        telp: true,
+        userId: true, // 🔗 untuk sync user
         divisi_fk: {
           include: {
             department_fk: true,
           },
         },
+        createdAt: true,
       },
     }),
 
@@ -82,10 +93,10 @@ export async function createEmployee(formData: FormData) {
 
   const employee = await prisma.karyawan.create({
     data: {
+      organization_id: organizationId, // 🔒 auto
+      divisi_id,
       nik,
       nama,
-      divisi_id,
-      organization_id: organizationId, // 🔒 AUTO
       nama_alias: formData.get('nama_alias')?.toString() ?? '',
       alamat: formData.get('alamat')?.toString() ?? '',
       no_ktp: formData.get('no_ktp')?.toString() ?? '',
@@ -111,29 +122,32 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  const oldEmployee = await prisma.karyawan.findFirst({
+  const employee = await prisma.karyawan.findFirst({
     where: {
       id_karyawan,
-      organization_id: organizationId, // 🔒 ownership check
+      organization_id: organizationId, // 🔒 ownership
     },
   });
 
-  if (!oldEmployee) throw new Error('Employee not found');
+  if (!employee) throw new Error('Employee not found');
 
   const updated = await prisma.karyawan.update({
-    where: { id_karyawan },
+    where: {
+      id_karyawan,
+    },
     data: {
-      nik: formData.get('nik')?.toString() ?? oldEmployee.nik,
-      nama: formData.get('nama')?.toString() ?? oldEmployee.nama,
-      divisi_id: formData.get('divisi_id')?.toString() ?? oldEmployee.divisi_id,
-      nama_alias: formData.get('nama_alias')?.toString() ?? '',
-      alamat: formData.get('alamat')?.toString() ?? '',
-      no_ktp: formData.get('no_ktp')?.toString() ?? '',
-      telp: formData.get('telp')?.toString() ?? '',
-      jabatan: formData.get('jabatan')?.toString() ?? '',
-      call_sign: formData.get('call_sign')?.toString() ?? '',
-      status_karyawan: formData.get('status_karyawan')?.toString() ?? '',
-      keterangan: formData.get('keterangan')?.toString() ?? '',
+      nik: formData.get('nik')?.toString() ?? employee.nik,
+      nama: formData.get('nama')?.toString() ?? employee.nama,
+      nama_alias: formData.get('nama_alias')?.toString() ?? employee.nama_alias,
+      alamat: formData.get('alamat')?.toString() ?? employee.alamat,
+      no_ktp: formData.get('no_ktp')?.toString() ?? employee.no_ktp,
+      telp: formData.get('telp')?.toString() ?? employee.telp,
+      jabatan: formData.get('jabatan')?.toString() ?? employee.jabatan,
+      call_sign: formData.get('call_sign')?.toString() ?? employee.call_sign,
+      status_karyawan:
+        formData.get('status_karyawan')?.toString() ?? employee.status_karyawan,
+      keterangan: formData.get('keterangan')?.toString() ?? employee.keterangan,
+      divisi_id: formData.get('divisi_id')?.toString() ?? employee.divisi_id,
     },
   });
 
@@ -151,10 +165,23 @@ export async function deleteEmployee(id_karyawan: string) {
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  await prisma.karyawan.deleteMany({
+  const employee = await prisma.karyawan.findFirst({
     where: {
       id_karyawan,
-      organization_id: organizationId, // 🔒 SAFE
+      organization_id: organizationId,
+    },
+  });
+
+  if (!employee) throw new Error('Employee not found');
+
+  // 🛑 optional safety
+  if (employee.userId) {
+    throw new Error('Employee is linked to a user account. Unlink first.');
+  }
+
+  await prisma.karyawan.delete({
+    where: {
+      id_karyawan,
     },
   });
 
@@ -173,14 +200,111 @@ export async function deleteEmployeeBulk(ids: string[]) {
 
   if (!ids || ids.length === 0) return;
 
+  const linked = await prisma.karyawan.count({
+    where: {
+      id_karyawan: { in: ids },
+      organization_id: organizationId,
+      userId: { not: null },
+    },
+  });
+
+  if (linked > 0) {
+    throw new Error('Some employees are linked to user accounts');
+  }
+
   await prisma.karyawan.deleteMany({
     where: {
-      id_karyawan: {
-        in: ids,
-      },
-      organization_id: organizationId, // 🔒 SAFE
+      id_karyawan: { in: ids },
+      organization_id: organizationId,
     },
   });
 
   revalidatePath('/employees');
+}
+
+/* =======================
+   CREATE + SYNC USER
+======================= */
+export async function syncEmployeeUser(id_karyawan: string) {
+  const session = await getServerSession();
+  if (!session) throw new Error('Unauthorized');
+
+  const organizationId = session.session.activeOrganizationId;
+  if (!organizationId) throw new Error('No active organization');
+
+  const employee = await prisma.karyawan.findFirst({
+    where: {
+      id_karyawan,
+      organization_id: organizationId,
+    },
+  });
+
+  if (!employee) {
+    throw new Error('Employee not found');
+  }
+
+  /**
+   * 1️⃣ Jika belum punya user → CREATE USER
+   */
+  let userId = employee.userId;
+
+  if (!userId) {
+    const email = `${employee.nik}@company.local`;
+
+    const newUser = await auth.api.createUser({
+      body: {
+        email,
+        password: `Emp@${employee.nik}`, // ⚠️ bisa diganti invite flow
+        name: employee.nama,
+        role: 'user',
+        data: {
+          employeeId: employee.id_karyawan,
+        },
+      },
+    });
+
+    userId = newUser.user.id;
+
+    /**
+     * 2️⃣ Add user ke organization
+     */
+    await auth.api.addMember({
+      body: {
+        userId,
+        organizationId,
+        role: 'member',
+      },
+      headers: await headers(),
+    });
+
+    /**
+     * 3️⃣ Simpan user_id ke karyawan
+     */
+    await prisma.karyawan.update({
+      where: { id_karyawan },
+      data: {
+        userId: userId,
+      },
+    });
+  }
+
+  /**
+   * 4️⃣ Sync data (update nama, metadata)
+   */
+  await auth.api.adminUpdateUser({
+    body: {
+      userId,
+      data: {
+        name: employee.nama,
+      },
+    },
+    headers: await headers(),
+  });
+
+  revalidatePath('/employees');
+
+  return {
+    success: true,
+    userId,
+  };
 }

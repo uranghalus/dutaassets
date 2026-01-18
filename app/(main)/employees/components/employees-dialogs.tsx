@@ -4,6 +4,7 @@
 import { useDialog } from '@/context/dialog-provider'
 import { EmployeeActionDialog } from './employees-action-dialog'
 import { EmployeeDeleteDialog } from './employees-delete-dialog'
+import { EmployeeSyncUserDialog } from './employee-sync-user-dialog'
 
 export default function EmployeeDialogs() {
     const { currentRow, open, setCurrentRow, setOpen } = useDialog()
@@ -36,6 +37,16 @@ export default function EmployeeDialogs() {
                         open={open === 'delete'}
                         onOpenChange={() => {
                             setOpen('delete')
+                            setCurrentRow(undefined)
+                        }}
+                        currentRow={currentRow as any}
+                    />
+                    {/* Sync USER */}
+                    <EmployeeSyncUserDialog
+                        key={`employee-sync-user-${(currentRow as any).id_karyawan}`}
+                        open={open === 'sync-user'}
+                        onOpenChange={() => {
+                            setOpen('sync-user')
                             setCurrentRow(undefined)
                         }}
                         currentRow={currentRow as any}

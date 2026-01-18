@@ -7,8 +7,31 @@ import { cn } from '@/lib/utils'
 import { Column, ColumnDef } from '@tanstack/react-table'
 import EmployeesRowActions from './employees-row-action'
 import { EmployeeWithDivisi } from '@/types/employee'
+import { Badge } from '@/components/ui/badge'
+import { UserCheck, UserX } from 'lucide-react'
 
+function EmployeeStatusBadge({
+    status,
+}: {
+    status?: string | null
+}) {
+    if (!status) {
+        return <Badge variant="secondary">-</Badge>
+    }
 
+    const map: Record<string, 'default' | 'secondary' | 'destructive'> = {
+        Aktif: 'default',
+        Nonaktif: 'secondary',
+        Resign: 'destructive',
+        Cuti: 'secondary',
+    }
+
+    return (
+        <Badge variant={map[status] ?? 'secondary'}>
+            {status}
+        </Badge>
+    )
+}
 export const employeesColumns: ColumnDef<EmployeeWithDivisi>[] = [
     /* =====================
      * SELECT
@@ -30,13 +53,15 @@ export const employeesColumns: ColumnDef<EmployeeWithDivisi>[] = [
         cell: ({ row }) => (
             <Checkbox
                 checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
+                onCheckedChange={(value) =>
+                    row.toggleSelected(!!value)
+                }
                 aria-label="Select row"
             />
         ),
         enableSorting: false,
         enableHiding: false,
-        size: 10,
+        size: 32,
     },
 
     /* =====================
@@ -44,12 +69,12 @@ export const employeesColumns: ColumnDef<EmployeeWithDivisi>[] = [
      ===================== */
     {
         accessorKey: 'nik',
-        header: ({ column }: { column: Column<EmployeeWithDivisi, unknown> }) => (
+        header: ({ column }: { column: Column<EmployeeWithDivisi> }) => (
             <DataTableColumnHeader column={column} title="NIK" />
         ),
         cell: ({ cell }) => (
             <div className="font-medium ps-2">
-                {cell.getValue<EmployeeWithDivisi['nik']>()}
+                {cell.getValue<string>()}
             </div>
         ),
         size: 120,
@@ -60,12 +85,12 @@ export const employeesColumns: ColumnDef<EmployeeWithDivisi>[] = [
      ===================== */
     {
         accessorKey: 'nama',
-        header: ({ column }: { column: Column<EmployeeWithDivisi, unknown> }) => (
+        header: ({ column }: { column: Column<EmployeeWithDivisi> }) => (
             <DataTableColumnHeader column={column} title="Nama" />
         ),
         cell: ({ cell }) => (
             <div className="font-medium ps-2">
-                {cell.getValue<EmployeeWithDivisi['nama']>()}
+                {cell.getValue<string>()}
             </div>
         ),
         meta: {
@@ -79,17 +104,20 @@ export const employeesColumns: ColumnDef<EmployeeWithDivisi>[] = [
      ===================== */
     {
         accessorKey: 'jabatan',
-        header: ({ column }: { column: Column<EmployeeWithDivisi, unknown> }) => (
+        header: ({ column }: { column: Column<EmployeeWithDivisi> }) => (
             <DataTableColumnHeader column={column} title="Jabatan" />
         ),
         cell: ({ cell }) => (
-            <div className="ps-2">
-                {cell.getValue<EmployeeWithDivisi['jabatan']>()}
+            <div className="ps-2 text-muted-foreground">
+                {cell.getValue<string>() || '-'}
             </div>
         ),
         size: 150,
     },
 
+    /* =====================
+     * DIVISI
+     ===================== */
     {
         id: 'divisi',
         header: ({ column }) => (
@@ -105,19 +133,45 @@ export const employeesColumns: ColumnDef<EmployeeWithDivisi>[] = [
     },
 
     /* =====================
-    * STATUS
-    ===================== */
+     * STATUS
+     ===================== */
     {
         accessorKey: 'status_karyawan',
-        header: ({ column }: { column: Column<EmployeeWithDivisi, unknown> }) => (
+        header: ({ column }: { column: Column<EmployeeWithDivisi> }) => (
             <DataTableColumnHeader column={column} title="Status" />
         ),
-        cell: ({ cell }) => (
-            <div className="ps-2">
-                {cell.getValue<EmployeeWithDivisi['status_karyawan']>()}
-            </div>
+        cell: ({ row }) => (
+            <EmployeeStatusBadge
+                status={row.original.status_karyawan}
+            />
         ),
         size: 120,
+    },
+
+    /* =====================
+     * USER LINKED
+     ===================== */
+    {
+        id: 'user',
+        header: ({ column }) => (
+            <DataTableColumnHeader
+                column={column}
+                title="User"
+            />
+        ),
+        cell: ({ row }) =>
+            row.original.userId ? (
+                <div className="flex items-center gap-1 text-green-600">
+                    <UserCheck className="h-4 w-4" />
+                    <span className="text-xs">Linked</span>
+                </div>
+            ) : (
+                <div className="flex items-center gap-1 text-muted-foreground">
+                    <UserX className="h-4 w-4" />
+                    <span className="text-xs">—</span>
+                </div>
+            ),
+        size: 90,
     },
 
     /* =====================
@@ -132,15 +186,14 @@ export const employeesColumns: ColumnDef<EmployeeWithDivisi>[] = [
                 className="ml-auto"
             />
         ),
-        size: 48,
-        minSize: 48,
-        maxSize: 48,
-        enableResizing: false,
         cell: EmployeesRowActions,
+        size: 56,
+        enableResizing: false,
         meta: {
             className: cn(
-                'sticky right-0 z-10 w-[60px] px-2',
-                'bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted transition-colors duration-200',
+                'sticky right-0 z-10',
+                'bg-background group-hover/row:bg-muted',
+                'group-data-[state=selected]/row:bg-muted transition-colors',
             ),
         },
     },

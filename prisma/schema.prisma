@@ -32,6 +32,8 @@ model User {
 
   members     Member[]
   invitations Invitation[]
+  /// RELATION 1-1 KE KARYAWAN
+  karyawan    Karyawan?
 
   @@unique([email])
   @@map("user")
@@ -180,7 +182,10 @@ model Karyawan {
   status_karyawan String @db.Char(50)
   keterangan      String @db.Char(150)
 
-  divisi_fk Divisi @relation(fields: [divisi_id], references: [id_divisi], onDelete: Cascade)
+  /// RELATION KE USER (1-1)
+  userId    String? @unique
+  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  divisi_fk Divisi  @relation(fields: [divisi_id], references: [id_divisi], onDelete: Cascade)
 
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt

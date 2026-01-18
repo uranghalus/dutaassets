@@ -4,6 +4,7 @@ import {
   updateEmployee,
   deleteEmployee,
   deleteEmployeeBulk,
+  syncEmployeeUser,
 } from '@/action/employees-action';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -92,6 +93,19 @@ export function useDeleteEmployeeBulk() {
 
   return useMutation({
     mutationFn: (ids: string[]) => deleteEmployeeBulk(ids),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['employees'],
+      });
+    },
+  });
+}
+export function useSyncEmployeeUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (employeeId: string) => syncEmployeeUser(employeeId),
 
     onSuccess: () => {
       queryClient.invalidateQueries({

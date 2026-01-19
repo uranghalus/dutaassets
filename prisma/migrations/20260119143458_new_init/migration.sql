@@ -5,15 +5,16 @@ CREATE TABLE `user` (
     `email` VARCHAR(191) NOT NULL,
     `emailVerified` BOOLEAN NOT NULL DEFAULT false,
     `image` TEXT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
     `username` TEXT NULL,
     `displayUsername` TEXT NULL,
     `role` TEXT NULL,
-    `banned` BOOLEAN NULL DEFAULT false,
+    `banned` BOOLEAN NOT NULL DEFAULT false,
     `banReason` TEXT NULL,
     `banExpires` DATETIME(3) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
+    INDEX `user_email_idx`(`email`(191)),
     UNIQUE INDEX `user_email_key`(`email`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -21,15 +22,15 @@ CREATE TABLE `user` (
 -- CreateTable
 CREATE TABLE `session` (
     `id` VARCHAR(191) NOT NULL,
-    `expiresAt` DATETIME(3) NOT NULL,
     `token` VARCHAR(191) NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `expiresAt` DATETIME(3) NOT NULL,
     `ipAddress` TEXT NULL,
     `userAgent` TEXT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `impersonatedBy` TEXT NULL,
     `activeOrganizationId` TEXT NULL,
+    `impersonatedBy` TEXT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
     INDEX `session_userId_idx`(`userId`(191)),
     UNIQUE INDEX `session_token_key`(`token`),
@@ -39,9 +40,9 @@ CREATE TABLE `session` (
 -- CreateTable
 CREATE TABLE `account` (
     `id` VARCHAR(191) NOT NULL,
-    `accountId` TEXT NOT NULL,
-    `providerId` TEXT NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
+    `providerId` TEXT NOT NULL,
+    `accountId` TEXT NOT NULL,
     `accessToken` TEXT NULL,
     `refreshToken` TEXT NULL,
     `idToken` TEXT NULL,
@@ -75,9 +76,12 @@ CREATE TABLE `organization` (
     `name` TEXT NOT NULL,
     `slug` VARCHAR(191) NOT NULL,
     `logo` TEXT NULL,
-    `createdAt` DATETIME(3) NOT NULL,
     `metadata` TEXT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
+    INDEX `organization_deleted_at_idx`(`deleted_at`),
     UNIQUE INDEX `organization_slug_key`(`slug`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -88,10 +92,13 @@ CREATE TABLE `member` (
     `organizationId` VARCHAR(191) NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
     `role` TEXT NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     INDEX `member_organizationId_idx`(`organizationId`(191)),
     INDEX `member_userId_idx`(`userId`(191)),
+    INDEX `member_deleted_at_idx`(`deleted_at`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -103,8 +110,9 @@ CREATE TABLE `invitation` (
     `role` TEXT NULL,
     `status` TEXT NOT NULL,
     `expiresAt` DATETIME(3) NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `inviterId` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
     INDEX `invitation_organizationId_idx`(`organizationId`(191)),
     INDEX `invitation_email_idx`(`email`(191)),
@@ -118,8 +126,12 @@ CREATE TABLE `Department` (
     `kode_department` TEXT NOT NULL,
     `nama_department` TEXT NOT NULL,
     `id_hod` TEXT NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     INDEX `Department_organization_id_idx`(`organization_id`),
+    INDEX `Department_deleted_at_idx`(`deleted_at`),
     UNIQUE INDEX `Department_organization_id_kode_department_key`(`organization_id`, `kode_department`(191)),
     PRIMARY KEY (`id_department`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -131,8 +143,12 @@ CREATE TABLE `Divisi` (
     `department_id` VARCHAR(191) NOT NULL,
     `nama_divisi` TEXT NOT NULL,
     `ext_tlp` TEXT NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     INDEX `Divisi_organization_id_department_id_idx`(`organization_id`, `department_id`),
+    INDEX `Divisi_deleted_at_idx`(`deleted_at`),
     PRIMARY KEY (`id_divisi`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -154,8 +170,10 @@ CREATE TABLE `Karyawan` (
     `userId` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     UNIQUE INDEX `Karyawan_userId_key`(`userId`),
+    INDEX `Karyawan_deleted_at_idx`(`deleted_at`),
     UNIQUE INDEX `Karyawan_organization_id_nik_key`(`organization_id`, `nik`),
     UNIQUE INDEX `Karyawan_organization_id_no_ktp_key`(`organization_id`, `no_ktp`),
     PRIMARY KEY (`id_karyawan`)
@@ -176,7 +194,7 @@ CREATE TABLE `Inventory` (
     `tipe_path_number` CHAR(100) NULL,
     `serial_number` CHAR(100) NULL,
     `tgl_pembelian` DATETIME(3) NULL,
-    `harga` DOUBLE NULL,
+    `harga` DECIMAL(15, 2) NULL,
     `tempat_pembelian` CHAR(100) NULL,
     `status_kondisi_barang` CHAR(50) NULL,
     `tempat_lokasi_barang` CHAR(200) NULL,
@@ -187,10 +205,21 @@ CREATE TABLE `Inventory` (
     `keterangan` TEXT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     INDEX `Inventory_organization_id_department_id_idx`(`organization_id`, `department_id`),
+    INDEX `Inventory_deleted_at_idx`(`deleted_at`),
     UNIQUE INDEX `Inventory_organization_id_kode_barang_key`(`organization_id`, `kode_barang`),
     PRIMARY KEY (`id_barang`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `_DepartmentToOrganization` (
+    `A` VARCHAR(191) NOT NULL,
+    `B` VARCHAR(191) NOT NULL,
+
+    UNIQUE INDEX `_DepartmentToOrganization_AB_unique`(`A`, `B`),
+    INDEX `_DepartmentToOrganization_B_index`(`B`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
@@ -212,19 +241,25 @@ ALTER TABLE `invitation` ADD CONSTRAINT `invitation_organizationId_fkey` FOREIGN
 ALTER TABLE `invitation` ADD CONSTRAINT `invitation_inviterId_fkey` FOREIGN KEY (`inviterId`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Divisi` ADD CONSTRAINT `Divisi_department_id_fkey` FOREIGN KEY (`department_id`) REFERENCES `Department`(`id_department`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `Divisi` ADD CONSTRAINT `Divisi_department_id_fkey` FOREIGN KEY (`department_id`) REFERENCES `Department`(`id_department`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Karyawan` ADD CONSTRAINT `Karyawan_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Karyawan` ADD CONSTRAINT `Karyawan_divisi_id_fkey` FOREIGN KEY (`divisi_id`) REFERENCES `Divisi`(`id_divisi`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `Karyawan` ADD CONSTRAINT `Karyawan_divisi_id_fkey` FOREIGN KEY (`divisi_id`) REFERENCES `Divisi`(`id_divisi`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Inventory` ADD CONSTRAINT `Inventory_department_id_fkey` FOREIGN KEY (`department_id`) REFERENCES `Department`(`id_department`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `Inventory` ADD CONSTRAINT `Inventory_department_id_fkey` FOREIGN KEY (`department_id`) REFERENCES `Department`(`id_department`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Inventory` ADD CONSTRAINT `Inventory_divisi_id_fkey` FOREIGN KEY (`divisi_id`) REFERENCES `Divisi`(`id_divisi`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `Inventory` ADD CONSTRAINT `Inventory_divisi_id_fkey` FOREIGN KEY (`divisi_id`) REFERENCES `Divisi`(`id_divisi`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Inventory` ADD CONSTRAINT `Inventory_karyawan_id_fkey` FOREIGN KEY (`karyawan_id`) REFERENCES `Karyawan`(`id_karyawan`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `Inventory` ADD CONSTRAINT `Inventory_karyawan_id_fkey` FOREIGN KEY (`karyawan_id`) REFERENCES `Karyawan`(`id_karyawan`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `_DepartmentToOrganization` ADD CONSTRAINT `_DepartmentToOrganization_A_fkey` FOREIGN KEY (`A`) REFERENCES `Department`(`id_department`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `_DepartmentToOrganization` ADD CONSTRAINT `_DepartmentToOrganization_B_fkey` FOREIGN KEY (`B`) REFERENCES `organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

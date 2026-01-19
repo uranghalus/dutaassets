@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -13,45 +7,56 @@ datasource db {
   provider = "mysql"
 }
 
-model User {
-  id              String    @id
-  name            String    @db.Text
-  email           String
-  emailVerified   Boolean   @default(false)
-  image           String?   @db.Text
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  username        String?   @db.Text
-  displayUsername String?   @db.Text
-  role            String?   @db.Text
-  banned          Boolean?  @default(false)
-  banReason       String?   @db.Text
-  banExpires      DateTime?
-  sessions        Session[]
-  accounts        Account[]
+//////////////////////////////////////////////////
+// USER & AUTH
+//////////////////////////////////////////////////
 
+model User {
+  id              String  @id
+  name            String  @db.Text
+  email           String
+  emailVerified   Boolean @default(false)
+  image           String? @db.Text
+  username        String? @db.Text
+  displayUsername String? @db.Text
+  role            String? @db.Text
+
+  banned     Boolean   @default(false)
+  banReason  String?   @db.Text
+  banExpires DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions    Session[]
+  accounts    Account[]
   members     Member[]
   invitations Invitation[]
-  /// RELATION 1-1 KE KARYAWAN
-  karyawan    Karyawan?
+
+  /// 1-1 ke Karyawan
+  karyawan Karyawan?
 
   @@unique([email])
+  @@index([email(length: 191)])
   @@map("user")
 }
 
 model Session {
-  id             String   @id
-  expiresAt      DateTime
-  token          String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  ipAddress      String?  @db.Text
-  userAgent      String?  @db.Text
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  impersonatedBy String?  @db.Text
+  id        String   @id
+  token     String
+  userId    String
+  expiresAt DateTime
+
+  ipAddress String? @db.Text
+  userAgent String? @db.Text
 
   activeOrganizationId String? @db.Text
+  impersonatedBy       String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
   @@index([userId(length: 191)])
@@ -59,11 +64,11 @@ model Session {
 }
 
 model Account {
-  id                    String    @id
-  accountId             String    @db.Text
-  providerId            String    @db.Text
-  userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String @id
+  userId     String
+  providerId String @db.Text
+  accountId  String @db.Text
+
   accessToken           String?   @db.Text
   refreshToken          String?   @db.Text
   idToken               String?   @db.Text
@@ -71,8 +76,11 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?   @db.Text
   password              String?   @db.Text
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId(length: 191)])
   @@map("account")
@@ -83,57 +91,81 @@ model Verification {
   identifier String   @db.Text
   value      String   @db.Text
   expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([identifier(length: 191)])
   @@map("verification")
 }
 
+//////////////////////////////////////////////////
+// ORGANIZATION & ACCESS
+//////////////////////////////////////////////////
+
 model Organization {
-  id          String       @id
-  name        String       @db.Text
-  slug        String
-  logo        String?      @db.Text
-  createdAt   DateTime
-  metadata    String?      @db.Text
+  id       String  @id
+  name     String  @db.Text
+  slug     String
+  logo     String? @db.Text
+  metadata String? @db.Text
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deleted_at DateTime?
+
   members     Member[]
   invitations Invitation[]
 
+  departments Department[]
+
   @@unique([slug])
+  @@index([deleted_at])
   @@map("organization")
 }
 
 model Member {
-  id             String       @id
+  id             String @id
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role           String       @db.Text
-  createdAt      DateTime
+  role           String @db.Text
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deleted_at DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([organizationId(length: 191)])
   @@index([userId(length: 191)])
+  @@index([deleted_at])
   @@map("member")
 }
 
 model Invitation {
-  id             String       @id
+  id             String   @id
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  email          String       @db.Text
-  role           String?      @db.Text
-  status         String       @db.Text
+  email          String   @db.Text
+  role           String?  @db.Text
+  status         String   @db.Text
   expiresAt      DateTime
-  createdAt      DateTime     @default(now())
   inviterId      String
-  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
 
   @@index([organizationId(length: 191)])
   @@index([email(length: 191)])
   @@map("invitation")
 }
+
+//////////////////////////////////////////////////
+// MASTER DATA
+//////////////////////////////////////////////////
 
 model Department {
   id_department   String @id @default(uuid())
@@ -143,11 +175,17 @@ model Department {
   nama_department String @db.Text
   id_hod          String @db.Text
 
-  divisis    Divisi[]
-  inventorys Inventory[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deleted_at DateTime?
+
+  divisis       Divisi[]
+  inventorys    Inventory[]
+  organizations Organization[]
 
   @@unique([organization_id, kode_department(length: 191)])
   @@index([organization_id])
+  @@index([deleted_at])
 }
 
 model Divisi {
@@ -158,12 +196,17 @@ model Divisi {
   nama_divisi String @db.Text
   ext_tlp     String @db.Text
 
-  department_fk Department @relation(fields: [department_id], references: [id_department], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deleted_at DateTime?
+
+  department_fk Department @relation(fields: [department_id], references: [id_department], onDelete: Restrict)
 
   karyawans   Karyawan[]
   inventories Inventory[]
 
   @@index([organization_id, department_id])
+  @@index([deleted_at])
 }
 
 model Karyawan {
@@ -182,29 +225,33 @@ model Karyawan {
   status_karyawan String @db.Char(50)
   keterangan      String @db.Char(150)
 
-  /// RELATION KE USER (1-1)
-  userId    String? @unique
-  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-  divisi_fk Divisi  @relation(fields: [divisi_id], references: [id_divisi], onDelete: Cascade)
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  divisi_fk Divisi @relation(fields: [divisi_id], references: [id_divisi], onDelete: Restrict)
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deleted_at DateTime?
+
   inventories Inventory[]
 
   @@unique([organization_id, nik])
   @@unique([organization_id, no_ktp])
+  @@index([deleted_at])
 }
+
+//////////////////////////////////////////////////
+// INVENTORY
+//////////////////////////////////////////////////
 
 model Inventory {
   id_barang String @id @default(uuid())
 
-  /// MULTI TENANT
   organization_id String
   department_id   String
-
-  /// OPTIONAL ASSIGNMENT
-  divisi_id   String?
-  karyawan_id String?
+  divisi_id       String?
+  karyawan_id     String?
 
   kode_barang     String @db.Char(50)
   nama_barang     String @db.Text
@@ -215,7 +262,7 @@ model Inventory {
   tipe_path_number      String?   @db.Char(100)
   serial_number         String?   @db.Char(100)
   tgl_pembelian         DateTime?
-  harga                 Float?
+  harga                 Decimal?  @db.Decimal(15, 2)
   tempat_pembelian      String?   @db.Char(100)
   status_kondisi_barang String?   @db.Char(50)
   tempat_lokasi_barang  String?   @db.Char(200)
@@ -226,16 +273,17 @@ model Inventory {
   expand_data Json?
   keterangan  String? @db.Text
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deleted_at DateTime?
 
-  /// RELATIONS (STYLE SAMA)
-  department_fk Department @relation(fields: [department_id], references: [id_department], onDelete: Cascade)
+  department_fk Department @relation(fields: [department_id], references: [id_department], onDelete: Restrict)
 
-  divisi_fk Divisi? @relation(fields: [divisi_id], references: [id_divisi], onDelete: Cascade)
+  divisi_fk Divisi? @relation(fields: [divisi_id], references: [id_divisi], onDelete: SetNull)
 
-  karyawan_fk Karyawan? @relation(fields: [karyawan_id], references: [id_karyawan], onDelete: Cascade)
+  karyawan_fk Karyawan? @relation(fields: [karyawan_id], references: [id_karyawan], onDelete: SetNull)
 
   @@unique([organization_id, kode_barang])
   @@index([organization_id, department_id])
+  @@index([deleted_at])
 }

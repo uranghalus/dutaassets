@@ -308,3 +308,31 @@ export async function syncEmployeeUser(id_karyawan: string) {
     userId,
   };
 }
+export async function unlinkEmployeeUser(employeeId: string) {
+  const session = await getServerSession();
+  if (!session) throw new Error('Unauthorized');
+
+  const organizationId = session.session.activeOrganizationId;
+  if (!organizationId) throw new Error('No active organization');
+
+  const member = await prisma.member.findFirst({
+    where: {
+      userId: session.user.id,
+      organizationId,
+    },
+  });
+
+  if (!member || !['admin', 'owner'].includes(member.role)) {
+    throw new Error('Forbidden');
+  }
+
+  await prisma.karyawan.update({
+    where: {
+      id_karyawan: employeeId,
+      organization_id: organizationId,
+    },
+    data: {
+      userId: null,
+    },
+  });
+}

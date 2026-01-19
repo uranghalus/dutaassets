@@ -5,7 +5,7 @@ import React, { useContext, useState } from 'react'
 import useDialogState from '@/hooks/use-dialog-state'
 
 // Tipe dialog-nya bisa disesuaikan
-export type DialogType = '' | 'invitations' | 'add' | 'edit' | 'delete' | 'ban' | 'unban' | 'reset-password' | 'members' | 'sync-user'
+export type DialogType = '' | 'invitations' | 'add' | 'edit' | 'delete' | 'ban' | 'unban' | 'reset-password' | 'members' | 'sync-user' | 'unsync-user'
 
 type DialogContextType<T> = {
     open: DialogType | null

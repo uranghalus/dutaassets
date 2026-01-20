@@ -16,6 +16,10 @@ export const authClient = createAuthClient({
     inferAdditionalFields<typeof auth>(),
     nextCookies(),
     usernameClient(),
-    organizationClient(),
+    organizationClient({
+      dynamicAccessControl: {
+        enabled: true,
+      },
+    }),
   ],
 });

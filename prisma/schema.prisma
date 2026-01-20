@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -118,6 +119,8 @@ model Organization {
   invitations Invitation[]
 
   departments Department[]
+
+  organizationroles OrganizationRole[]
 
   @@unique([slug])
   @@index([deleted_at])
@@ -286,4 +289,18 @@ model Inventory {
   @@unique([organization_id, kode_barang])
   @@index([organization_id, department_id])
   @@index([deleted_at])
+}
+
+model OrganizationRole {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           String       @db.Text
+  permission     String       @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime?    @updatedAt
+
+  @@index([organizationId(length: 191)])
+  @@index([role(length: 191)])
+  @@map("organizationRole")
 }

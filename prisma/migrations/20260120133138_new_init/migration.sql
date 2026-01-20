@@ -214,6 +214,20 @@ CREATE TABLE `Inventory` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `organizationRole` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `role` TEXT NOT NULL,
+    `permission` TEXT NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NULL,
+
+    INDEX `organizationRole_organizationId_idx`(`organizationId`(191)),
+    INDEX `organizationRole_role_idx`(`role`(191)),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `_DepartmentToOrganization` (
     `A` VARCHAR(191) NOT NULL,
     `B` VARCHAR(191) NOT NULL,
@@ -257,6 +271,9 @@ ALTER TABLE `Inventory` ADD CONSTRAINT `Inventory_divisi_id_fkey` FOREIGN KEY (`
 
 -- AddForeignKey
 ALTER TABLE `Inventory` ADD CONSTRAINT `Inventory_karyawan_id_fkey` FOREIGN KEY (`karyawan_id`) REFERENCES `Karyawan`(`id_karyawan`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `organizationRole` ADD CONSTRAINT `organizationRole_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `_DepartmentToOrganization` ADD CONSTRAINT `_DepartmentToOrganization_A_fkey` FOREIGN KEY (`A`) REFERENCES `Department`(`id_department`) ON DELETE CASCADE ON UPDATE CASCADE;

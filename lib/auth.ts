@@ -4,6 +4,7 @@ import { betterAuth } from 'better-auth';
 import { nextCookies } from 'better-auth/next-js';
 
 import { admin as adminPg, organization, username } from 'better-auth/plugins';
+import { ac } from './auth-permission';
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'mysql', // or "mysql", "postgresql", ...etc
@@ -35,6 +36,10 @@ export const auth = betterAuth({
     adminPg(),
     organization({
       allowUserToCreateOrganization: true,
+      ac: ac,
+      dynamicAccessControl: {
+        enabled: true,
+      },
     }),
   ],
 });

@@ -3,6 +3,9 @@ import { Main } from '@/components/main'
 import { DialogProvider } from '@/context/dialog-provider'
 
 import { Metadata } from 'next'
+import { RolesTable } from './components/roles-table';
+import OrgRoleDialogs from './components/roles-dialog';
+import RolesPrimaryButton from './components/roles-primary-buttons';
 
 export const metadata: Metadata = {
     title: 'Role & Permission',
@@ -19,11 +22,11 @@ export default function OrganizationPage() {
                             Kelola Role & Permission organisasi Anda di sini.
                         </p>
                     </div>
-                    {/* <RolesPrimaryButton /> */}
+                    <RolesPrimaryButton />
                 </div>
-                {/* <RolesTable /> */}
+                <RolesTable />
             </Main>
-            {/* <RolesDialogs /> */}
+            <OrgRoleDialogs />
         </DialogProvider>
     )
 }

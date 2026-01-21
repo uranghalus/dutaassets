@@ -3,7 +3,7 @@ import { createAccessControl } from 'better-auth/plugins/access';
 
 export const statement = {
   ...defaultStatements,
-
+  role: ['view', 'list', 'create', 'edit', 'delete'],
   employee: [
     'view',
     'list',

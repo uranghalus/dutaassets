@@ -6,6 +6,7 @@ import { Column, ColumnDef } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
 // import { RoleRowActions } from './role-row-action'
 import type { OrganizationRole } from '@/generated/prisma/client'
+import { RoleRowActions } from './roles-row-action'
 
 /* =========================
    HELPERS
@@ -116,25 +117,25 @@ export const roleColumns: ColumnDef<OrganizationRole>[] = [
     /* =====================
      * ACTIONS
      ===================== */
-    // {
-    //     id: 'actions',
-    //     header: ({ column }) => (
-    //         <DataTableColumnHeader
-    //             column={column}
-    //             title="Aksi"
-    //             className="ml-auto"
-    //         />
-    //     ),
-    //     size: 48,
-    //     minSize: 48,
-    //     maxSize: 48,
-    //     enableResizing: false,
-    //     cell: RoleRowActions,
-    //     meta: {
-    //         className: cn(
-    //             'sticky right-0 z-10 w-[60px] px-2',
-    //             'bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted transition-colors duration-200',
-    //         ),
-    //     },
-    // },
+    {
+        id: 'actions',
+        header: ({ column }) => (
+            <DataTableColumnHeader
+                column={column}
+                title="Aksi"
+                className="ml-auto"
+            />
+        ),
+        size: 48,
+        minSize: 48,
+        maxSize: 48,
+        enableResizing: false,
+        cell: RoleRowActions,
+        meta: {
+            className: cn(
+                'sticky right-0 z-10 w-[60px] px-2',
+                'bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted transition-colors duration-200',
+            ),
+        },
+    },
 ]

@@ -8,6 +8,7 @@ import {
 } from 'better-auth/client/plugins';
 
 import { auth } from './auth';
+import { ac, owner } from './auth-permission';
 // import { ac, admin, inspector, manager, superadmin } from './permissions';
 
 export const authClient = createAuthClient({
@@ -17,8 +18,12 @@ export const authClient = createAuthClient({
     nextCookies(),
     usernameClient(),
     organizationClient({
+      ac: ac,
       dynamicAccessControl: {
         enabled: true,
+      },
+      roles: {
+        owner,
       },
     }),
   ],

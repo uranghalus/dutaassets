@@ -1,14 +1,24 @@
-'use server';
+// lib/require-permission.ts
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 
-export async function requirePermission(permissions: Record<string, string[]>) {
-  const result = await auth.api.hasPermission({
-    headers: await headers(),
-    body: { permissions },
-  });
+type PermissionInput = {
+  [resource: string]: string[];
+};
 
-  if (!result.success) {
+export async function requirePermission(permissions: PermissionInput) {
+  try {
+    await auth.api.hasPermission({
+      headers: await headers(),
+      body: {
+        permissions,
+      },
+    });
+
+    // jika lolos → berarti punya permission
+    return true;
+  } catch (error) {
+    console.error('Permission denied:', error);
     throw new Error('Forbidden');
   }
 }

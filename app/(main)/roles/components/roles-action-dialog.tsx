@@ -28,6 +28,7 @@ import {
     orgRoleFormSchema,
 } from '@/schema/org-role-schema'
 import { useCreateOrgRole, useUpdateOrgRole } from '@/hooks/use-organization-role'
+import { PermissionCheckboxGroup } from '@/components/permission-checkbox-group'
 
 
 type OrgRoleRow = {
@@ -56,36 +57,27 @@ export function OrgRoleActionDialog({
         resolver: zodResolver(orgRoleFormSchema),
         defaultValues: {
             role: currentRow?.role ?? '',
-            permission: currentRow?.permission ?? '{}',
+            permissions: currentRow?.permission
+                ? JSON.parse(currentRow.permission)
+                : {},
             isEdit,
         },
-    })
+    });
 
     const isPending =
         createMutation.isPending || updateMutation.isPending
 
     const onSubmit = async (values: OrgRoleForm) => {
-        // validasi JSON permission
-        let parsedPermission: Record<string, string[]>
-        try {
-            parsedPermission = JSON.parse(values.permission)
-        } catch {
-            form.setError('permission', {
-                message: 'Permission harus JSON valid',
-            })
-            return
-        }
-
         if (isEdit && currentRow) {
             await updateMutation.mutateAsync({
                 roleId: currentRow.id,
                 roleName: values.role,
-                permission: parsedPermission,
+                permission: values.permissions, // ✅ LANGSUNG
             })
         } else {
             await createMutation.mutateAsync({
                 role: values.role,
-                permission: parsedPermission,
+                permission: values.permissions, // ✅ LANGSUNG
             })
         }
 
@@ -141,15 +133,14 @@ export function OrgRoleActionDialog({
                         {/* PERMISSION */}
                         <FormField
                             control={form.control}
-                            name="permission"
+                            name="permissions"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Permissions (JSON)</FormLabel>
+                                    <FormLabel>Permissions</FormLabel>
                                     <FormControl>
-                                        <Textarea
-                                            rows={6}
-                                            placeholder={`{\n  "project": ["view", "create"]\n}`}
-                                            {...field}
+                                        <PermissionCheckboxGroup
+                                            value={field.value}
+                                            onChange={field.onChange}
                                         />
                                     </FormControl>
                                     <FormMessage />

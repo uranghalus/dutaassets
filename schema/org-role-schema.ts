@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const orgRoleFormSchema = z.object({
-  role: z.string().min(2, 'Role name minimal 2 karakter'),
-  permission: z.string().min(2, 'Permission tidak boleh kosong'),
+  role: z.string().min(2),
+  permissions: z.record(z.string(), z.array(z.string())),
   isEdit: z.boolean().optional(),
 });
 

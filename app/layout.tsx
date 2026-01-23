@@ -40,8 +40,9 @@ export default function RootLayout({
           <ThemeProvider>
             <FontProvider>
               <DirectionProvider >
-                <ToastProvider />
-                {children}
+                <ToastProvider>
+                  {children}
+                </ToastProvider>
               </DirectionProvider>
             </FontProvider>
           </ThemeProvider>

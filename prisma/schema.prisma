@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -105,11 +104,10 @@ model Verification {
 //////////////////////////////////////////////////
 
 model Organization {
-  id       String  @id
-  name     String  @db.Text
-  slug     String
-  logo     String? @db.Text
-  metadata String? @db.Text
+  id   String  @id
+  name String  @db.Text
+  slug String  @unique
+  logo String? @db.Text
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -118,11 +116,10 @@ model Organization {
   members     Member[]
   invitations Invitation[]
 
-  departments Department[]
+  departments       Department[] // ✅ 1 org → banyak department
+  organizationRoles OrganizationRole[]
+  divisis           Divisi[]
 
-  organizationroles OrganizationRole[]
-
-  @@unique([slug])
   @@index([deleted_at])
   @@map("organization")
 }
@@ -182,9 +179,10 @@ model Department {
   updatedAt  DateTime  @updatedAt
   deleted_at DateTime?
 
-  divisis       Divisi[]
-  inventorys    Inventory[]
-  organizations Organization[]
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  divisis    Divisi[]
+  inventorys Inventory[]
 
   @@unique([organization_id, kode_department(length: 191)])
   @@index([organization_id])
@@ -193,8 +191,8 @@ model Department {
 
 model Divisi {
   id_divisi       String @id @default(uuid())
-  organization_id String
   department_id   String
+  organization_id String
 
   nama_divisi String @db.Text
   ext_tlp     String @db.Text
@@ -203,7 +201,9 @@ model Divisi {
   updatedAt  DateTime  @updatedAt
   deleted_at DateTime?
 
-  department_fk Department @relation(fields: [department_id], references: [id_department], onDelete: Restrict)
+  department Department @relation(fields: [department_id], references: [id_department], onDelete: Restrict)
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   karyawans   Karyawan[]
   inventories Inventory[]

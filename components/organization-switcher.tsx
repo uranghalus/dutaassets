@@ -1,14 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { ChevronsUpDown, Plus } from 'lucide-react'
-import { useSidebar } from '@/components/ui/sidebar'
+import { ChevronsUpDown } from 'lucide-react'
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -17,39 +14,54 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar'
 
-import { useOrganizationOptions } from '@/hooks/use-organization'
-
 import { authClient } from '@/lib/auth-client'
-import { switchOrganizationAdminOnly } from '@/lib/switch-organization'
+
+
+import { useOrganizationActiveMutation, useOrganizationListQuery } from '@/hooks/use-switcher'
 
 export function OrganizationSwitcher() {
-    const { isMobile } = useSidebar()
-    const { data: organizations = [] } = useOrganizationOptions()
     const { data: activeOrganization } = authClient.useActiveOrganization()
+    const { data: organizations = [], isLoading } = useOrganizationListQuery()
+    const { mutate, isPending } = useOrganizationActiveMutation()
 
-    if (!activeOrganization) return null
+    if (isLoading) return null
 
-    const handleSwitch = async (org: {
-        id: string
-        slug: string
-    }) => {
-        try {
-            await switchOrganizationAdminOnly(org.id, org.slug)
-            window.location.reload() // 🔥 sync sidebar + data
-        } catch (err) {
-            console.error(err)
-            alert('You are not allowed to switch organization')
-        }
+    const isAdmin =
+        activeOrganization?.members[0].role === 'owner' ||
+        activeOrganization?.members[0].role === 'admin'
+
+    // 🔒 MEMBER → READ ONLY
+    if (!isAdmin) {
+        return (
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton size="lg">
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
+                            {activeOrganization?.name.charAt(0)}
+                        </div>
+                        <div className="grid flex-1 text-start text-sm leading-tight">
+                            <span className="truncate font-semibold">
+                                {activeOrganization?.name}
+                            </span>
+                            <span className="truncate text-xs text-muted-foreground">
+                                {activeOrganization?.slug}
+                            </span>
+                        </div>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
+        )
     }
 
+    // 🔓 OWNER / ADMIN
     return (
         <SidebarMenu>
             <SidebarMenuItem>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton size="lg">
+                        <SidebarMenuButton size="lg" disabled={isPending}>
                             <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-                                {activeOrganization.name[0]}
+                                {activeOrganization.name.charAt(0)}
                             </div>
 
                             <div className="grid flex-1 text-start text-sm leading-tight">
@@ -65,21 +77,20 @@ export function OrganizationSwitcher() {
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
 
-                    <DropdownMenuContent
-                        align="start"
-                        side={isMobile ? 'bottom' : 'right'}
-                        sideOffset={4}
-                        className="min-w-56 rounded-lg"
-                    >
+                    <DropdownMenuContent align="start" className="min-w-56">
                         <DropdownMenuLabel className="text-xs text-muted-foreground">
                             Organizations
                         </DropdownMenuLabel>
 
-                        {organizations.map((org: any) => (
+                        {organizations.map((org) => (
                             <DropdownMenuItem
                                 key={org.id}
-                                onClick={() => handleSwitch(org)}
-                                className="cursor-pointer"
+                                disabled={org.id === activeOrganization.id}
+                                onClick={() =>
+                                    mutate({
+                                        organizationId: org.id,
+                                    })
+                                }
                             >
                                 <span className="font-medium">{org.name}</span>
                                 <span className="ml-auto text-xs text-muted-foreground">
@@ -87,13 +98,6 @@ export function OrganizationSwitcher() {
                                 </span>
                             </DropdownMenuItem>
                         ))}
-
-                        <DropdownMenuSeparator />
-
-                        <DropdownMenuItem className="gap-2 cursor-pointer">
-                            <Plus className="size-4" />
-                            <span>Add Organization</span>
-                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>

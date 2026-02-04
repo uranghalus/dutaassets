@@ -35,6 +35,7 @@ export const useOrganizationActiveMutation = () => {
 };
 export async function getOrganizationList() {
   const { data, error } = await authClient.organization.list();
+  console.log('getOrganizationList Debug:', { data, error });
   if (error) throw new Error(error.message);
 
   return data;

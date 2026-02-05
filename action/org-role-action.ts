@@ -100,3 +100,52 @@ export async function updateOrgRole(input: UpdateOrgRoleInput) {
     headers: await headers(),
   });
 }
+
+export async function deleteOrgRole(roleId: string) {
+  const session = await getServerSession();
+  if (!session) throw new Error('Unauthorized');
+
+  const organizationId = session.session.activeOrganizationId;
+  if (!organizationId) throw new Error('No active organization');
+
+  /* 🔐 DAC CHECK */
+  await requirePermission({
+    role: ['delete'],
+  });
+
+  return auth.api.deleteOrgRole({
+    body: {
+      roleId,
+      organizationId,
+    },
+    headers: await headers(),
+  });
+}
+
+export async function deleteOrgRolesBulk(roleIds: string[]) {
+  const session = await getServerSession();
+  if (!session) throw new Error('Unauthorized');
+
+  const organizationId = session.session.activeOrganizationId;
+  if (!organizationId) throw new Error('No active organization');
+
+  /* 🔐 DAC CHECK */
+  await requirePermission({
+    role: ['delete'],
+  });
+
+  const reqHeaders = await headers();
+  await Promise.all(
+    roleIds.map((roleId) =>
+      auth.api.deleteOrgRole({
+        body: {
+          roleId,
+          organizationId,
+        },
+        headers: reqHeaders,
+      })
+    )
+  );
+
+  return { success: true };
+}

@@ -3,8 +3,8 @@ import { defaultStatements } from 'better-auth/plugins/organization/access';
 
 export const statement = {
   ...defaultStatements,
-  ac: ['view', 'list', 'create', 'edit', 'delete'],
-  role: ['view', 'list', 'create', 'edit', 'delete'],
+  ac: ['view', 'list', 'create', 'edit', 'delete', 'read', 'update'],
+  role: ['view', 'list', 'create', 'edit', 'delete', 'read', 'update'],
   employee: [
     'view',
     'list',
@@ -33,8 +33,8 @@ export const statement = {
 
 export const ac = createAccessControl(statement);
 export const owner = ac.newRole({
-  ac: ['view', 'list', 'create', 'edit', 'delete'],
-  role: ['view', 'list', 'create', 'edit', 'delete'],
+  ac: ['view', 'list', 'create', 'edit', 'delete', 'read', 'update'],
+  role: ['view', 'list', 'create', 'edit', 'delete', 'read', 'update'],
   employee: [
     'view',
     'list',

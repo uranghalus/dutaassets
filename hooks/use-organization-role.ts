@@ -2,6 +2,8 @@
 
 import {
   createOrgRole,
+  deleteOrgRole,
+  deleteOrgRolesBulk,
   listOrgRoles,
   updateOrgRole,
 } from '@/action/org-role-action';
@@ -47,9 +49,9 @@ export function useCreateOrgRole() {
   });
 }
 
-// /* =======================
-//    UPDATE
-// ======================= */
+/* =======================
+   UPDATE
+======================= */
 export function useUpdateOrgRole() {
   const queryClient = useQueryClient();
 
@@ -63,36 +65,36 @@ export function useUpdateOrgRole() {
   });
 }
 
-// /* =======================
-//    DELETE (SINGLE)
-// ======================= */
-// export function useDeleteOrgRole() {
-//   const queryClient = useQueryClient();
+/* =======================
+   DELETE (SINGLE)
+======================= */
+export function useDeleteOrgRole() {
+  const queryClient = useQueryClient();
 
-//   return useMutation({
-//     mutationFn: (id: string) => deleteOrgRole(id),
+  return useMutation({
+    mutationFn: (id: string) => deleteOrgRole(id),
 
-//     onSuccess: async () => {
-//       await queryClient.invalidateQueries({
-//         queryKey: ['org-roles'],
-//       });
-//     },
-//   });
-// }
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['org-roles'],
+      });
+    },
+  });
+}
 
-// /* =======================
-//    BULK DELETE
-// ======================= */
-// export function useDeleteOrgRolesBulk() {
-//   const queryClient = useQueryClient();
+/* =======================
+   BULK DELETE
+======================= */
+export function useDeleteOrgRolesBulk() {
+  const queryClient = useQueryClient();
 
-//   return useMutation({
-//     mutationFn: (ids: string[]) => deleteOrgRolesBulk(ids),
+  return useMutation({
+    mutationFn: (ids: string[]) => deleteOrgRolesBulk(ids),
 
-//     onSuccess: async () => {
-//       await queryClient.invalidateQueries({
-//         queryKey: ['org-roles'],
-//       });
-//     },
-//   });
-// }
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['org-roles'],
+      });
+    },
+  });
+}

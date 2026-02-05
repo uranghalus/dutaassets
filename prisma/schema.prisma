@@ -59,7 +59,7 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
-  @@index([userId(length: 191)])
+  @@index([userId(length: 191)], map: "session_userId_idx_custom_v2")
   @@map("session")
 }
 
@@ -82,7 +82,7 @@ model Account {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId(length: 191)])
+  @@index([userId], map: "account_userId_idx_custom_v2")
   @@map("account")
 }
 
@@ -95,7 +95,7 @@ model Verification {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([identifier(length: 191)])
+  @@index([identifier(length: 191)], map: "verification_identifier_idx_custom_v2")
   @@map("verification")
 }
 
@@ -119,8 +119,9 @@ model Organization {
   departments       Department[] // ✅ 1 org → banyak department
   organizationRoles OrganizationRole[]
   divisis           Divisi[]
+  teams             Team[]
 
-  @@index([deleted_at])
+  @@index([deleted_at], map: "organization_deleted_at_idx_custom")
   @@map("organization")
 }
 
@@ -137,9 +138,9 @@ model Member {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([organizationId(length: 191)])
-  @@index([userId(length: 191)])
-  @@index([deleted_at])
+  @@index([organizationId], map: "member_organizationId_idx_custom_v2")
+  @@index([userId], map: "member_userId_idx_custom_v2")
+  @@index([deleted_at], map: "member_deleted_at_idx_custom_v2")
   @@map("member")
 }
 
@@ -158,8 +159,8 @@ model Invitation {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
 
-  @@index([organizationId(length: 191)])
-  @@index([email(length: 191)])
+  @@index([organizationId], map: "invitation_organizationId_idx_custom_v2")
+  @@index([email(length: 191)], map: "invitation_email_idx_custom_v2")
   @@map("invitation")
 }
 
@@ -184,9 +185,9 @@ model Department {
   divisis    Divisi[]
   inventorys Inventory[]
 
-  @@unique([organization_id, kode_department(length: 191)])
-  @@index([organization_id])
-  @@index([deleted_at])
+  @@unique([organization_id, kode_department(length: 191)], map: "department_org_kode_unique_custom_v2")
+  @@index([organization_id], map: "department_organization_id_idx_custom_v2")
+  @@index([deleted_at], map: "department_deleted_at_idx_custom_v2")
 }
 
 model Divisi {
@@ -207,9 +208,10 @@ model Divisi {
 
   karyawans   Karyawan[]
   inventories Inventory[]
+  teams       Team[]
 
-  @@index([organization_id, department_id])
-  @@index([deleted_at])
+  @@index([organization_id, department_id], map: "divisi_org_dept_idx_custom_v2")
+  @@index([deleted_at], map: "divisi_deleted_at_idx_custom_v2")
 }
 
 model Karyawan {
@@ -228,7 +230,7 @@ model Karyawan {
   status_karyawan String @db.Char(50)
   keterangan      String @db.Char(150)
 
-  userId String? @unique
+  userId String? @unique(map: "karyawan_userId_unique_custom_v2")
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   divisi_fk Divisi @relation(fields: [divisi_id], references: [id_divisi], onDelete: Restrict)
@@ -239,9 +241,9 @@ model Karyawan {
 
   inventories Inventory[]
 
-  @@unique([organization_id, nik])
-  @@unique([organization_id, no_ktp])
-  @@index([deleted_at])
+  @@unique([organization_id, nik], map: "karyawan_org_nik_unique_custom_v2")
+  @@unique([organization_id, no_ktp], map: "karyawan_org_no_ktp_unique_custom_v2")
+  @@index([deleted_at], map: "karyawan_deleted_at_idx_custom_v2")
 }
 
 //////////////////////////////////////////////////
@@ -286,9 +288,9 @@ model Inventory {
 
   karyawan_fk Karyawan? @relation(fields: [karyawan_id], references: [id_karyawan], onDelete: SetNull)
 
-  @@unique([organization_id, kode_barang])
-  @@index([organization_id, department_id])
-  @@index([deleted_at])
+  @@unique([organization_id, kode_barang], map: "inventory_org_kode_unique_custom_v2")
+  @@index([organization_id, department_id], map: "inventory_org_dept_idx_custom_v2")
+  @@index([deleted_at], map: "inventory_deleted_at_idx_custom_v2")
 }
 
 model OrganizationRole {
@@ -300,7 +302,26 @@ model OrganizationRole {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime?    @updatedAt
 
-  @@index([organizationId(length: 191)])
-  @@index([role(length: 191)])
+  @@index([role(length: 191)], map: "organizationRole_role_idx_custom_v2")
   @@map("organizationRole")
+}
+
+model Team {
+  id_team         String @id @default(uuid())
+  organization_id String
+  divisi_id       String
+
+  kode_team  String  @db.Text
+  nama_team  String  @db.Text
+  keterangan String? @db.Text
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deleted_at DateTime?
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  divisi       Divisi       @relation(fields: [divisi_id], references: [id_divisi], onDelete: Restrict)
+
+  @@index([organization_id, divisi_id])
+  @@index([deleted_at])
 }

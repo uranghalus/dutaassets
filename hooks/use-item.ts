@@ -1,18 +1,18 @@
 
 import {
-  createTeam,
-  deleteTeam,
-  deleteTeamBulk,
-  getTeams,
-  getTeam,
-  updateTeam,
-} from '@/action/teams-action';
+  createItem,
+  deleteItem,
+  deleteItemBulk,
+  getItems,
+  getItem,
+  updateItem,
+} from '@/action/item-action';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 /* =======================
    GET (PAGINATION)
 ======================= */
-export function useTeams({
+export function useItems({
   page,
   pageSize,
 }: {
@@ -20,9 +20,9 @@ export function useTeams({
   pageSize: number;
 }) {
   return useQuery({
-    queryKey: ['teams', page, pageSize],
+    queryKey: ['items', page, pageSize],
     queryFn: () =>
-      getTeams({
+      getItems({
         page,
         pageSize,
       }),
@@ -32,10 +32,10 @@ export function useTeams({
 /* =======================
    GET SINGLE
 ======================= */
-export function useTeam(id: string) {
+export function useItem(id: string) {
   return useQuery({
-    queryKey: ['team', id],
-    queryFn: () => getTeam(id),
+    queryKey: ['item', id],
+    queryFn: () => getItem(id),
     enabled: !!id,
   });
 }
@@ -43,15 +43,15 @@ export function useTeam(id: string) {
 /* =======================
    CREATE
 ======================= */
-export function useCreateTeam() {
+export function useCreateItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (formData: FormData) => createTeam(formData),
+    mutationFn: (formData: FormData) => createItem(formData),
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['teams'],
+        queryKey: ['items'],
       });
     },
   });
@@ -60,7 +60,7 @@ export function useCreateTeam() {
 /* =======================
    UPDATE
 ======================= */
-export function useUpdateTeam() {
+export function useUpdateItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -70,11 +70,11 @@ export function useUpdateTeam() {
     }: {
       id: string;
       formData: FormData;
-    }) => updateTeam(id, formData),
+    }) => updateItem(id, formData),
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['teams'],
+        queryKey: ['items'],
       });
     },
   });
@@ -83,15 +83,15 @@ export function useUpdateTeam() {
 /* =======================
    DELETE
 ======================= */
-export function useDeleteTeam() {
+export function useDeleteItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deleteTeam(id),
+    mutationFn: (id: string) => deleteItem(id),
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['teams'],
+        queryKey: ['items'],
       });
     },
   });
@@ -100,15 +100,15 @@ export function useDeleteTeam() {
 /* =======================
    BULK DELETE
 ======================= */
-export function useDeleteTeamBulk() {
+export function useDeleteItemBulk() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (ids: string[]) => deleteTeamBulk(ids),
+    mutationFn: (ids: string[]) => deleteItemBulk(ids),
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['teams'],
+        queryKey: ['items'],
       });
     },
   });

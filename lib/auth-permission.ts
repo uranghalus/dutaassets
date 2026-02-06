@@ -29,6 +29,7 @@ export const statement = {
     'impersonate',
     'set-password',
   ],
+  team: ['create', 'update', 'delete'],
 } as const;
 
 export const ac = createAccessControl(statement);
@@ -59,4 +60,8 @@ export const owner = ac.newRole({
     'impersonate',
     'set-password',
   ],
+  team: ['create', 'update', 'delete'],
+  member: ['create', 'update', 'delete'],
+  invitation: ['create', 'cancel'],
+  organization: ['update', 'delete'],
 });

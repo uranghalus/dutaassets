@@ -1,15 +1,13 @@
 'use server';
 
-import { auth } from '@/lib/auth';
 import { getServerSession } from '@/lib/get-session';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
 
 /* =======================
    TYPES
 ======================= */
-export type TeamArgs = {
+export type ItemCategoryArgs = {
   page: number;
   pageSize: number;
 };
@@ -17,7 +15,7 @@ export type TeamArgs = {
 /* =======================
    GET (PAGINATION)
 ======================= */
-export async function getTeams({ page, pageSize }: TeamArgs) {
+export async function getItemCategories({ page, pageSize }: ItemCategoryArgs) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
@@ -30,7 +28,7 @@ export async function getTeams({ page, pageSize }: TeamArgs) {
   const take = safePageSize;
 
   const [data, total] = await Promise.all([
-    prisma.team.findMany({
+    prisma.itemCategory.findMany({
       where: {
         organizationId: organizationId,
       },
@@ -40,20 +38,13 @@ export async function getTeams({ page, pageSize }: TeamArgs) {
         name: 'asc',
       },
       include: {
-        divisi: {
-            select: {
-                nama_divisi: true,
-                department: {
-                    select: {
-                        nama_department: true
-                    }
-                }
-            }
-        }
-      }
+        _count: {
+          select: { items: true },
+        },
+      },
     }),
 
-    prisma.team.count({
+    prisma.itemCategory.count({
       where: {
         organizationId: organizationId,
       },
@@ -70,80 +61,81 @@ export async function getTeams({ page, pageSize }: TeamArgs) {
 }
 
 /* =======================
-   GET SINGLE TEAM
+   GET ALL (FOR SELECT)
 ======================= */
-export async function getTeam(id: string) {
+export async function getAllItemCategories() {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  const team = await prisma.team.findFirst({
+  const categories = await prisma.itemCategory.findMany({
+    where: {
+      organizationId: organizationId,
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  });
+
+  return categories;
+}
+
+/* =======================
+   GET SINGLE
+======================= */
+export async function getItemCategory(id: string) {
+  const session = await getServerSession();
+  if (!session) throw new Error('Unauthorized');
+
+  const organizationId = session.session.activeOrganizationId;
+  if (!organizationId) throw new Error('No active organization');
+
+  const category = await prisma.itemCategory.findFirst({
     where: {
       id,
       organizationId: organizationId,
     },
-    include: {
-        divisi: {
-            select: {
-                nama_divisi: true
-            }
-        }
-    }
   });
 
-  return team;
+  return category;
 }
 
 /* =======================
    CREATE
 ======================= */
-export async function createTeam(formData: FormData) {
+export async function createItemCategory(formData: FormData) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  const kode_team = formData.get('kode_team')?.toString();
-  const name = formData.get('nama_team')?.toString(); // Form still sends nama_team likely, we'll map to name
-  const divisi_id = formData.get('divisi_id')?.toString();
-  const keterangan = formData.get('keterangan')?.toString() ?? '';
-
-  if (!kode_team || !name || !divisi_id) {
+  const name = formData.get('name')?.toString();
+  
+  if (!name) {
     throw new Error('Required fields are missing');
   }
 
-  // Use auth.api to create team (creates TeamMember automatically)
-  const newTeam = await auth.api.createTeam({
-    body: {
-        name,
-        organizationId
-    },
-    headers: await headers()
-  });
+  const description = formData.get('description')?.toString();
 
-  if (!newTeam) throw new Error('Failed to create team');
-
-  // Update with custom fields
-  const team = await prisma.team.update({
-    where: { id: newTeam.id },
+  const category = await prisma.itemCategory.create({
     data: {
-      divisi_id,
-      kode_team,
-      keterangan,
+      name,
+      description,
+      organizationId,
     },
   });
 
-  revalidatePath('/teams');
-  return team;
+  revalidatePath('/inventory/categories');
+  return category;
 }
 
 /* =======================
    UPDATE
 ======================= */
-export async function updateTeam(
+export async function updateItemCategory(
   id: string,
   formData: FormData
 ) {
@@ -153,65 +145,61 @@ export async function updateTeam(
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  const team = await prisma.team.findFirst({
+  const category = await prisma.itemCategory.findFirst({
     where: {
       id,
       organizationId: organizationId,
     },
   });
 
-  if (!team) throw new Error('Team not found');
+  if (!category) throw new Error('Category not found');
 
-  const updated = await prisma.team.update({
+  const updated = await prisma.itemCategory.update({
     where: {
       id,
     },
     data: {
-      kode_team: formData.get('kode_team')?.toString() ?? team.kode_team,
-      name: formData.get('nama_team')?.toString() ?? team.name,
-      divisi_id: formData.get('divisi_id')?.toString() ?? team.divisi_id,
-      keterangan: formData.get('keterangan')?.toString() ?? team.keterangan,
+      name: formData.get('name')?.toString() ?? category.name,
+      description: formData.get('description')?.toString() ?? category.description,
     },
   });
 
-  revalidatePath('/teams');
+  revalidatePath('/inventory/categories');
   return updated;
 }
 
 /* =======================
    DELETE
 ======================= */
-export async function deleteTeam(id: string) {
+export async function deleteItemCategory(id: string) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  const team = await prisma.team.findFirst({
+  const category = await prisma.itemCategory.findFirst({
     where: {
       id,
       organizationId: organizationId,
     },
   });
 
-  if (!team) throw new Error('Team not found');
+  if (!category) throw new Error('Category not found');
 
-  // Use auth.api to remove team (handles cleanup if any)
-  // Or just pure prisma. Auth API removeTeam might require extra perms
-  await prisma.team.delete({
+  await prisma.itemCategory.delete({
     where: {
       id,
     },
   });
 
-  revalidatePath('/teams');
+  revalidatePath('/inventory/categories');
 }
 
 /* =======================
    BULK DELETE
 ======================= */
-export async function deleteTeamBulk(ids: string[]) {
+export async function deleteItemCategoryBulk(ids: string[]) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
@@ -220,12 +208,12 @@ export async function deleteTeamBulk(ids: string[]) {
 
   if (!ids || ids.length === 0) return;
 
-  await prisma.team.deleteMany({
+  await prisma.itemCategory.deleteMany({
     where: {
       id: { in: ids },
       organizationId: organizationId,
     },
   });
 
-  revalidatePath('/teams');
+  revalidatePath('/inventory/categories');
 }

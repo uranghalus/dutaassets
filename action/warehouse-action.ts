@@ -1,15 +1,13 @@
 'use server';
 
-import { auth } from '@/lib/auth';
 import { getServerSession } from '@/lib/get-session';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
 
 /* =======================
    TYPES
 ======================= */
-export type TeamArgs = {
+export type WarehouseArgs = {
   page: number;
   pageSize: number;
 };
@@ -17,7 +15,7 @@ export type TeamArgs = {
 /* =======================
    GET (PAGINATION)
 ======================= */
-export async function getTeams({ page, pageSize }: TeamArgs) {
+export async function getWarehouses({ page, pageSize }: WarehouseArgs) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
@@ -30,7 +28,7 @@ export async function getTeams({ page, pageSize }: TeamArgs) {
   const take = safePageSize;
 
   const [data, total] = await Promise.all([
-    prisma.team.findMany({
+    prisma.warehouse.findMany({
       where: {
         organizationId: organizationId,
       },
@@ -40,20 +38,13 @@ export async function getTeams({ page, pageSize }: TeamArgs) {
         name: 'asc',
       },
       include: {
-        divisi: {
-            select: {
-                nama_divisi: true,
-                department: {
-                    select: {
-                        nama_department: true
-                    }
-                }
-            }
+        _count: {
+            select: { stocks: true }
         }
       }
     }),
 
-    prisma.team.count({
+    prisma.warehouse.count({
       where: {
         organizationId: organizationId,
       },
@@ -70,80 +61,58 @@ export async function getTeams({ page, pageSize }: TeamArgs) {
 }
 
 /* =======================
-   GET SINGLE TEAM
+   GET SINGLE
 ======================= */
-export async function getTeam(id: string) {
+export async function getWarehouse(id: string) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  const team = await prisma.team.findFirst({
+  const warehouse = await prisma.warehouse.findFirst({
     where: {
       id,
       organizationId: organizationId,
     },
-    include: {
-        divisi: {
-            select: {
-                nama_divisi: true
-            }
-        }
-    }
   });
 
-  return team;
+  return warehouse;
 }
 
 /* =======================
    CREATE
 ======================= */
-export async function createTeam(formData: FormData) {
+export async function createWarehouse(formData: FormData) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  const kode_team = formData.get('kode_team')?.toString();
-  const name = formData.get('nama_team')?.toString(); // Form still sends nama_team likely, we'll map to name
-  const divisi_id = formData.get('divisi_id')?.toString();
-  const keterangan = formData.get('keterangan')?.toString() ?? '';
+  const name = formData.get('name')?.toString();
+  const location = formData.get('location')?.toString() ?? '';
 
-  if (!kode_team || !name || !divisi_id) {
+  if (!name) {
     throw new Error('Required fields are missing');
   }
 
-  // Use auth.api to create team (creates TeamMember automatically)
-  const newTeam = await auth.api.createTeam({
-    body: {
-        name,
-        organizationId
-    },
-    headers: await headers()
-  });
-
-  if (!newTeam) throw new Error('Failed to create team');
-
-  // Update with custom fields
-  const team = await prisma.team.update({
-    where: { id: newTeam.id },
+  const warehouse = await prisma.warehouse.create({
     data: {
-      divisi_id,
-      kode_team,
-      keterangan,
+      name,
+      location,
+      organizationId,
     },
   });
 
-  revalidatePath('/teams');
-  return team;
+  revalidatePath('/inventory/warehouses');
+  return warehouse;
 }
 
 /* =======================
    UPDATE
 ======================= */
-export async function updateTeam(
+export async function updateWarehouse(
   id: string,
   formData: FormData
 ) {
@@ -153,65 +122,70 @@ export async function updateTeam(
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  const team = await prisma.team.findFirst({
+  const warehouse = await prisma.warehouse.findFirst({
     where: {
       id,
       organizationId: organizationId,
     },
   });
 
-  if (!team) throw new Error('Team not found');
+  if (!warehouse) throw new Error('Warehouse not found');
 
-  const updated = await prisma.team.update({
+  const updated = await prisma.warehouse.update({
     where: {
       id,
     },
     data: {
-      kode_team: formData.get('kode_team')?.toString() ?? team.kode_team,
-      name: formData.get('nama_team')?.toString() ?? team.name,
-      divisi_id: formData.get('divisi_id')?.toString() ?? team.divisi_id,
-      keterangan: formData.get('keterangan')?.toString() ?? team.keterangan,
+      name: formData.get('name')?.toString() ?? warehouse.name,
+      location: formData.get('location')?.toString() ?? warehouse.location,
     },
   });
 
-  revalidatePath('/teams');
+  revalidatePath('/inventory/warehouses');
   return updated;
 }
 
 /* =======================
    DELETE
 ======================= */
-export async function deleteTeam(id: string) {
+export async function deleteWarehouse(id: string) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  const team = await prisma.team.findFirst({
+  const warehouse = await prisma.warehouse.findFirst({
     where: {
       id,
       organizationId: organizationId,
     },
   });
 
-  if (!team) throw new Error('Team not found');
+  if (!warehouse) throw new Error('Warehouse not found');
 
-  // Use auth.api to remove team (handles cleanup if any)
-  // Or just pure prisma. Auth API removeTeam might require extra perms
-  await prisma.team.delete({
+  // Check generic constraint if needed (e.g., if has stocks)
+  // For now, cascade might not be set or we want to prevent deletion if stocks exist.
+  // Prisma schema didn't define cascade on User? 
+  // Let's assume we allow deletion for now or Prisma handles it. 
+  // Wait, stock has @relation(fields: [warehouseId], references: [id])
+  // If we delete warehouse, stock deletion depends on onDelete. 
+  // Schema didn't specify onDelete for Stock->Warehouse. Default is RESTRICT (usually) or NO ACTION.
+  // Better to be safe, but adhering to requested minimal CRUD.
+  
+  await prisma.warehouse.delete({
     where: {
       id,
     },
   });
 
-  revalidatePath('/teams');
+  revalidatePath('/inventory/warehouses');
 }
 
 /* =======================
    BULK DELETE
 ======================= */
-export async function deleteTeamBulk(ids: string[]) {
+export async function deleteWarehouseBulk(ids: string[]) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
@@ -220,12 +194,12 @@ export async function deleteTeamBulk(ids: string[]) {
 
   if (!ids || ids.length === 0) return;
 
-  await prisma.team.deleteMany({
+  await prisma.warehouse.deleteMany({
     where: {
       id: { in: ids },
       organizationId: organizationId,
     },
   });
 
-  revalidatePath('/teams');
+  revalidatePath('/inventory/warehouses');
 }

@@ -25,6 +25,9 @@ export const authClient = createAuthClient({
       roles: {
         owner,
       },
+      teams: {
+        enabled: true,
+      },
     }),
   ],
 });

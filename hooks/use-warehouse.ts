@@ -1,18 +1,18 @@
 
 import {
-  createTeam,
-  deleteTeam,
-  deleteTeamBulk,
-  getTeams,
-  getTeam,
-  updateTeam,
-} from '@/action/teams-action';
+  createWarehouse,
+  deleteWarehouse,
+  deleteWarehouseBulk,
+  getWarehouses,
+  getWarehouse,
+  updateWarehouse,
+} from '@/action/warehouse-action';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 /* =======================
    GET (PAGINATION)
 ======================= */
-export function useTeams({
+export function useWarehouses({
   page,
   pageSize,
 }: {
@@ -20,9 +20,9 @@ export function useTeams({
   pageSize: number;
 }) {
   return useQuery({
-    queryKey: ['teams', page, pageSize],
+    queryKey: ['warehouses', page, pageSize],
     queryFn: () =>
-      getTeams({
+      getWarehouses({
         page,
         pageSize,
       }),
@@ -32,10 +32,10 @@ export function useTeams({
 /* =======================
    GET SINGLE
 ======================= */
-export function useTeam(id: string) {
+export function useWarehouse(id: string) {
   return useQuery({
-    queryKey: ['team', id],
-    queryFn: () => getTeam(id),
+    queryKey: ['warehouse', id],
+    queryFn: () => getWarehouse(id),
     enabled: !!id,
   });
 }
@@ -43,15 +43,15 @@ export function useTeam(id: string) {
 /* =======================
    CREATE
 ======================= */
-export function useCreateTeam() {
+export function useCreateWarehouse() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (formData: FormData) => createTeam(formData),
+    mutationFn: (formData: FormData) => createWarehouse(formData),
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['teams'],
+        queryKey: ['warehouses'],
       });
     },
   });
@@ -60,7 +60,7 @@ export function useCreateTeam() {
 /* =======================
    UPDATE
 ======================= */
-export function useUpdateTeam() {
+export function useUpdateWarehouse() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -70,11 +70,11 @@ export function useUpdateTeam() {
     }: {
       id: string;
       formData: FormData;
-    }) => updateTeam(id, formData),
+    }) => updateWarehouse(id, formData),
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['teams'],
+        queryKey: ['warehouses'],
       });
     },
   });
@@ -83,15 +83,15 @@ export function useUpdateTeam() {
 /* =======================
    DELETE
 ======================= */
-export function useDeleteTeam() {
+export function useDeleteWarehouse() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deleteTeam(id),
+    mutationFn: (id: string) => deleteWarehouse(id),
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['teams'],
+        queryKey: ['warehouses'],
       });
     },
   });
@@ -100,15 +100,15 @@ export function useDeleteTeam() {
 /* =======================
    BULK DELETE
 ======================= */
-export function useDeleteTeamBulk() {
+export function useDeleteWarehouseBulk() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (ids: string[]) => deleteTeamBulk(ids),
+    mutationFn: (ids: string[]) => deleteWarehouseBulk(ids),
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['teams'],
+        queryKey: ['warehouses'],
       });
     },
   });

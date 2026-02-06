@@ -34,7 +34,8 @@ model User {
   invitations Invitation[]
 
   /// 1-1 ke Karyawan
-  karyawan Karyawan?
+  karyawan    Karyawan?
+  teamMembers TeamMember[]
 
   @@unique([email])
   @@index([email(length: 191)])
@@ -59,7 +60,7 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
-  @@index([userId(length: 191)], map: "session_userId_idx_custom_v2")
+  @@index([userId(length: 191)], map: "session_userId_idx_custom_v10")
   @@map("session")
 }
 
@@ -82,7 +83,7 @@ model Account {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId], map: "account_userId_idx_custom_v2")
+  @@index([userId], map: "account_userId_idx_custom_v10")
   @@map("account")
 }
 
@@ -95,7 +96,7 @@ model Verification {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([identifier(length: 191)], map: "verification_identifier_idx_custom_v2")
+  @@index([identifier(length: 191)], map: "verification_identifier_idx_custom_v10")
   @@map("verification")
 }
 
@@ -138,9 +139,9 @@ model Member {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([organizationId], map: "member_organizationId_idx_custom_v2")
-  @@index([userId], map: "member_userId_idx_custom_v2")
-  @@index([deleted_at], map: "member_deleted_at_idx_custom_v2")
+  @@index([organizationId], map: "member_organizationId_idx_custom_v9")
+  @@index([userId], map: "member_userId_idx_custom_v9")
+  @@index([deleted_at], map: "member_deleted_at_idx_custom_v9")
   @@map("member")
 }
 
@@ -158,9 +159,11 @@ model Invitation {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  team         Team?        @relation(fields: [teamId], references: [id])
+  teamId       String?
 
-  @@index([organizationId], map: "invitation_organizationId_idx_custom_v2")
-  @@index([email(length: 191)], map: "invitation_email_idx_custom_v2")
+  @@index([organizationId], map: "invitation_organizationId_idx_custom_v9")
+  @@index([email(length: 191)], map: "invitation_email_idx_custom_v9")
   @@map("invitation")
 }
 
@@ -182,12 +185,12 @@ model Department {
 
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
-  divisis    Divisi[]
-  inventorys Inventory[]
+  divisis Divisi[]
+  assets  Asset[]
 
-  @@unique([organization_id, kode_department(length: 191)], map: "department_org_kode_unique_custom_v2")
-  @@index([organization_id], map: "department_organization_id_idx_custom_v2")
-  @@index([deleted_at], map: "department_deleted_at_idx_custom_v2")
+  @@unique([organization_id, kode_department(length: 191)], map: "department_org_kode_unique_custom_v9")
+  @@index([organization_id], map: "department_organization_id_idx_custom_v9")
+  @@index([deleted_at], map: "department_deleted_at_idx_custom_v9")
 }
 
 model Divisi {
@@ -206,12 +209,12 @@ model Divisi {
 
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
-  karyawans   Karyawan[]
-  inventories Inventory[]
-  teams       Team[]
+  karyawans Karyawan[]
+  assets    Asset[]
+  teams     Team[]
 
-  @@index([organization_id, department_id], map: "divisi_org_dept_idx_custom_v2")
-  @@index([deleted_at], map: "divisi_deleted_at_idx_custom_v2")
+  @@index([organization_id, department_id], map: "divisi_org_dept_idx_custom_v9")
+  @@index([deleted_at], map: "divisi_deleted_at_idx_custom_v9")
 }
 
 model Karyawan {
@@ -230,7 +233,7 @@ model Karyawan {
   status_karyawan String @db.Char(50)
   keterangan      String @db.Char(150)
 
-  userId String? @unique(map: "karyawan_userId_unique_custom_v2")
+  userId String? @unique(map: "karyawan_userId_unique_custom_v9")
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   divisi_fk Divisi @relation(fields: [divisi_id], references: [id_divisi], onDelete: Restrict)
@@ -239,18 +242,24 @@ model Karyawan {
   updatedAt  DateTime  @updatedAt
   deleted_at DateTime?
 
-  inventories Inventory[]
+  assets       Asset[]
+  requisitions Requisition[]
+  assetLoans   AssetLoan[]
 
-  @@unique([organization_id, nik], map: "karyawan_org_nik_unique_custom_v2")
-  @@unique([organization_id, no_ktp], map: "karyawan_org_no_ktp_unique_custom_v2")
-  @@index([deleted_at], map: "karyawan_deleted_at_idx_custom_v2")
+  @@unique([organization_id, nik], map: "karyawan_org_nik_unique_custom_v9")
+  @@unique([organization_id, no_ktp], map: "karyawan_org_no_ktp_unique_custom_v9")
+  @@index([deleted_at], map: "karyawan_deleted_at_idx_custom_v9")
 }
 
 //////////////////////////////////////////////////
 // INVENTORY
 //////////////////////////////////////////////////
 
-model Inventory {
+// ==========================================
+// ASSET MANAGEMENT (Fixed Assets)
+// ==========================================
+
+model Asset {
   id_barang String @id @default(uuid())
 
   organization_id String
@@ -258,39 +267,197 @@ model Inventory {
   divisi_id       String?
   karyawan_id     String?
 
-  kode_barang     String @db.Char(50)
-  nama_barang     String @db.Text
-  kelompok_barang String @db.Char(100)
+  kode_asset     String @db.Char(50) // Renamed from kode_barang
+  nama_asset     String @db.Text // Renamed from nama_barang
+  kategori_asset String @db.Char(100) // Renamed from kelompok_barang
 
-  deskripsi_barang      String?   @db.Text
-  merk                  String?   @db.Char(100)
-  tipe_path_number      String?   @db.Char(100)
-  serial_number         String?   @db.Char(100)
-  tgl_pembelian         DateTime?
-  harga                 Decimal?  @db.Decimal(15, 2)
-  tempat_pembelian      String?   @db.Char(100)
-  status_kondisi_barang String?   @db.Char(50)
-  tempat_lokasi_barang  String?   @db.Char(200)
-  tgl_exp_paramsi       DateTime?
+  deskripsi     String? @db.Text
+  brand         String? @db.Char(100)
+  model         String? @db.Char(100)
+  serial_number String? @db.Char(100)
+
+  tgl_pembelian DateTime?
+  harga         Decimal?  @db.Decimal(15, 2)
+  vendor        String?   @db.Char(100) // Renamed from tempat_pembelian/provider
+
+  kondisi String? @db.Char(50) // GOOD, DAMAGED
+  lokasi  String? @db.Char(200) // Specific location description
+
+  // warranty/expiry
+  garansi_exp DateTime?
 
   path_folder String? @db.Text
   gambar      String? @db.Text
   expand_data Json?
   keterangan  String? @db.Text
 
+  status String @default("AVAILABLE") // AVAILABLE, IN_USE, MAINTENANCE, DISPOSED
+
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   deleted_at DateTime?
 
   department_fk Department @relation(fields: [department_id], references: [id_department], onDelete: Restrict)
+  divisi_fk     Divisi?    @relation(fields: [divisi_id], references: [id_divisi], onDelete: SetNull)
+  karyawan_fk   Karyawan?  @relation(fields: [karyawan_id], references: [id_karyawan], onDelete: SetNull)
 
-  divisi_fk Divisi? @relation(fields: [divisi_id], references: [id_divisi], onDelete: SetNull)
+  loans        AssetLoan[]
+  maintenances AssetMaintenance[]
 
-  karyawan_fk Karyawan? @relation(fields: [karyawan_id], references: [id_karyawan], onDelete: SetNull)
+  @@unique([organization_id, kode_asset], map: "asset_org_kode_unique")
+  @@index([organization_id, department_id], map: "asset_org_dept_idx")
+  @@index([deleted_at], map: "asset_deleted_at_idx")
+  @@map("asset")
+}
 
-  @@unique([organization_id, kode_barang], map: "inventory_org_kode_unique_custom_v2")
-  @@index([organization_id, department_id], map: "inventory_org_dept_idx_custom_v2")
-  @@index([deleted_at], map: "inventory_deleted_at_idx_custom_v2")
+model AssetLoan {
+  id             String @id @default(uuid())
+  organizationId String
+  assetId        String
+  employeeId     String
+
+  loanDate         DateTime  @default(now())
+  returnDate       DateTime?
+  actualReturnDate DateTime?
+
+  status String  @db.Char(50) // ACTIVE, RETURNED
+  notes  String? @db.Text
+
+  asset    Asset    @relation(fields: [assetId], references: [id_barang])
+  employee Karyawan @relation(fields: [employeeId], references: [id_karyawan])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId], map: "asset_loan_org_idx")
+  @@map("asset_loan")
+}
+
+model AssetMaintenance {
+  id             String @id @default(uuid())
+  organizationId String
+  assetId        String
+
+  maintenanceDate DateTime
+  type            String // PREVENTIVE, REPAIR
+  provider        String?
+  cost            Decimal  @db.Decimal(15, 2)
+  description     String?  @db.Text
+  status          String // SCHEDULED, COMPLETED
+
+  asset Asset @relation(fields: [assetId], references: [id_barang])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId], map: "asset_maintenance_org_idx")
+  @@map("asset_maintenance")
+}
+
+// ==========================================
+// INVENTORY CONTROL (Supply Elements)
+// ==========================================
+
+model ItemCategory {
+  id             String @id @default(uuid())
+  organizationId String
+
+  name        String  @db.Text
+  description String? @db.Text
+
+  items Item[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, name(length: 191)], map: "item_category_org_name_unique")
+  @@map("item_category")
+}
+
+model Item {
+  id             String @id @default(uuid())
+  organizationId String
+
+  code     String  @db.Char(50)
+  name     String  @db.Text
+  category String?
+  unit     String  @db.Char(20) // PCS, BOX
+  minStock Int     @default(0)
+
+  description String? @db.Text
+  image       String? @db.Text
+
+  categoryId   String?
+  itemCategory ItemCategory? @relation(fields: [categoryId], references: [id])
+
+  stocks           Stock[]
+  requisitionItems RequisitionItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, code], map: "item_org_code_unique")
+  @@map("item")
+}
+
+model Warehouse {
+  id             String @id @default(uuid())
+  organizationId String
+
+  name     String  @db.Text
+  location String? @db.Text
+
+  stocks Stock[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("warehouse")
+}
+
+model Stock {
+  id          String @id @default(uuid())
+  warehouseId String
+  itemId      String
+  quantity    Int    @default(0)
+
+  item      Item      @relation(fields: [itemId], references: [id])
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([warehouseId, itemId], map: "stock_warehouse_item_unique")
+  @@map("stock")
+}
+
+model Requisition {
+  id             String @id @default(uuid())
+  organizationId String
+  requesterId    String
+
+  date    DateTime @default(now())
+  status  String   @default("PENDING") // PENDING, APPROVED, REJECTED, COMPLETED
+  remarks String?  @db.Text
+
+  requester Karyawan          @relation(fields: [requesterId], references: [id_karyawan])
+  items     RequisitionItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("requisition")
+}
+
+model RequisitionItem {
+  id            String @id @default(uuid())
+  requisitionId String
+  itemId        String
+  quantity      Int
+
+  requisition Requisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  item        Item        @relation(fields: [itemId], references: [id])
+
+  @@map("requisition_item")
 }
 
 model OrganizationRole {
@@ -302,26 +469,49 @@ model OrganizationRole {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime?    @updatedAt
 
-  @@index([role(length: 191)], map: "organizationRole_role_idx_custom_v2")
+  @@index([role(length: 191)], map: "organizationRole_role_idx_custom_v9")
   @@map("organizationRole")
 }
 
 model Team {
-  id_team         String @id @default(uuid())
-  organization_id String
-  divisi_id       String
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  kode_team  String  @db.Text
-  nama_team  String  @db.Text
+  name String
+
+  // Custom fields
+  divisi_id String?
+  divisi    Divisi? @relation(fields: [divisi_id], references: [id_divisi], onDelete: SetNull)
+
+  kode_team  String? @db.Text
   keterangan String? @db.Text
 
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deleted_at DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  divisi       Divisi       @relation(fields: [divisi_id], references: [id_divisi], onDelete: Restrict)
+  members     TeamMember[]
+  invitations Invitation[]
 
-  @@index([organization_id, divisi_id])
-  @@index([deleted_at])
+  @@index([organizationId], map: "team_organizationId_idx")
+  @@index([divisi_id], map: "team_divisi_id_idx")
+  @@map("team")
+}
+
+model TeamMember {
+  id     String @id
+  teamId String
+  userId String
+  role   String @default("member")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId], map: "teamMember_team_user_unique")
+  @@index([teamId], map: "teamMember_teamId_idx")
+  @@index([userId], map: "teamMember_userId_idx")
+  @@map("teamMember")
 }

@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
@@ -60,7 +60,7 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
-  @@index([userId(length: 191)], map: "session_userId_idx_custom_v10")
+  @@index([userId(length: 191)], map: "session_userId_idx_custom_v11")
   @@map("session")
 }
 
@@ -259,6 +259,22 @@ model Karyawan {
 // ASSET MANAGEMENT (Fixed Assets)
 // ==========================================
 
+model AssetCategory {
+  id             String @id @default(uuid())
+  organizationId String
+
+  name        String  @db.Text
+  description String? @db.Text
+
+  assets Asset[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, name(length: 191)], map: "asset_category_org_name_unique")
+  @@map("asset_category")
+}
+
 model Asset {
   id_barang String @id @default(uuid())
 
@@ -290,6 +306,9 @@ model Asset {
   gambar      String? @db.Text
   expand_data Json?
   keterangan  String? @db.Text
+
+  categoryId    String?
+  assetCategory AssetCategory? @relation(fields: [categoryId], references: [id])
 
   status String @default("AVAILABLE") // AVAILABLE, IN_USE, MAINTENANCE, DISPOSED
 
@@ -393,8 +412,9 @@ model Item {
   stocks           Stock[]
   requisitionItems RequisitionItem[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  stockAdjustmentItems StockAdjustmentItem[]
 
   @@unique([organizationId, code], map: "item_org_code_unique")
   @@map("item")
@@ -409,8 +429,10 @@ model Warehouse {
 
   stocks Stock[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  stockAdjustments StockAdjustment[]
+  requisitions     Requisition[]
 
   @@map("warehouse")
 }
@@ -430,17 +452,64 @@ model Stock {
   @@map("stock")
 }
 
+model StockAdjustment {
+  id             String @id @default(uuid())
+  organizationId String
+  warehouseId    String
+
+  date      DateTime @default(now())
+  reason    String   @db.Text
+  reference String?  @db.Text
+  status    String   @default("COMPLETED") // COMPLETED, DRAFT
+
+  warehouse Warehouse             @relation(fields: [warehouseId], references: [id])
+  items     StockAdjustmentItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("stock_adjustment")
+}
+
+model StockAdjustmentItem {
+  id                String @id @default(uuid())
+  stockAdjustmentId String
+  itemId            String
+
+  quantityChange Int // Positive to add, Negative to deduct
+  currentStock   Int // Snapshot of stock BEFORE change
+  remarks        String? @db.Text
+
+  stockAdjustment StockAdjustment @relation(fields: [stockAdjustmentId], references: [id], onDelete: Cascade)
+  item            Item            @relation(fields: [itemId], references: [id])
+
+  @@map("stock_adjustment_item")
+}
+
 model Requisition {
   id             String @id @default(uuid())
   organizationId String
   requesterId    String
 
   date    DateTime @default(now())
-  status  String   @default("PENDING") // PENDING, APPROVED, REJECTED, COMPLETED
+  status  String   @default("PENDING_SUPERVISOR") // PENDING_SUPERVISOR, PENDING_FA, PENDING_GM, PENDING_WAREHOUSE, COMPLETED, REJECTED
   remarks String?  @db.Text
 
   requester Karyawan          @relation(fields: [requesterId], references: [id_karyawan])
   items     RequisitionItem[]
+
+  warehouseId String?
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+
+  // Approval Workflow Tracking
+  supervisorAckBy String? // Stores User ID or Name
+  supervisorAckAt DateTime?
+
+  faManagerAckBy String?
+  faManagerAckAt DateTime?
+
+  gmApprovedBy String?
+  gmApprovedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

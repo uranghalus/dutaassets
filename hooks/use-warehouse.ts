@@ -113,3 +113,13 @@ export function useDeleteWarehouseBulk() {
     },
   });
 }
+
+/* =======================
+   GET ALL (NO PAGINATION)
+======================= */
+export function useAllWarehouses() {
+  return useQuery({
+    queryKey: ['warehouses', 'all'],
+    queryFn: () => getWarehouses({ page: 0, pageSize: 1000 }),
+  });
+}

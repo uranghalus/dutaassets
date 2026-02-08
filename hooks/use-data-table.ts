@@ -16,7 +16,7 @@ type UseDataTableProps<TData> = {
   data: TData[];
   columns: ColumnDef<TData, any>[];
   pageCount: number;
-  columnResizeMode: any;
+  columnResizeMode?: any;
   columnResizeDirection?: any;
   pagination: {
     pageIndex: number;

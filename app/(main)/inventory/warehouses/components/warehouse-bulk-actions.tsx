@@ -23,7 +23,7 @@ import {
 
 import { DataTableBulkActions } from "@/components/datatable/datatable-bulk-action"; // Changed from -actions to -action
 import { useDeleteWarehouseBulk } from "@/hooks/use-warehouse";
-import { Warehouse } from "@prisma/client";
+import { Warehouse } from "@/generated/prisma/client";
 
 interface WarehouseBulkActionsProps<TData> {
   table: Table<TData>;
@@ -50,11 +50,11 @@ export function WarehouseBulkActions<TData>({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DataTableBulkActions table={table}>
+      <DataTableBulkActions table={table} entityName="Warehouses">
         <DialogTrigger asChild>
           <Button
-            variant="ghost text-destructive hover:text-destructive hover:bg-destructive/10"
-            className="w-full justify-start"
+            variant="ghost"
+            className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
           >
             Delete Selected
           </Button>

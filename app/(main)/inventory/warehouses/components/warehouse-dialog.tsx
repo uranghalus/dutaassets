@@ -4,7 +4,7 @@
 import { useDialog } from "@/context/dialog-provider";
 import { WarehouseActionDialog } from "./warehouse-action-dialog";
 import { WarehouseDeleteDialog } from "./warehouse-delete-dialog";
-import { Warehouse } from "@prisma/client";
+import { Warehouse } from "@/generated/prisma/client";
 
 export default function WarehouseDialogs() {
   const { currentRow, open, setCurrentRow, setOpen } = useDialog();
@@ -32,15 +32,7 @@ export default function WarehouseDialogs() {
           />
 
           {/* DELETE */}
-          <WarehouseDeleteDialog
-            key={`warehouse-delete-${(currentRow as Warehouse).id}`}
-            open={open === "delete"}
-            currentRow={currentRow as Warehouse}
-            onOpenChange={() => {
-              setOpen("delete");
-              setCurrentRow(undefined);
-            }}
-          />
+          <WarehouseDeleteDialog />
         </>
       )}
     </>

@@ -113,3 +113,13 @@ export function useDeleteItemBulk() {
     },
   });
 }
+
+/* =======================
+   GET ALL (NO PAGINATION)
+======================= */
+export function useAllItems() {
+  return useQuery({
+    queryKey: ['items', 'all'],
+    queryFn: () => getItems({ page: 0, pageSize: 1000 }),
+  });
+}

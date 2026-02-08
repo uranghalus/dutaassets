@@ -72,7 +72,7 @@ export const sidebarData: SidebarData = {
         },
         {
           title: 'Kategori Aset',
-          url: '/asset-categories',
+          url: '/assets/categories',
           icon: Tags,
         },
         {
@@ -127,7 +127,7 @@ export const sidebarData: SidebarData = {
           items: [
             {
               title: 'Permintaan Barang',
-              url: '/inventory/requisition',
+              url: '/inventory/requisitions',
             },
             {
               title: 'Persetujuan Permintaan',

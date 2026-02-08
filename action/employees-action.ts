@@ -50,7 +50,7 @@ export async function getEmployees({ page, pageSize }: EmployeeArgs) {
         userId: true, // 🔗 untuk sync user
         divisi_fk: {
           include: {
-            department_fk: true,
+            department: true,
           },
         },
         createdAt: true,

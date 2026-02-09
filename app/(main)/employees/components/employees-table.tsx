@@ -48,7 +48,7 @@ export function EmployeeTable() {
             columnId: "divisi", // ✅ HARUS SAMA
             title: "Divisi",
             options: divisions.map((div) => ({
-              label: div.nama_divisi,
+              label: `${div.nama_divisi} (${div.department?.nama_department ?? "-"})`,
               value: div.nama_divisi, // ✅ MATCH accessorFn
             })),
           },

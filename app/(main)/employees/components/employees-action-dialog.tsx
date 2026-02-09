@@ -1,519 +1,658 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react";
+import { format } from "date-fns";
 
-import { Button } from '@/components/ui/button'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from '@/components/ui/command'
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
 
-import { Karyawan } from '@/generated/prisma/client'
-import { EmployeeForm, employeeFormSchema } from '@/schema/employee-schema'
-import { useCreateEmployee, useUpdateEmployee } from '@/hooks/use-employee'
-import { useDivisionOptions } from '@/hooks/use-divisions'
-import { formatPhone } from '@/lib/utils'
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+
+import { Karyawan } from "@/generated/prisma/client";
+import { EmployeeForm, employeeFormSchema } from "@/schema/employee-schema";
+import { useCreateEmployee, useUpdateEmployee } from "@/hooks/use-employee";
+import { useDivisionOptions } from "@/hooks/use-divisions";
+import { formatPhone } from "@/lib/utils";
 
 type Props = {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    currentRow?: Karyawan
-}
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  currentRow?: Karyawan;
+};
 
 type DivisionOption = {
-    id_divisi: string
-    nama_divisi: string
-}
+  id_divisi: string;
+  nama_divisi: string;
+  department: {
+    nama_department: string;
+  } | null;
+};
 // LINK status_karyawan
-const EMPLOYEE_STATUSES = [
-    'Aktif',
-    'Kontrak',
-    'Magang',
-    'Nonaktif',
-]
+const EMPLOYEE_STATUSES = ["Aktif", "Kontrak", "Magang", "Nonaktif"];
 // LINK jabatan
 const JOB_TITLES = [
-    'Staff',
-    'Supervisor',
-    'Koordinator',
-    'Asisten Manager',
-    'Manager',
-    'Senior Manager',
-    'Head of Department',
-    'Direktur',
-]
+  "Staff",
+  "Supervisor",
+  "Koordinator",
+  "Asisten Manager",
+  "Manager",
+  "Senior Manager",
+  "Head of Department",
+  "Direktur",
+];
 export function EmployeeActionDialog({
-    open,
-    onOpenChange,
-    currentRow,
+  open,
+  onOpenChange,
+  currentRow,
 }: Props) {
-    const isEdit = !!currentRow
+  const isEdit = !!currentRow;
 
-    const createMutation = useCreateEmployee()
-    const updateMutation = useUpdateEmployee()
-    const [openStatus, setOpenStatus] = useState(false)
-    const [openJob, setOpenJob] = useState(false)
+  const createMutation = useCreateEmployee();
+  const updateMutation = useUpdateEmployee();
+  const [openStatus, setOpenStatus] = useState(false);
+  const [openJob, setOpenJob] = useState(false);
 
-    const form = useForm<EmployeeForm>({
-        resolver: zodResolver(employeeFormSchema),
-        defaultValues: {
-            nik: currentRow?.nik ?? '',
-            nama: currentRow?.nama ?? '',
-            nama_alias: currentRow?.nama_alias ?? '',
-            alamat: currentRow?.alamat ?? '',
-            no_ktp: currentRow?.no_ktp ?? '',
-            telp: currentRow?.telp ?? '',
-            divisi_id: currentRow?.divisi_id ?? '',
-            jabatan: currentRow?.jabatan ?? '',
-            call_sign: currentRow?.call_sign ?? '',
-            status_karyawan: currentRow?.status_karyawan ?? '',
-            keterangan: currentRow?.keterangan ?? '',
-            isEdit,
-        },
-    })
+  const form = useForm<EmployeeForm>({
+    resolver: zodResolver(employeeFormSchema),
+    defaultValues: {
+      nik: currentRow?.nik ?? "",
+      nama: currentRow?.nama ?? "",
+      nama_alias: currentRow?.nama_alias ?? "",
+      alamat: currentRow?.alamat ?? "",
+      no_ktp: currentRow?.no_ktp ?? "",
+      telp: currentRow?.telp ?? "",
+      divisi_id: currentRow?.divisi_id ?? "",
+      jabatan: currentRow?.jabatan ?? "",
+      call_sign: currentRow?.call_sign ?? "",
+      status_karyawan: currentRow?.status_karyawan ?? "",
+      keterangan: currentRow?.keterangan ?? "",
+      tempat_lahir: currentRow?.tempat_lahir ?? "",
+      tgl_lahir: currentRow?.tgl_lahir
+        ? new Date(currentRow.tgl_lahir)
+        : undefined,
+      tgl_masuk: currentRow?.tgl_masuk
+        ? new Date(currentRow.tgl_masuk)
+        : undefined,
+      foto: currentRow?.foto ?? "",
+      isEdit,
+    },
+  });
 
-    const {
-        data: divisions = [],
-        isLoading: isLoadingDivision,
-    } = useDivisionOptions()
+  const { data: divisions = [], isLoading: isLoadingDivision } =
+    useDivisionOptions();
 
-    const [openDiv, setOpenDiv] = useState(false)
+  const [openDiv, setOpenDiv] = useState(false);
 
-    useEffect(() => {
-        if (open) {
-            form.reset({
-                nik: currentRow?.nik ?? '',
-                nama: currentRow?.nama ?? '',
-                nama_alias: currentRow?.nama_alias ?? '',
-                alamat: currentRow?.alamat ?? '',
-                no_ktp: currentRow?.no_ktp ?? '',
-                telp: currentRow?.telp ?? '',
-                divisi_id: currentRow?.divisi_id ?? '',
-                jabatan: currentRow?.jabatan ?? '',
-                call_sign: currentRow?.call_sign ?? '',
-                status_karyawan: currentRow?.status_karyawan ?? '',
-                keterangan: currentRow?.keterangan ?? '',
-                isEdit,
-            })
-        }
-    }, [open, currentRow, isEdit, form])
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        nik: currentRow?.nik ?? "",
+        nama: currentRow?.nama ?? "",
+        nama_alias: currentRow?.nama_alias ?? "",
+        alamat: currentRow?.alamat ?? "",
+        no_ktp: currentRow?.no_ktp ?? "",
+        telp: currentRow?.telp ?? "",
+        divisi_id: currentRow?.divisi_id ?? "",
+        jabatan: currentRow?.jabatan ?? "",
+        call_sign: currentRow?.call_sign ?? "",
+        status_karyawan: currentRow?.status_karyawan ?? "",
+        keterangan: currentRow?.keterangan ?? "",
+        tempat_lahir: currentRow?.tempat_lahir ?? "",
+        tgl_lahir: currentRow?.tgl_lahir
+          ? new Date(currentRow.tgl_lahir)
+          : undefined,
+        tgl_masuk: currentRow?.tgl_masuk
+          ? new Date(currentRow.tgl_masuk)
+          : undefined,
+        foto: currentRow?.foto ?? "",
+        isEdit,
+      });
+    }
+  }, [open, currentRow, isEdit, form]);
 
-    const isPending =
-        createMutation.isPending || updateMutation.isPending
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
-    const onSubmit = async (values: EmployeeForm) => {
-        const formData = new FormData()
+  const onSubmit = async (values: EmployeeForm) => {
+    const formData = new FormData();
 
-        Object.entries(values).forEach(([key, value]) => {
-            if (key !== 'isEdit' && value !== undefined) {
-                formData.append(key, value as string)
-            }
-        })
-
-        if (isEdit && currentRow) {
-            await updateMutation.mutateAsync({
-                employeeId: currentRow.id_karyawan,
-                formData,
-            })
+    Object.entries(values).forEach(([key, value]) => {
+      if (key !== "isEdit" && value !== undefined) {
+        // Handle Date objects for tgl_lahir and tgl_masuk
+        if (value instanceof Date) {
+          formData.append(key, value.toISOString()); // Convert Date to ISO string
         } else {
-            await createMutation.mutateAsync(formData)
+          formData.append(key, value as string);
         }
+      }
+    });
 
-        form.reset()
-        onOpenChange(false)
+    if (isEdit && currentRow) {
+      await updateMutation.mutateAsync({
+        employeeId: currentRow.id_karyawan,
+        formData,
+      });
+    } else {
+      await createMutation.mutateAsync(formData);
     }
 
-    return (
-        <Dialog
-            open={open}
-            onOpenChange={(state) => {
-                if (!state) form.reset()
-                onOpenChange(state)
-            }}
-        >
-            <DialogContent className="sm:max-w-xl">
-                <DialogHeader>
-                    <DialogTitle>
-                        {isEdit ? 'Edit Karyawan' : 'Add Karyawan'}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {isEdit
-                            ? 'Update employee data.'
-                            : 'Create a new employee.'}
-                    </DialogDescription>
-                </DialogHeader>
+    form.reset();
+    onOpenChange(false);
+  };
 
-                <Form {...form}>
-                    <form
-                        id="employee-form"
-                        onSubmit={form.handleSubmit(onSubmit)}
-                        className="grid grid-cols-2 gap-4"
-                    >
-                        {/* =========================
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(state) => {
+        if (!state) form.reset();
+        onOpenChange(state);
+      }}
+    >
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{isEdit ? "Edit Karyawan" : "Add Karyawan"}</DialogTitle>
+          <DialogDescription>
+            {isEdit ? "Update employee data." : "Create a new employee."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form
+            id="employee-form"
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="grid grid-cols-2 gap-4"
+          >
+            {/* =========================
                 DIVISI
             ========================= */}
-                        <FormField
-                            control={form.control}
-                            name="divisi_id"
-                            render={({ field }) => (
-                                <FormItem className="col-span-2 flex flex-col">
-                                    <FormLabel>Divisi</FormLabel>
+            <FormField
+              control={form.control}
+              name="divisi_id"
+              render={({ field }) => (
+                <FormItem className="col-span-2 flex flex-col">
+                  <FormLabel>Divisi</FormLabel>
 
-                                    <Popover
-                                        open={openDiv}
-                                        onOpenChange={setOpenDiv}
-                                    >
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                disabled={isLoadingDivision}
-                                                className="justify-between"
-                                            >
-                                                {field.value
-                                                    ? divisions.find(
-                                                        (d: DivisionOption) =>
-                                                            d.id_divisi === field.value
-                                                    )?.nama_divisi
-                                                    : 'Pilih divisi'}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
+                  <Popover open={openDiv} onOpenChange={setOpenDiv}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        disabled={isLoadingDivision}
+                        className="justify-between"
+                      >
+                        {field.value
+                          ? (() => {
+                              const div = divisions.find(
+                                (d: DivisionOption) =>
+                                  d.id_divisi === field.value,
+                              );
+                              return div
+                                ? `${div.nama_divisi} (${
+                                    div.department?.nama_department ?? "-"
+                                  })`
+                                : "Pilih divisi";
+                            })()
+                          : "Pilih divisi"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
 
-                                        <PopoverContent className="p-0">
-                                            <Command>
-                                                <CommandInput placeholder="Search divisi..." />
-                                                <CommandList>
-                                                    <CommandEmpty>
-                                                        Divisi tidak ditemukan.
-                                                    </CommandEmpty>
-                                                    <CommandGroup>
-                                                        {divisions.map(
-                                                            (div: DivisionOption) => (
-                                                                <CommandItem
-                                                                    key={div.id_divisi}
-                                                                    value={div.nama_divisi}
-                                                                    onSelect={() => {
-                                                                        field.onChange(div.id_divisi)
-                                                                        setOpenDiv(false)
-                                                                    }}
-                                                                >
-                                                                    {div.nama_divisi}
-                                                                    <Check
-                                                                        className={`ml-auto h-4 w-4 ${field.value === div.id_divisi
-                                                                            ? 'opacity-100'
-                                                                            : 'opacity-0'
-                                                                            }`}
-                                                                    />
-                                                                </CommandItem>
-                                                            )
-                                                        )}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                    <PopoverContent className="p-0">
+                      <Command>
+                        <CommandInput placeholder="Search divisi..." />
+                        <CommandList>
+                          <CommandEmpty>Divisi tidak ditemukan.</CommandEmpty>
+                          <CommandGroup>
+                            {divisions.map((div: DivisionOption) => (
+                              <CommandItem
+                                key={div.id_divisi}
+                                value={div.nama_divisi}
+                                onSelect={() => {
+                                  field.onChange(div.id_divisi);
+                                  setOpenDiv(false);
+                                }}
+                              >
+                                {div.nama_divisi}{" "}
+                                <span className="text-muted-foreground text-xs">
+                                  ({div.department?.nama_department ?? "-"})
+                                </span>
+                                <Check
+                                  className={`ml-auto h-4 w-4 ${
+                                    field.value === div.id_divisi
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  }`}
+                                />
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
 
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                        {/* =========================
+            {/* =========================
                 NIK
             ========================= */}
-                        <FormField
-                            control={form.control}
-                            name="nik"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>NIK</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+            <FormField
+              control={form.control}
+              name="nik"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>NIK</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                        {/* =========================
+            {/* =========================
                 NO KTP
             ========================= */}
-                        <FormField
-                            control={form.control}
-                            name="no_ktp"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>No KTP</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} maxLength={16} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+            <FormField
+              control={form.control}
+              name="no_ktp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>No KTP</FormLabel>
+                  <FormControl>
+                    <Input {...field} maxLength={16} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                        {/* =========================
+            {/* =========================
                 NAMA
             ========================= */}
-                        <FormField
-                            control={form.control}
-                            name="nama"
-                            render={({ field }) => (
-                                <FormItem className="col-span-2">
-                                    <FormLabel>Nama</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+            <FormField
+              control={form.control}
+              name="nama"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nama</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                        {/* =========================
+            {/* =========================
+                NAMA ALIAS
+            ========================= */}
+            <FormField
+              control={form.control}
+              name="nama_alias"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nama Alias</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="(Optional)" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* =========================
+                FOTO PROFILE
+            ========================= */}
+            <FormField
+              control={form.control}
+              name="foto"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Foto Profile (URL)</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="https://..." />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* =========================
                 ALAMAT
             ========================= */}
-                        <FormField
-                            control={form.control}
-                            name="alamat"
-                            render={({ field }) => (
-                                <FormItem className="col-span-2">
-                                    <FormLabel>Alamat</FormLabel>
-                                    <FormControl>
-                                        <Textarea {...field} />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                        {/* =========================
+            <FormField
+              control={form.control}
+              name="alamat"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Alamat</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* =========================
+                TEMPAT & TGL LAHIR
+            ========================= */}
+            <FormField
+              control={form.control}
+              name="tempat_lahir"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tempat Lahir</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="tgl_lahir"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Tgl Lahir</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground",
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* =========================
     TELEPON
 ========================= */}
-                        <FormField
-                            control={form.control}
-                            name="telp"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>No. Telepon</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="0812-3456-789"
-                                            value={field.value ?? ''}
-                                            onChange={(e) =>
-                                                field.onChange(
-                                                    formatPhone(e.target.value)
-                                                )
-                                            }
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+            <FormField
+              control={form.control}
+              name="telp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>No. Telepon</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="0812-3456-789"
+                      value={field.value ?? ""}
+                      onChange={(e) =>
+                        field.onChange(formatPhone(e.target.value))
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                        {/* =========================
+            {/* =========================
     JABATAN
 ========================= */}
-                        <FormField
-                            control={form.control}
-                            name="jabatan"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>Jabatan</FormLabel>
+            <FormField
+              control={form.control}
+              name="jabatan"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Jabatan</FormLabel>
 
-                                    <Popover
-                                        open={openJob}
-                                        onOpenChange={setOpenJob}
-                                    >
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                className="justify-between"
-                                            >
-                                                {field.value || 'Pilih jabatan'}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
+                  <Popover open={openJob} onOpenChange={setOpenJob}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className="justify-between"
+                      >
+                        {field.value || "Pilih jabatan"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
 
-                                        <PopoverContent className="p-0">
-                                            <Command>
-                                                <CommandInput placeholder="Cari jabatan..." />
-                                                <CommandList>
-                                                    <CommandEmpty>
-                                                        Jabatan tidak ditemukan.
-                                                    </CommandEmpty>
+                    <PopoverContent className="p-0">
+                      <Command>
+                        <CommandInput placeholder="Cari jabatan..." />
+                        <CommandList>
+                          <CommandEmpty>Jabatan tidak ditemukan.</CommandEmpty>
 
-                                                    <CommandGroup>
-                                                        {JOB_TITLES.map((job) => (
-                                                            <CommandItem
-                                                                key={job}
-                                                                value={job}
-                                                                onSelect={() => {
-                                                                    field.onChange(job)
-                                                                    setOpenJob(false)
-                                                                }}
-                                                            >
-                                                                {job}
-                                                                <Check
-                                                                    className={`ml-auto h-4 w-4 ${field.value === job
-                                                                        ? 'opacity-100'
-                                                                        : 'opacity-0'
-                                                                        }`}
-                                                                />
-                                                            </CommandItem>
-                                                        ))}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                          <CommandGroup>
+                            {JOB_TITLES.map((job) => (
+                              <CommandItem
+                                key={job}
+                                value={job}
+                                onSelect={() => {
+                                  field.onChange(job);
+                                  setOpenJob(false);
+                                }}
+                              >
+                                {job}
+                                <Check
+                                  className={`ml-auto h-4 w-4 ${
+                                    field.value === job
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  }`}
+                                />
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </FormItem>
+              )}
+            />
 
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+            {/* =========================
+                TGL MASUK
+            ========================= */}
+            <FormField
+              control={form.control}
+              name="tgl_masuk"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Tanggal Masuk</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground",
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-
-                        {/* =========================
+            {/* =========================
     CALL SIGN
 ========================= */}
-                        <FormField
-                            control={form.control}
-                            name="call_sign"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Call Sign</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Radio / ID internal" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+            <FormField
+              control={form.control}
+              name="call_sign"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Call Sign</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Radio / ID internal" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                        {/* =========================
+            {/* =========================
     STATUS KARYAWAN
 ========================= */}
-                        <FormField
-                            control={form.control}
-                            name="status_karyawan"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>Status Karyawan</FormLabel>
+            <FormField
+              control={form.control}
+              name="status_karyawan"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Status Karyawan</FormLabel>
 
-                                    <Popover
-                                        open={openStatus}
-                                        onOpenChange={setOpenStatus}
-                                    >
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                className="justify-between"
-                                            >
-                                                {field.value || 'Pilih status'}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
+                  <Popover open={openStatus} onOpenChange={setOpenStatus}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className="justify-between"
+                      >
+                        {field.value || "Pilih status"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
 
-                                        <PopoverContent className="p-0">
-                                            <Command>
-                                                <CommandInput placeholder="Cari status..." />
-                                                <CommandList>
-                                                    <CommandEmpty>
-                                                        Status tidak ditemukan.
-                                                    </CommandEmpty>
+                    <PopoverContent className="p-0">
+                      <Command>
+                        <CommandInput placeholder="Cari status..." />
+                        <CommandList>
+                          <CommandEmpty>Status tidak ditemukan.</CommandEmpty>
 
-                                                    <CommandGroup>
-                                                        {EMPLOYEE_STATUSES.map((status) => (
-                                                            <CommandItem
-                                                                key={status}
-                                                                value={status}
-                                                                onSelect={() => {
-                                                                    field.onChange(status)
-                                                                    setOpenStatus(false)
-                                                                }}
-                                                            >
-                                                                {status}
-                                                                <Check
-                                                                    className={`ml-auto h-4 w-4 ${field.value === status
-                                                                        ? 'opacity-100'
-                                                                        : 'opacity-0'
-                                                                        }`}
-                                                                />
-                                                            </CommandItem>
-                                                        ))}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                          <CommandGroup>
+                            {EMPLOYEE_STATUSES.map((status) => (
+                              <CommandItem
+                                key={status}
+                                value={status}
+                                onSelect={() => {
+                                  field.onChange(status);
+                                  setOpenStatus(false);
+                                }}
+                              >
+                                {status}
+                                <Check
+                                  className={`ml-auto h-4 w-4 ${
+                                    field.value === status
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  }`}
+                                />
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
 
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-
-                        {/* =========================
+            {/* =========================
     KETERANGAN
 ========================= */}
-                        <FormField
-                            control={form.control}
-                            name="keterangan"
-                            render={({ field }) => (
-                                <FormItem className="col-span-2">
-                                    <FormLabel>Keterangan</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder="Catatan tambahan"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </form>
-                </Form>
+            <FormField
+              control={form.control}
+              name="keterangan"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Keterangan</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Catatan tambahan" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
 
-                <DialogFooter>
-                    <Button
-                        type="submit"
-                        form="employee-form"
-                        disabled={isPending}
-                    >
-                        {isPending ? 'Saving...' : 'Save'}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
+        <DialogFooter>
+          <Button type="submit" form="employee-form" disabled={isPending}>
+            {isPending ? "Saving..." : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

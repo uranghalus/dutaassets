@@ -36,6 +36,18 @@ export const employeeFormSchema = z.object({
   keterangan: z.string().optional(),
 
   /** =========================
+   *  PERSONAL DETAILS
+   *  ========================= */
+  tempat_lahir: z.string().optional(),
+  tgl_lahir: z.date().optional(),
+  foto: z.string().optional(),
+
+  /** =========================
+   *  EMPLOYMENT DETAILS
+   *  ========================= */
+  tgl_masuk: z.date().optional(),
+
+  /** =========================
    *  INTERNAL
    *  ========================= */
   isEdit: z.boolean().optional(),

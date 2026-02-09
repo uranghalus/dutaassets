@@ -1,19 +1,16 @@
 import { z } from 'zod';
 
 export const userFormSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email address'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .optional()
-    .or(z.literal('')), 
+  username: z.string().min(3, 'Username must be at least 3 characters'),
+  name: z.string().optional(),
+  email: z.string().optional(),
+  password: z.string().optional(),
   role: z.string().min(1, 'Role is required'),
   isBanned: z.boolean().optional(),
   banReason: z.string().optional(),
   
-  // Custom field for linking employee
-  employeeId: z.string().optional(),
+  // Link to Employee is now central
+  employeeId: z.string().min(1, 'Employee is required'),
   
   isEdit: z.boolean().optional(),
 });

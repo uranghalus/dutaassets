@@ -72,24 +72,46 @@ export async function getUsers({ page, pageSize, search }: UserArgs) {
    CREATE
 ======================= */
 export async function createUser(formData: FormData) {
-  const name = formData.get('name')?.toString();
-  const email = formData.get('email')?.toString();
-  const password = formData.get('password')?.toString();
+  const username = formData.get('username')?.toString();
   const role = formData.get('role')?.toString();
   const employeeId = formData.get('employeeId')?.toString();
 
-  if (!name || !email || !password || !role) {
-    throw new Error('Missing required fields');
+  if (!username || !role || !employeeId) {
+    throw new Error('Missing required fields: Username, Role, and Employee are required.');
   }
 
-  // 1. Create User via Better Auth
+  // 1. Fetch Employee Data
+  const employee = await prisma.karyawan.findUnique({
+    where: { id_karyawan: employeeId },
+  });
+
+  if (!employee) {
+    throw new Error('Employee not found');
+  }
+
+  // 2. Generate Unique Email
+  let email = `${username}@dutaverse.com`;
+  let finalUsername = username;
+  let counter = 1;
+
+  // Check for duplicates and generate alternative
+  while (await prisma.user.findFirst({ where: { email } })) {
+    finalUsername = `${username}${counter}`;
+    email = `${finalUsername}@dutaverse.com`;
+    counter++;
+  }
+
+  // 3. Prepare User Data
+  const name = employee.nama;
+  const password = employee.no_ktp; // Use KTP as initial password
+
+  // 4. Create User via Better Auth
   const newUser = await auth.api.createUser({
     body: {
       name,
       email,
       password,
-      role: role as "user" | "admin", // Type Cast
-
+      role: role as "user" | "admin",
     },
     headers: await headers(),
   });
@@ -98,20 +120,20 @@ export async function createUser(formData: FormData) {
     throw new Error('Failed to create user');
   }
 
-
-  // 1.5 Manually verify email (since we can't pass it to createUser)
+  // 5. Post-creation updates (Verify email, set username, link employee)
   await prisma.user.update({
     where: { id: newUser.user.id },
-    data: { emailVerified: true },
+    data: { 
+        emailVerified: true,
+        username: finalUsername
+    },
   });
 
-  // 2. Link Employee if selected
-  if (employeeId) {
-    await prisma.karyawan.update({
-      where: { id_karyawan: employeeId },
-      data: { userId: newUser.user.id },
-    });
-  }
+  // Link Employee
+  await prisma.karyawan.update({
+    where: { id_karyawan: employeeId },
+    data: { userId: newUser.user.id },
+  });
 
   revalidatePath('/users');
   return newUser;
@@ -121,17 +143,40 @@ export async function createUser(formData: FormData) {
    UPDATE
 ======================= */
 export async function updateUser(userId: string, formData: FormData) {
-  const name = formData.get('name')?.toString();
-  const email = formData.get('email')?.toString();
+  const username = formData.get('username')?.toString();
   const role = formData.get('role')?.toString();
   const employeeId = formData.get('employeeId')?.toString();
+  const password = formData.get('password')?.toString();
 
   const updateData: any = {};
-  if (name) updateData.name = name;
-  if (email) updateData.email = email;
   if (role) updateData.role = role;
 
-  // 1. Update User via Better Auth
+  // 1. Handle Username / Email Update
+  let finalUsername = username;
+  if (username) {
+      // Check if username is different from current? Use simple logic: update if provided.
+      // Generate email
+      let email = `${username}@dutaverse.com`;
+      
+      // Check uniqueness is tricky on update without current user context, 
+      // but let's assume if it fails, it fails.
+      // Or we can query current user.
+      const currentUser = await prisma.user.findUnique({ where: { id: userId } });
+      if (currentUser?.username !== username) {
+           // check if email taken
+           const existing = await prisma.user.findFirst({
+               where: { email, id: { not: userId } }
+           });
+           if (existing) {
+               throw new Error("Username already taken");
+           }
+           updateData.email = email;
+      } else {
+          finalUsername = undefined; // No change
+      }
+  }
+
+  // 2. Update User via Better Auth
   await auth.api.adminUpdateUser({
     body: {
       userId,
@@ -140,26 +185,31 @@ export async function updateUser(userId: string, formData: FormData) {
     headers: await headers(),
   });
   
-  const password = formData.get('password')?.toString();
+  // Update Prisma-only fields (username)
+  if (finalUsername) {
+      await prisma.user.update({
+          where: { id: userId },
+          data: { username: finalUsername }
+      });
+  }
+
+  // Update Password if provided
   if (password) {
-      // Use setUserPassword as suggested by linter (available in recent Better Auth versions)
       await auth.api.setUserPassword({
           body: {
               userId,
               newPassword: password,
           },
           headers: await headers()
-      })
+      });
   }
 
-  // 2. Handle Employee Link Update
-  // Check current link
+  // 3. Handle Employee Link Update and Name Sync
   const currentLink = await prisma.karyawan.findFirst({
     where: { userId },
   });
 
   if (employeeId) {
-    // If different employee selected
     if (currentLink?.id_karyawan !== employeeId) {
       // Unlink old
       if (currentLink) {
@@ -168,11 +218,25 @@ export async function updateUser(userId: string, formData: FormData) {
             data: { userId: null }
         });
       }
-      // Link new
-      await prisma.karyawan.update({
-        where: { id_karyawan: employeeId },
-        data: { userId },
+      
+      // Fetch new employee
+      const newEmployee = await prisma.karyawan.findUnique({
+          where: { id_karyawan: employeeId }
       });
+
+      if (newEmployee) {
+        // Link new
+        await prisma.karyawan.update({
+            where: { id_karyawan: employeeId },
+            data: { userId },
+        });
+
+        // Sync Name to User
+        await prisma.user.update({
+            where: { id: userId },
+            data: { name: newEmployee.nama }
+        });
+      }
     }
   } else {
     // If no employee selected, but one was linked -> Unlink

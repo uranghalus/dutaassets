@@ -44,9 +44,14 @@ export async function getEmployees({ page, pageSize }: EmployeeArgs) {
         nik: true,
         nama: true,
         nama_alias: true,
+        no_ktp:true,
         jabatan: true,
         status_karyawan: true,
         telp: true,
+        tempat_lahir: true,
+        tgl_lahir: true,
+        tgl_masuk: true,
+        foto: true,
         userId: true, // 🔗 untuk sync user
         divisi_fk: {
           include: {
@@ -71,6 +76,50 @@ export async function getEmployees({ page, pageSize }: EmployeeArgs) {
     page: safePage,
     pageSize: safePageSize,
   };
+}
+
+/* =======================
+   GET BY ID
+======================= */
+export async function getEmployeeById(id: string) {
+  const session = await getServerSession();
+  if (!session) throw new Error('Unauthorized');
+
+  const organizationId = session.session.activeOrganizationId;
+  if (!organizationId) throw new Error('No active organization');
+
+  const employee = await prisma.karyawan.findFirst({
+    where: {
+      id_karyawan: id,
+      organization_id: organizationId,
+    },
+    include: {
+      divisi_fk: {
+        include: {
+          department: true,
+        },
+      },
+      user: true,
+      assets: {
+        where: {
+          status: 'IN_USE',
+        },
+      },
+      assetLoans: {
+        where: {
+          organizationId: organizationId,
+        },
+        include: {
+          asset: true,
+        },
+        orderBy: {
+          loanDate: 'desc',
+        },
+      },
+    },
+  });
+
+  return employee;
 }
 
 /* =======================
@@ -105,6 +154,10 @@ export async function createEmployee(formData: FormData) {
       call_sign: formData.get('call_sign')?.toString() ?? '',
       status_karyawan: formData.get('status_karyawan')?.toString() ?? '',
       keterangan: formData.get('keterangan')?.toString() ?? '',
+      tempat_lahir: formData.get('tempat_lahir')?.toString() ?? null,
+      tgl_lahir: formData.get('tgl_lahir') ? new Date(formData.get('tgl_lahir')!.toString()) : null,
+      tgl_masuk: formData.get('tgl_masuk') ? new Date(formData.get('tgl_masuk')!.toString()) : null,
+      foto: formData.get('foto')?.toString() ?? null,
     },
   });
 
@@ -148,6 +201,10 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
         formData.get('status_karyawan')?.toString() ?? employee.status_karyawan,
       keterangan: formData.get('keterangan')?.toString() ?? employee.keterangan,
       divisi_id: formData.get('divisi_id')?.toString() ?? employee.divisi_id,
+      tempat_lahir: formData.get('tempat_lahir')?.toString() ?? employee.tempat_lahir,
+      tgl_lahir: formData.get('tgl_lahir') ? new Date(formData.get('tgl_lahir')!.toString()) : employee.tgl_lahir,
+      tgl_masuk: formData.get('tgl_masuk') ? new Date(formData.get('tgl_masuk')!.toString()) : employee.tgl_masuk,
+      foto: formData.get('foto')?.toString() ?? employee.foto,
     },
   });
 

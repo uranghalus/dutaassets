@@ -137,6 +137,10 @@ export async function updateAsset(id: string, formData: FormData) {
   }
   
   const organizationId = session.session.activeOrganizationId;
+
+  if (!organizationId) {
+    throw new Error("No active organization");
+  }
   
     const rawData = Object.fromEntries(formData.entries());
   
@@ -196,6 +200,10 @@ export async function deleteAsset(id: string) {
   }
   
   const organizationId = session.session.activeOrganizationId;
+
+  if (!organizationId) {
+    throw new Error("No active organization");
+  }
 
   try {
     // Soft delete

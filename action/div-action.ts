@@ -38,7 +38,7 @@ export async function getDivisions({ page, pageSize }: DivisiArgs) {
       take,
       orderBy: { nama_divisi: 'asc' },
       include: {
-        department_fk: true,
+        department: true,
       },
     }),
     prisma.divisi.count({ where }),
@@ -180,6 +180,11 @@ export async function getDivisionOptions() {
     select: {
       id_divisi: true,
       nama_divisi: true,
+      department: {
+        select: {
+          nama_department: true,
+        },
+      },
     },
     orderBy: {
       nama_divisi: 'asc',

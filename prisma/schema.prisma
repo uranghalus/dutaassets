@@ -60,7 +60,7 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
-  @@index([userId(length: 191)], map: "session_userId_idx_custom_v11")
+  @@index([userId(length: 191)], map: "session_userId_idx_custom_v12")
   @@map("session")
 }
 
@@ -232,6 +232,11 @@ model Karyawan {
   call_sign       String @db.Char(150)
   status_karyawan String @db.Char(50)
   keterangan      String @db.Char(150)
+
+  tempat_lahir String?   @db.Text
+  tgl_lahir    DateTime?
+  tgl_masuk    DateTime?
+  foto         String?   @db.Text
 
   userId String? @unique(map: "karyawan_userId_unique_custom_v9")
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)

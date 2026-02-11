@@ -4,4 +4,5 @@ export type EmployeeWithDivisi = Karyawan & {
   divisi_fk: Divisi & {
     department: Department | null;
   };
+  department: Department | null;
 };

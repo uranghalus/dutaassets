@@ -23,6 +23,7 @@ export const employeeFormSchema = z.object({
    *  RELATION
    *  ========================= */
   divisi_id: z.string().min(1, 'Divisi is required'),
+  department_id: z.string().min(1, 'Department is required'),
 
   /** =========================
    *  JOB INFO
@@ -40,7 +41,7 @@ export const employeeFormSchema = z.object({
    *  ========================= */
   tempat_lahir: z.string().optional(),
   tgl_lahir: z.date().optional(),
-  foto: z.string().optional(),
+  foto: z.any().optional(),
 
   /** =========================
    *  EMPLOYMENT DETAILS

@@ -65,6 +65,7 @@ async function main() {
               data: {
                   organization_id: org.id,
                   divisi_id: divisi.id_divisi,
+                  department_id: dept.id_department,
                   nik: emp.nik,
                   nama: emp.nama,
                   nama_alias: emp.nama.split(' ')[0],

@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../generated/prisma"
 }
 
@@ -185,8 +185,9 @@ model Department {
 
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
-  divisis Divisi[]
-  assets  Asset[]
+  divisis   Divisi[]
+  assets    Asset[]
+  karyawans Karyawan[]
 
   @@unique([organization_id, kode_department(length: 191)], map: "department_org_kode_unique_custom_v9")
   @@index([organization_id], map: "department_organization_id_idx_custom_v9")
@@ -243,6 +244,9 @@ model Karyawan {
 
   divisi_fk Divisi @relation(fields: [divisi_id], references: [id_divisi], onDelete: Restrict)
 
+  department_id String
+  department    Department @relation(fields: [department_id], references: [id_department], onDelete: Restrict)
+
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   deleted_at DateTime?
@@ -253,6 +257,7 @@ model Karyawan {
 
   @@unique([organization_id, nik], map: "karyawan_org_nik_unique_custom_v9")
   @@unique([organization_id, no_ktp], map: "karyawan_org_no_ktp_unique_custom_v9")
+  @@index([department_id], map: "karyawan_department_id_idx")
   @@index([deleted_at], map: "karyawan_deleted_at_idx_custom_v9")
 }
 

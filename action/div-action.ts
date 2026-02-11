@@ -180,6 +180,7 @@ export async function getDivisionOptions() {
     select: {
       id_divisi: true,
       nama_divisi: true,
+      department_id: true, // 👈 add this
       department: {
         select: {
           nama_department: true,

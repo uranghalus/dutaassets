@@ -9,7 +9,8 @@ import { Column, ColumnDef } from "@tanstack/react-table";
 import EmployeesRowActions from "./employees-row-action";
 import { EmployeeWithDivisi } from "@/types/employee";
 import { Badge } from "@/components/ui/badge";
-import { UserCheck, UserX } from "lucide-react";
+import { UserCheck, UserX, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 function EmployeeStatusBadge({ status }: { status?: string | null }) {
   if (!status) {
@@ -51,6 +52,32 @@ export const employeesColumns: ColumnDef<EmployeeWithDivisi>[] = [
     enableSorting: false,
     enableHiding: false,
     size: 32,
+  },
+  /* =====================
+     * PHOTO
+     ===================== */
+  {
+    id: "foto",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Foto" />
+    ),
+    cell: ({ row }) => {
+      const initials = row.original.nama
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .substring(0, 2)
+        .toUpperCase();
+
+      return (
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={row.original.foto || ""} alt={row.original.nama} />
+          <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+        </Avatar>
+      );
+    },
+    size: 50,
+    enableSorting: false,
   },
 
   /* =====================
@@ -103,6 +130,23 @@ export const employeesColumns: ColumnDef<EmployeeWithDivisi>[] = [
       </div>
     ),
     size: 150,
+  },
+
+  /* =====================
+     * DEPARTMENT
+     ===================== */
+  {
+    id: "department",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Department" />
+    ),
+    accessorFn: (row) => row.department?.nama_department ?? "-",
+    cell: ({ row }) => (
+      <div className="ps-2">
+        {row.original.department?.nama_department ?? "-"}
+      </div>
+    ),
+    size: 160,
   },
 
   /* =====================

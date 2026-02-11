@@ -14,6 +14,7 @@ import { EmployeeBulkActions } from "./employees-bulk-action";
 import { employeesColumns } from "./employees-column";
 import { EmployeeWithDivisi } from "@/types/employee";
 import { useDivisionOptions } from "@/hooks/use-divisions";
+import { useDepartmentOptions } from "@/hooks/use-departments";
 
 export function EmployeeTable() {
   const [pagination, setPagination] = useState({
@@ -27,6 +28,7 @@ export function EmployeeTable() {
   });
 
   const { data: divisions = [] } = useDivisionOptions();
+  const { data: departments = [] } = useDepartmentOptions();
 
   const { table } = useDataTable({
     data: (data?.data ?? []) as any,
@@ -50,6 +52,14 @@ export function EmployeeTable() {
             options: divisions.map((div) => ({
               label: `${div.nama_divisi} (${div.department?.nama_department ?? "-"})`,
               value: div.nama_divisi, // ✅ MATCH accessorFn
+            })),
+          },
+          {
+            columnId: "department",
+            title: "Department",
+            options: departments.map((dept: any) => ({
+              label: dept.nama_department,
+              value: dept.nama_department,
             })),
           },
         ]}

@@ -30,6 +30,22 @@ export function useOrgRoles({
 }
 
 /* =======================
+   LIST OPTIONS (ALL)
+======================= */
+export function useOrgRoleOptions() {
+  return useQuery({
+    queryKey: ["org-role-options"],
+    queryFn: async () => {
+      const res = await listOrgRoles({
+        page: 1,
+        pageSize: 1000, // Fetch all (reasonable limit)
+      });
+      return res.data;
+    },
+  });
+}
+
+/* =======================
    CREATE
 ======================= */
 export function useCreateOrgRole() {

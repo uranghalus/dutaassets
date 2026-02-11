@@ -5,6 +5,8 @@ import { getServerSession } from '@/lib/get-session';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
+import fs from 'fs/promises';
+import path from 'path';
 
 /* =======================
    TYPES
@@ -58,6 +60,7 @@ export async function getEmployees({ page, pageSize }: EmployeeArgs) {
             department: true,
           },
         },
+        department: true,
         createdAt: true,
       },
     }),
@@ -99,6 +102,7 @@ export async function getEmployeeById(id: string) {
           department: true,
         },
       },
+      department: true,
       user: true,
       assets: {
         where: {
@@ -135,15 +139,35 @@ export async function createEmployee(formData: FormData) {
   const nik = formData.get('nik')?.toString();
   const nama = formData.get('nama')?.toString();
   const divisi_id = formData.get('divisi_id')?.toString();
+  const department_id = formData.get('department_id')?.toString();
 
-  if (!nik || !nama || !divisi_id) {
+  /* Removed duplicate declarations */
+
+  if (!nik || !nama || !divisi_id || !department_id) {
     throw new Error('Required fields are missing');
+  }
+
+  // Handle Foto Upload
+  let fotoPath = null;
+  const fotoFile = formData.get('foto');
+  
+  if (fotoFile instanceof File && fotoFile.size > 0) {
+    const buffer = Buffer.from(await fotoFile.arrayBuffer());
+    const fileName = `${Date.now()}-${fotoFile.name.replace(/\s+/g, '-')}`;
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'employees');
+    
+    // Ensure directory exists
+    await fs.mkdir(uploadDir, { recursive: true });
+    
+    await fs.writeFile(path.join(uploadDir, fileName), buffer);
+    fotoPath = `/uploads/employees/${fileName}`;
   }
 
   const employee = await prisma.karyawan.create({
     data: {
       organization_id: organizationId, // 🔒 auto
       divisi_id,
+      department_id,
       nik,
       nama,
       nama_alias: formData.get('nama_alias')?.toString() ?? '',
@@ -157,7 +181,7 @@ export async function createEmployee(formData: FormData) {
       tempat_lahir: formData.get('tempat_lahir')?.toString() ?? null,
       tgl_lahir: formData.get('tgl_lahir') ? new Date(formData.get('tgl_lahir')!.toString()) : null,
       tgl_masuk: formData.get('tgl_masuk') ? new Date(formData.get('tgl_masuk')!.toString()) : null,
-      foto: formData.get('foto')?.toString() ?? null,
+      foto: fotoPath,
     },
   });
 
@@ -184,6 +208,31 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
 
   if (!employee) throw new Error('Employee not found');
 
+  // Handle Foto Upload
+  let fotoPath = employee.foto;
+  const fotoFile = formData.get('foto');
+
+  if (fotoFile instanceof File && fotoFile.size > 0) {
+    const buffer = Buffer.from(await fotoFile.arrayBuffer());
+    const fileName = `${Date.now()}-${fotoFile.name.replace(/\s+/g, '-')}`;
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'employees');
+
+    // Ensure directory exists
+    await fs.mkdir(uploadDir, { recursive: true });
+
+    // Delete old file if exists
+    if (employee.foto && employee.foto.startsWith('/uploads/')) {
+      try {
+        await fs.unlink(path.join(process.cwd(), 'public', employee.foto));
+      } catch (err) {
+        console.error('Failed to delete old photo:', err);
+      }
+    }
+
+    await fs.writeFile(path.join(uploadDir, fileName), buffer);
+    fotoPath = `/uploads/employees/${fileName}`;
+  }
+
   const updated = await prisma.karyawan.update({
     where: {
       id_karyawan,
@@ -201,10 +250,11 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
         formData.get('status_karyawan')?.toString() ?? employee.status_karyawan,
       keterangan: formData.get('keterangan')?.toString() ?? employee.keterangan,
       divisi_id: formData.get('divisi_id')?.toString() ?? employee.divisi_id,
+      department_id: formData.get('department_id')?.toString() ?? employee.department_id,
       tempat_lahir: formData.get('tempat_lahir')?.toString() ?? employee.tempat_lahir,
       tgl_lahir: formData.get('tgl_lahir') ? new Date(formData.get('tgl_lahir')!.toString()) : employee.tgl_lahir,
       tgl_masuk: formData.get('tgl_masuk') ? new Date(formData.get('tgl_masuk')!.toString()) : employee.tgl_masuk,
-      foto: formData.get('foto')?.toString() ?? employee.foto,
+      foto: fotoPath,
     },
   });
 
@@ -234,6 +284,15 @@ export async function deleteEmployee(id_karyawan: string) {
   // 🛑 optional safety
   if (employee.userId) {
     throw new Error('Employee is linked to a user account. Unlink first.');
+  }
+
+  // Delete photo file if exists
+  if (employee.foto && employee.foto.startsWith('/uploads/')) {
+    try {
+      await fs.unlink(path.join(process.cwd(), 'public', employee.foto));
+    } catch (err) {
+      console.error('Failed to delete photo:', err);
+    }
   }
 
   await prisma.karyawan.delete({
@@ -267,6 +326,25 @@ export async function deleteEmployeeBulk(ids: string[]) {
 
   if (linked > 0) {
     throw new Error('Some employees are linked to user accounts');
+  }
+
+  // Get photos to delete
+  const employeesToDelete = await prisma.karyawan.findMany({
+    where: {
+      id_karyawan: { in: ids },
+      organization_id: organizationId,
+    },
+    select: { foto: true },
+  });
+
+  for (const emp of employeesToDelete) {
+    if (emp.foto && emp.foto.startsWith('/uploads/')) {
+      try {
+        await fs.unlink(path.join(process.cwd(), 'public', emp.foto));
+      } catch (err) {
+        console.error('Failed to delete photo:', err);
+      }
+    }
   }
 
   await prisma.karyawan.deleteMany({
@@ -325,11 +403,27 @@ export async function syncEmployeeUser(id_karyawan: string) {
     /**
      * 2️⃣ Add user ke organization
      */
+    /**
+     * 2️⃣ Add user ke organization
+     */
+    let roleToAssign = 'member';
+    if (employee.jabatan) {
+      const roleExists = await prisma.organizationRole.findFirst({
+        where: {
+          organizationId,
+          role: employee.jabatan,
+        },
+      });
+      if (roleExists) {
+        roleToAssign = employee.jabatan;
+      }
+    }
+
     await auth.api.addMember({
       body: {
         userId,
         organizationId,
-        role: 'member',
+        role: roleToAssign as any,
       },
       headers: await headers(),
     });

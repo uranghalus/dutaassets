@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache"; 
 import { stockAdjustmentFormSchema } from "@/schema/stock-adjustment-schema";
+import { withContext } from "@/lib/action-utils";
 
 export async function getStockAdjustments({
   page = 0,
@@ -54,113 +55,115 @@ export async function getStockAdjustments({
 }
 
 export async function createStockAdjustment(formData: FormData) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) {
-    throw new Error("No active organization");
-  }
-
-  // Parse items from JSON string
-  const itemsJson = formData.get("items") as string;
-  let parsedItems = [];
-  try {
-    parsedItems = JSON.parse(itemsJson);
-  } catch (error) {
-    return { error: "Invalid items data" };
-  }
-
-  const rawData = {
-    warehouseId: formData.get("warehouseId"),
-    reason: formData.get("reason"),
-    reference: formData.get("reference"),
-    items: parsedItems,
-  };
-
-  const validatedFields = stockAdjustmentFormSchema.safeParse(rawData);
-
-  if (!validatedFields.success) {
-    return {
-      error: "Validation failed",
-      details: validatedFields.error.flatten().fieldErrors,
-    };
-  }
-
-  const { warehouseId, reason, reference, items } = validatedFields.data;
-
-  try {
-    await prisma.$transaction(async (tx) => {
-      // 1. Create Header
-      const adjustment = await tx.stockAdjustment.create({
-        data: {
-          organizationId,
-          warehouseId,
-          reason,
-          reference,
-          status: "COMPLETED",
-        },
-      });
-
-      // 2. Process Items
-      for (const item of items) {
-        // Get current stock
-        let currentStock = 0;
-        const stockRecord = await tx.stock.findUnique({
-          where: {
-            warehouseId_itemId: {
-              warehouseId,
-              itemId: item.itemId,
-            },
-          },
-        });
-
-        if (stockRecord) {
-          currentStock = stockRecord.quantity;
-        }
-
-        // Create Detail Record
-        await tx.stockAdjustmentItem.create({
-          data: {
-            stockAdjustmentId: adjustment.id,
-            itemId: item.itemId,
-            quantityChange: item.quantityChange,
-            currentStock: currentStock,
-            remarks: item.remarks,
-          },
-        });
-
-        // Update Actual Stock
-        await tx.stock.upsert({
-          where: {
-            warehouseId_itemId: {
-              warehouseId,
-              itemId: item.itemId,
-            },
-          },
-          update: {
-            quantity: { increment: item.quantityChange },
-          },
-          create: {
-            warehouseId,
-            itemId: item.itemId,
-            quantity: item.quantityChange,
-          },
-        });
-      }
+  return withContext(async () => {
+    const session = await auth.api.getSession({
+      headers: await headers(),
     });
 
-    revalidatePath("/inventory/adjustments");
-    revalidatePath("/inventory/stocks");
-    
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to create stock adjustment:", error);
-    return { error: "Failed to create adjustment" };
-  }
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) {
+      throw new Error("No active organization");
+    }
+
+    // Parse items from JSON string
+    const itemsJson = formData.get("items") as string;
+    let parsedItems = [];
+    try {
+      parsedItems = JSON.parse(itemsJson);
+    } catch (error) {
+      return { error: "Invalid items data" };
+    }
+
+    const rawData = {
+      warehouseId: formData.get("warehouseId"),
+      reason: formData.get("reason"),
+      reference: formData.get("reference"),
+      items: parsedItems,
+    };
+
+    const validatedFields = stockAdjustmentFormSchema.safeParse(rawData);
+
+    if (!validatedFields.success) {
+      return {
+        error: "Validation failed",
+        details: validatedFields.error.flatten().fieldErrors,
+      };
+    }
+
+    const { warehouseId, reason, reference, items } = validatedFields.data;
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        // 1. Create Header
+        const adjustment = await tx.stockAdjustment.create({
+          data: {
+            organizationId,
+            warehouseId,
+            reason,
+            reference,
+            status: "COMPLETED",
+          },
+        });
+
+        // 2. Process Items
+        for (const item of items) {
+          // Get current stock
+          let currentStock = 0;
+          const stockRecord = await tx.stock.findUnique({
+            where: {
+              warehouseId_itemId: {
+                warehouseId,
+                itemId: item.itemId,
+              },
+            },
+          });
+
+          if (stockRecord) {
+            currentStock = stockRecord.quantity;
+          }
+
+          // Create Detail Record
+          await tx.stockAdjustmentItem.create({
+            data: {
+              stockAdjustmentId: adjustment.id,
+              itemId: item.itemId,
+              quantityChange: item.quantityChange,
+              currentStock: currentStock,
+              remarks: item.remarks,
+            },
+          });
+
+          // Update Actual Stock
+          await tx.stock.upsert({
+            where: {
+              warehouseId_itemId: {
+                warehouseId,
+                itemId: item.itemId,
+              },
+            },
+            update: {
+              quantity: { increment: item.quantityChange },
+            },
+            create: {
+              warehouseId,
+              itemId: item.itemId,
+              quantity: item.quantityChange,
+            },
+          });
+        }
+      });
+
+      revalidatePath("/inventory/adjustments");
+      revalidatePath("/inventory/stocks");
+
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to create stock adjustment:", error);
+      return { error: "Failed to create adjustment" };
+    }
+  });
 }

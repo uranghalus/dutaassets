@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { getServerSession } from '@/lib/get-session';
 import { auth } from '@/lib/auth';
 import { requirePermission } from '@/lib/auth-guard';
+import { withContext } from '@/lib/action-utils';
 
 type ListOrgRoleArgs = {
   page: number;
@@ -50,23 +51,25 @@ export async function createOrgRole(input: {
   role: string;
   permission: Record<string, string[]>;
 }) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) throw new Error('No active organization');
 
-  await requirePermission({
-    role: ['create'],
-  });
+    await requirePermission({
+      role: ['create'],
+    });
 
-  return auth.api.createOrgRole({
-    body: {
-      role: input.role,
-      permission: input.permission,
-      organizationId,
-    },
-    headers: await headers(),
+    return auth.api.createOrgRole({
+      body: {
+        role: input.role,
+        permission: input.permission,
+        organizationId,
+      },
+      headers: await headers(),
+    });
   });
 }
 export type UpdateOrgRoleInput = {
@@ -76,76 +79,82 @@ export type UpdateOrgRoleInput = {
 };
 
 export async function updateOrgRole(input: UpdateOrgRoleInput) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) throw new Error('No active organization');
 
-  /* 🔐 DAC CHECK */
-  await requirePermission({
-    role: ['edit'],
-  });
+    /* 🔐 DAC CHECK */
+    await requirePermission({
+      role: ['edit'],
+    });
 
-  return auth.api.updateOrgRole({
-    body: {
-      roleId: input.roleId,
-      roleName: input.roleName, // role lama (identifier)
-      organizationId,
-      data: {
-        roleName: input.roleName, // bisa diganti kalau mau rename
-        permission: input.permission,
+    return auth.api.updateOrgRole({
+      body: {
+        roleId: input.roleId,
+        roleName: input.roleName, // role lama (identifier)
+        organizationId,
+        data: {
+          roleName: input.roleName, // bisa diganti kalau mau rename
+          permission: input.permission,
+        },
       },
-    },
-    headers: await headers(),
+      headers: await headers(),
+    });
   });
 }
 
 export async function deleteOrgRole(roleId: string) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) throw new Error('No active organization');
 
-  /* 🔐 DAC CHECK */
-  await requirePermission({
-    role: ['delete'],
-  });
+    /* 🔐 DAC CHECK */
+    await requirePermission({
+      role: ['delete'],
+    });
 
-  return auth.api.deleteOrgRole({
-    body: {
-      roleId,
-      organizationId,
-    },
-    headers: await headers(),
+    return auth.api.deleteOrgRole({
+      body: {
+        roleId,
+        organizationId,
+      },
+      headers: await headers(),
+    });
   });
 }
 
 export async function deleteOrgRolesBulk(roleIds: string[]) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) throw new Error('No active organization');
 
-  /* 🔐 DAC CHECK */
-  await requirePermission({
-    role: ['delete'],
+    /* 🔐 DAC CHECK */
+    await requirePermission({
+      role: ['delete'],
+    });
+
+    const reqHeaders = await headers();
+    await Promise.all(
+      roleIds.map((roleId) =>
+        auth.api.deleteOrgRole({
+          body: {
+            roleId,
+            organizationId,
+          },
+          headers: reqHeaders,
+        })
+      )
+    );
+
+    return { success: true };
   });
-
-  const reqHeaders = await headers();
-  await Promise.all(
-    roleIds.map((roleId) =>
-      auth.api.deleteOrgRole({
-        body: {
-          roleId,
-          organizationId,
-        },
-        headers: reqHeaders,
-      })
-    )
-  );
-
-  return { success: true };
 }

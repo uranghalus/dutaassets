@@ -3,6 +3,7 @@
 import { getServerSession } from '@/lib/get-session';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { withContext } from '@/lib/action-utils';
 
 /* =======================
    TYPES
@@ -106,30 +107,32 @@ export async function getItemCategory(id: string) {
    CREATE
 ======================= */
 export async function createItemCategory(formData: FormData) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) throw new Error('No active organization');
 
-  const name = formData.get('name')?.toString();
-  
-  if (!name) {
-    throw new Error('Required fields are missing');
-  }
+    const name = formData.get('name')?.toString();
 
-  const description = formData.get('description')?.toString();
+    if (!name) {
+      throw new Error('Required fields are missing');
+    }
 
-  const category = await prisma.itemCategory.create({
-    data: {
-      name,
-      description,
-      organizationId,
-    },
+    const description = formData.get('description')?.toString();
+
+    const category = await prisma.itemCategory.create({
+      data: {
+        name,
+        description,
+        organizationId,
+      },
+    });
+
+    revalidatePath('/inventory/categories');
+    return category;
   });
-
-  revalidatePath('/inventory/categories');
-  return category;
 }
 
 /* =======================
@@ -139,81 +142,87 @@ export async function updateItemCategory(
   id: string,
   formData: FormData
 ) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) throw new Error('No active organization');
 
-  const category = await prisma.itemCategory.findFirst({
-    where: {
-      id,
-      organizationId: organizationId,
-    },
+    const category = await prisma.itemCategory.findFirst({
+      where: {
+        id,
+        organizationId: organizationId,
+      },
+    });
+
+    if (!category) throw new Error('Category not found');
+
+    const updated = await prisma.itemCategory.update({
+      where: {
+        id,
+      },
+      data: {
+        name: formData.get('name')?.toString() ?? category.name,
+        description: formData.get('description')?.toString() ?? category.description,
+      },
+    });
+
+    revalidatePath('/inventory/categories');
+    return updated;
   });
-
-  if (!category) throw new Error('Category not found');
-
-  const updated = await prisma.itemCategory.update({
-    where: {
-      id,
-    },
-    data: {
-      name: formData.get('name')?.toString() ?? category.name,
-      description: formData.get('description')?.toString() ?? category.description,
-    },
-  });
-
-  revalidatePath('/inventory/categories');
-  return updated;
 }
 
 /* =======================
    DELETE
 ======================= */
 export async function deleteItemCategory(id: string) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) throw new Error('No active organization');
 
-  const category = await prisma.itemCategory.findFirst({
-    where: {
-      id,
-      organizationId: organizationId,
-    },
+    const category = await prisma.itemCategory.findFirst({
+      where: {
+        id,
+        organizationId: organizationId,
+      },
+    });
+
+    if (!category) throw new Error('Category not found');
+
+    await prisma.itemCategory.delete({
+      where: {
+        id,
+      },
+    });
+
+    revalidatePath('/inventory/categories');
   });
-
-  if (!category) throw new Error('Category not found');
-
-  await prisma.itemCategory.delete({
-    where: {
-      id,
-    },
-  });
-
-  revalidatePath('/inventory/categories');
 }
 
 /* =======================
    BULK DELETE
 ======================= */
 export async function deleteItemCategoryBulk(ids: string[]) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) throw new Error('No active organization');
 
-  if (!ids || ids.length === 0) return;
+    if (!ids || ids.length === 0) return;
 
-  await prisma.itemCategory.deleteMany({
-    where: {
-      id: { in: ids },
-      organizationId: organizationId,
-    },
+    await prisma.itemCategory.deleteMany({
+      where: {
+        id: { in: ids },
+        organizationId: organizationId,
+      },
+    });
+
+    revalidatePath('/inventory/categories');
   });
-
-  revalidatePath('/inventory/categories');
 }

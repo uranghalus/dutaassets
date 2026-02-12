@@ -87,7 +87,7 @@ export const sidebarData: SidebarData = {
         },
         {
           title: 'Maintenance Aset',
-          url: '/maintenance',
+          url: '/assets/maintenances',
           icon: Wrench,
         },
         {
@@ -144,6 +144,11 @@ export const sidebarData: SidebarData = {
           title: 'Penyesuaian Stok',
           url: '/inventory/adjustments',
           icon: ArrowDownUp,
+        },
+        {
+          title: 'Mutasi Stok',
+          url: '/inventory/transfers',
+          icon: Move,
         },
         {
           title: 'Stok Barang',

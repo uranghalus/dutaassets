@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from '@/lib/get-session';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
+import { withContext } from '@/lib/action-utils';
 
 /* =======================
    GET TEAM MEMBERS
@@ -54,40 +55,44 @@ export async function getOrgMembers() {
    ADD MEMBER
 ======================= */
 export async function addTeamMember(teamId: string, userId: string) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const result = await auth.api.addTeamMember({
-    body: {
-      teamId,
-      userId,
-    },
-    headers: await headers(),
+    const result = await auth.api.addTeamMember({
+      body: {
+        teamId,
+        userId,
+      },
+      headers: await headers(),
+    });
+
+    if (!result) throw new Error('Failed to add member');
+
+    revalidatePath(`/teams/${teamId}/members`);
+    return result;
   });
-
-  if (!result) throw new Error('Failed to add member');
-
-  revalidatePath(`/teams/${teamId}/members`);
-  return result;
 }
 
 /* =======================
    REMOVE MEMBER
 ======================= */
 export async function removeTeamMember(teamId: string, userId: string) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const result = await auth.api.removeTeamMember({
-    body: {
-      teamId,
-      userId,
-    },
-    headers: await headers(),
+    const result = await auth.api.removeTeamMember({
+      body: {
+        teamId,
+        userId,
+      },
+      headers: await headers(),
+    });
+
+    if (!result) throw new Error('Failed to remove member');
+
+    revalidatePath(`/teams/${teamId}/members`);
+    return result;
   });
-
-  if (!result) throw new Error('Failed to remove member');
-
-  revalidatePath(`/teams/${teamId}/members`);
-  return result;
 }

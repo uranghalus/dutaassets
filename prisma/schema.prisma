@@ -34,8 +34,9 @@ model User {
   invitations Invitation[]
 
   /// 1-1 ke Karyawan
-  karyawan    Karyawan?
-  teamMembers TeamMember[]
+  karyawan     Karyawan?
+  teamMembers  TeamMember[]
+  activityLogs ActivityLog[]
 
   @@unique([email])
   @@index([email(length: 191)])
@@ -52,6 +53,7 @@ model Session {
   userAgent String? @db.Text
 
   activeOrganizationId String? @db.Text
+  activeTeamId         String? @db.Text
   impersonatedBy       String? @db.Text
 
   createdAt DateTime @default(now())
@@ -121,6 +123,7 @@ model Organization {
   organizationRoles OrganizationRole[]
   divisis           Divisi[]
   teams             Team[]
+  activityLogs      ActivityLog[]
 
   @@index([deleted_at], map: "organization_deleted_at_idx_custom")
   @@map("organization")
@@ -251,9 +254,11 @@ model Karyawan {
   updatedAt  DateTime  @updatedAt
   deleted_at DateTime?
 
-  assets       Asset[]
-  requisitions Requisition[]
-  assetLoans   AssetLoan[]
+  assets        Asset[]
+  requisitions  Requisition[]
+  assetLoans    AssetLoan[]
+  transfersFrom AssetTransfer[] @relation("TransferFromEmp")
+  transfersTo   AssetTransfer[] @relation("TransferToEmp")
 
   @@unique([organization_id, nik], map: "karyawan_org_nik_unique_custom_v9")
   @@unique([organization_id, no_ktp], map: "karyawan_org_no_ktp_unique_custom_v9")
@@ -277,6 +282,9 @@ model AssetCategory {
   description String? @db.Text
 
   assets Asset[]
+
+  transfersFrom AssetTransfer[] @relation("TransferFrom")
+  transfersTo   AssetTransfer[] @relation("TransferTo")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -320,6 +328,9 @@ model Asset {
   categoryId    String?
   assetCategory AssetCategory? @relation(fields: [categoryId], references: [id])
 
+  locationId    String?
+  assetLocation AssetLocation? @relation(fields: [locationId], references: [id])
+
   status String @default("AVAILABLE") // AVAILABLE, IN_USE, MAINTENANCE, DISPOSED
 
   createdAt  DateTime  @default(now())
@@ -332,6 +343,7 @@ model Asset {
 
   loans        AssetLoan[]
   maintenances AssetMaintenance[]
+  transfers    AssetTransfer[]
 
   @@unique([organization_id, kode_asset], map: "asset_org_kode_unique")
   @@index([organization_id, department_id], map: "asset_org_dept_idx")
@@ -383,6 +395,56 @@ model AssetMaintenance {
   @@map("asset_maintenance")
 }
 
+model AssetLocation {
+  id             String @id @default(uuid())
+  organizationId String
+
+  name        String  @db.Text
+  description String? @db.Text
+
+  assets Asset[]
+
+  transfersFrom AssetTransfer[] @relation("TransferFrom")
+  transfersTo   AssetTransfer[] @relation("TransferTo")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, name(length: 191)], map: "asset_location_org_name_unique")
+  @@map("asset_location")
+}
+
+model AssetTransfer {
+  id             String @id @default(uuid())
+  organizationId String
+  assetId        String
+
+  fromLocationId String?
+  toLocationId   String?
+  fromEmployeeId String?
+  toEmployeeId   String?
+
+  transferDate DateTime @default(now())
+  status       String   @default("COMPLETED") // PENDING, COMPLETED, CANCELLED
+  remarks      String?  @db.Text
+
+  asset        Asset          @relation(fields: [assetId], references: [id_barang])
+  fromLocation AssetLocation? @relation("TransferFrom", fields: [fromLocationId], references: [id])
+  toLocation   AssetLocation? @relation("TransferTo", fields: [toLocationId], references: [id])
+  fromEmployee Karyawan?      @relation("TransferFromEmp", fields: [fromEmployeeId], references: [id_karyawan])
+  toEmployee   Karyawan?      @relation("TransferToEmp", fields: [toEmployeeId], references: [id_karyawan])
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  assetCategory   AssetCategory? @relation(fields: [assetCategoryId], references: [id])
+  assetCategoryId String?
+  assetCategory   AssetCategory? @relation(fields: [assetCategoryId], references: [id])
+  assetCategoryId String?
+
+  @@index([organizationId], map: "asset_transfer_org_idx")
+  @@map("asset_transfer")
+}
+
 // ==========================================
 // INVENTORY CONTROL (Supply Elements)
 // ==========================================
@@ -425,6 +487,8 @@ model Item {
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   stockAdjustmentItems StockAdjustmentItem[]
+  stockTransferItems   StockTransferItem[]
+  stockReceiptItems    StockReceiptItem[]
 
   @@unique([organizationId, code], map: "item_org_code_unique")
   @@map("item")
@@ -443,6 +507,9 @@ model Warehouse {
   updatedAt        DateTime          @updatedAt
   stockAdjustments StockAdjustment[]
   requisitions     Requisition[]
+  transfersFrom    StockTransfer[]   @relation("FromWarehouse")
+  transfersTo      StockTransfer[]   @relation("ToWarehouse")
+  receipts         StockReceipt[]
 
   @@map("warehouse")
 }
@@ -537,6 +604,93 @@ model RequisitionItem {
   item        Item        @relation(fields: [itemId], references: [id])
 
   @@map("requisition_item")
+}
+
+model StockTransfer {
+  id              String @id @default(uuid())
+  organizationId  String
+  fromWarehouseId String
+  toWarehouseId   String
+
+  date    DateTime @default(now())
+  status  String   @default("COMPLETED")
+  remarks String?  @db.Text
+
+  fromWarehouse Warehouse           @relation("FromWarehouse", fields: [fromWarehouseId], references: [id])
+  toWarehouse   Warehouse           @relation("ToWarehouse", fields: [toWarehouseId], references: [id])
+  items         StockTransferItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("stock_transfer")
+}
+
+model StockTransferItem {
+  id              String @id @default(uuid())
+  stockTransferId String
+  itemId          String
+  quantity        Int
+
+  stockTransfer StockTransfer @relation(fields: [stockTransferId], references: [id], onDelete: Cascade)
+  item          Item          @relation(fields: [itemId], references: [id])
+
+  @@map("stock_transfer_item")
+}
+
+model StockReceipt {
+  id             String @id @default(uuid())
+  organizationId String
+  warehouseId    String
+
+  vendorName      String?  @db.Text
+  referenceNumber String?  @db.Text
+  receivedAt      DateTime @default(now())
+  remarks         String?  @db.Text
+
+  warehouse Warehouse          @relation(fields: [warehouseId], references: [id])
+  items     StockReceiptItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("stock_receipt")
+}
+
+model StockReceiptItem {
+  id             String @id @default(uuid())
+  stockReceiptId String
+  itemId         String
+  quantity       Int
+
+  stockReceipt StockReceipt @relation(fields: [stockReceiptId], references: [id], onDelete: Cascade)
+  item         Item         @relation(fields: [itemId], references: [id])
+
+  @@map("stock_receipt_item")
+}
+
+model ActivityLog {
+  id             String  @id @default(uuid())
+  organizationId String
+  userId         String?
+
+  action     String // e.g., "STOCK_TRANSFER", "ASSET_LOAN"
+  entityType String // e.g., "INVENTORY", "ASSET", "EMPLOYEE"
+  entityId   String? // Reference to the specific record
+
+  details   Json? // Contextual data (diffs, remarks, quantities)
+  ipAddress String? @db.Text
+  userAgent String? @db.Text
+
+  createdAt DateTime @default(now())
+
+  user         User?        @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@map("activity_log")
 }
 
 model OrganizationRole {

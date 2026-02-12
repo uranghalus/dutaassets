@@ -5,6 +5,7 @@ import { getServerSession } from '@/lib/get-session';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
+import { withContext } from '@/lib/action-utils';
 
 type GetOrganizationsArgs = {
   page: number;
@@ -40,75 +41,83 @@ export async function getOrganizations({
   };
 }
 export async function createOrganization(formData: FormData) {
-  const session = await getServerSession();
+  return withContext(async () => {
+    const session = await getServerSession();
 
-  if (!session) throw new Error('Unauthorized');
+    if (!session) throw new Error('Unauthorized');
 
-  const data = await auth.api.createOrganization({
-    body: {
-      name: formData.get('name') as string, // required
-      slug: formData.get('slug') as string, // required
-      userId: session.user.id,
-      keepCurrentActiveOrganization: false,
-    },
-    // This endpoint requires session cookies.
-    headers: await headers(),
+    const data = await auth.api.createOrganization({
+      body: {
+        name: formData.get('name') as string, // required
+        slug: formData.get('slug') as string, // required
+        userId: session.user.id,
+        keepCurrentActiveOrganization: false,
+      },
+      // This endpoint requires session cookies.
+      headers: await headers(),
+    });
+
+    revalidatePath('/organizations');
+    return data;
   });
-
-  revalidatePath('/organizations');
-  return data;
 }
 export async function updateOrganization(
   organizationId: string,
   formData: FormData
 ) {
-  const data = await auth.api.updateOrganization({
-    body: {
-      data: {
-        name: formData.get('name') as string, // required
-        slug: formData.get('slug') as string, // required
+  return withContext(async () => {
+    const data = await auth.api.updateOrganization({
+      body: {
+        data: {
+          name: formData.get('name') as string, // required
+          slug: formData.get('slug') as string, // required
+        },
+        organizationId: organizationId,
       },
-      organizationId: organizationId,
-    },
-    // This endpoint requires session cookies.
-    headers: await headers(),
+      // This endpoint requires session cookies.
+      headers: await headers(),
+    });
+    revalidatePath('/organizations');
+    return data;
   });
-  revalidatePath('/organizations');
-  return data;
 }
 export async function deleteOrganization(organizationId: string) {
-  const session = await getServerSession();
+  return withContext(async () => {
+    const session = await getServerSession();
 
-  if (!session) {
-    throw new Error('Unauthorized');
-  }
+    if (!session) {
+      throw new Error('Unauthorized');
+    }
 
-  const data = await auth.api.deleteOrganization({
-    body: {
-      organizationId,
-    },
-    headers: await headers(),
+    const data = await auth.api.deleteOrganization({
+      body: {
+        organizationId,
+      },
+      headers: await headers(),
+    });
+
+    revalidatePath('/organizations');
+    return data;
   });
-
-  revalidatePath('/organizations');
-  return data;
 }
 export async function deleteOrganizationsBulk(organizationIds: string[]) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  if (!organizationIds.length) return;
+    if (!organizationIds.length) return;
 
-  await Promise.all(
-    organizationIds.map(async (organizationId) =>
-      auth.api.deleteOrganization({
-        body: { organizationId },
-        headers: await headers(),
-      })
-    )
-  );
+    await Promise.all(
+      organizationIds.map(async (organizationId) =>
+        auth.api.deleteOrganization({
+          body: { organizationId },
+          headers: await headers(),
+        })
+      )
+    );
 
-  revalidatePath('/organizations');
+    revalidatePath('/organizations');
+  });
 }
 type getOrganizations = {
   organizationId: string;

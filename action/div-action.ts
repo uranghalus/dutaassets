@@ -3,6 +3,7 @@
 import { getServerSession } from '@/lib/get-session';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { withContext } from '@/lib/action-utils';
 
 /* =======================
    TYPES
@@ -57,111 +58,119 @@ export async function getDivisions({ page, pageSize }: DivisiArgs) {
    CREATE DIVISION
 ======================= */
 export async function createDivision(formData: FormData) {
-  const session = await getServerSession();
-  if (!session?.session?.activeOrganizationId) {
-    throw new Error('Unauthorized');
-  }
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session?.session?.activeOrganizationId) {
+      throw new Error('Unauthorized');
+    }
 
-  const nama_divisi = formData.get('nama_divisi')?.toString();
-  const department_id = formData.get('department_id')?.toString();
-  const ext_tlp = formData.get('ext_tlp')?.toString() ?? '';
+    const nama_divisi = formData.get('nama_divisi')?.toString();
+    const department_id = formData.get('department_id')?.toString();
+    const ext_tlp = formData.get('ext_tlp')?.toString() ?? '';
 
-  if (!nama_divisi || !department_id) {
-    throw new Error('Required fields are missing');
-  }
+    if (!nama_divisi || !department_id) {
+      throw new Error('Required fields are missing');
+    }
 
-  const divisi = await prisma.divisi.create({
-    data: {
-      nama_divisi,
-      department_id,
-      organization_id: session?.session?.activeOrganizationId, // 🔒 dari session
-      ext_tlp,
-    },
+    const divisi = await prisma.divisi.create({
+      data: {
+        nama_divisi,
+        department_id,
+        organization_id: session?.session?.activeOrganizationId, // 🔒 dari session
+        ext_tlp,
+      },
+    });
+
+    revalidatePath('/divisions');
+    return divisi;
   });
-
-  revalidatePath('/divisions');
-  return divisi;
 }
 
 /* =======================
    UPDATE DIVISION
 ======================= */
 export async function updateDivisi(divisiId: string, formData: FormData) {
-  const session = await getServerSession();
-  if (!session?.session?.activeOrganizationId) {
-    throw new Error('Unauthorized');
-  }
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session?.session?.activeOrganizationId) {
+      throw new Error('Unauthorized');
+    }
 
-  const oldDivisi = await prisma.divisi.findFirst({
-    where: {
-      id_divisi: divisiId,
-      organization_id: session.session?.activeOrganizationId, // 🔒 proteksi
-    },
+    const oldDivisi = await prisma.divisi.findFirst({
+      where: {
+        id_divisi: divisiId,
+        organization_id: session.session?.activeOrganizationId, // 🔒 proteksi
+      },
+    });
+
+    if (!oldDivisi) {
+      throw new Error('Divisi not found');
+    }
+
+    const nama_divisi = formData.get('nama_divisi')?.toString();
+    const department_id = formData.get('department_id')?.toString();
+    const ext_tlp = formData.get('ext_tlp')?.toString() ?? '';
+
+    if (!nama_divisi || !department_id) {
+      throw new Error('Required fields are missing');
+    }
+
+    const updated = await prisma.divisi.update({
+      where: { id_divisi: divisiId },
+      data: {
+        nama_divisi,
+        department_id,
+        ext_tlp,
+      },
+    });
+
+    revalidatePath('/divisions');
+    return updated;
   });
-
-  if (!oldDivisi) {
-    throw new Error('Divisi not found');
-  }
-
-  const nama_divisi = formData.get('nama_divisi')?.toString();
-  const department_id = formData.get('department_id')?.toString();
-  const ext_tlp = formData.get('ext_tlp')?.toString() ?? '';
-
-  if (!nama_divisi || !department_id) {
-    throw new Error('Required fields are missing');
-  }
-
-  const updated = await prisma.divisi.update({
-    where: { id_divisi: divisiId },
-    data: {
-      nama_divisi,
-      department_id,
-      ext_tlp,
-    },
-  });
-
-  revalidatePath('/divisions');
-  return updated;
 }
 
 /* =======================
    DELETE
 ======================= */
 export async function deleteDivision(id_divisi: string) {
-  const session = await getServerSession();
-  if (!session?.session?.activeOrganizationId) {
-    throw new Error('Unauthorized');
-  }
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session?.session?.activeOrganizationId) {
+      throw new Error('Unauthorized');
+    }
 
-  await prisma.divisi.deleteMany({
-    where: {
-      id_divisi,
-      organization_id: session?.session?.activeOrganizationId, // 🔒
-    },
+    await prisma.divisi.deleteMany({
+      where: {
+        id_divisi,
+        organization_id: session?.session?.activeOrganizationId, // 🔒
+      },
+    });
+
+    revalidatePath('/divisions');
   });
-
-  revalidatePath('/divisions');
 }
 
 /* =======================
    BULK DELETE
 ======================= */
 export async function deleteDivisionBulk(ids: string[]) {
-  const session = await getServerSession();
-  if (!session?.session?.activeOrganizationId) {
-    throw new Error('Unauthorized');
-  }
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session?.session?.activeOrganizationId) {
+      throw new Error('Unauthorized');
+    }
 
-  if (!ids || ids.length === 0) return;
+    if (!ids || ids.length === 0) return;
 
-  await prisma.divisi.deleteMany({
-    where: {
-      id_divisi: { in: ids },
-      organization_id: session?.session?.activeOrganizationId, // 🔒
-    },
+    await prisma.divisi.deleteMany({
+      where: {
+        id_divisi: { in: ids },
+        organization_id: session?.session?.activeOrganizationId, // 🔒
+      },
+    });
+
+    revalidatePath('/divisions');
   });
-
-  revalidatePath('/divisions');
 }
 
 /* =======================

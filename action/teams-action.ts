@@ -5,6 +5,7 @@ import { getServerSession } from '@/lib/get-session';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
+import { withContext } from '@/lib/action-utils';
 
 /* =======================
    TYPES
@@ -100,44 +101,46 @@ export async function getTeam(id: string) {
    CREATE
 ======================= */
 export async function createTeam(formData: FormData) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) throw new Error('No active organization');
 
-  const kode_team = formData.get('kode_team')?.toString();
-  const name = formData.get('nama_team')?.toString(); // Form still sends nama_team likely, we'll map to name
-  const divisi_id = formData.get('divisi_id')?.toString();
-  const keterangan = formData.get('keterangan')?.toString() ?? '';
+    const kode_team = formData.get('kode_team')?.toString();
+    const name = formData.get('nama_team')?.toString(); // Form still sends nama_team likely, we'll map to name
+    const divisi_id = formData.get('divisi_id')?.toString();
+    const keterangan = formData.get('keterangan')?.toString() ?? '';
 
-  if (!kode_team || !name || !divisi_id) {
-    throw new Error('Required fields are missing');
-  }
+    if (!kode_team || !name || !divisi_id) {
+      throw new Error('Required fields are missing');
+    }
 
-  // Use auth.api to create team (creates TeamMember automatically)
-  const newTeam = await auth.api.createTeam({
-    body: {
+    // Use auth.api to create team (creates TeamMember automatically)
+    const newTeam = await auth.api.createTeam({
+      body: {
         name,
         organizationId
-    },
-    headers: await headers()
+      },
+      headers: await headers()
+    });
+
+    if (!newTeam) throw new Error('Failed to create team');
+
+    // Update with custom fields
+    const team = await prisma.team.update({
+      where: { id: newTeam.id },
+      data: {
+        divisi_id,
+        kode_team,
+        keterangan,
+      },
+    });
+
+    revalidatePath('/teams');
+    return team;
   });
-
-  if (!newTeam) throw new Error('Failed to create team');
-
-  // Update with custom fields
-  const team = await prisma.team.update({
-    where: { id: newTeam.id },
-    data: {
-      divisi_id,
-      kode_team,
-      keterangan,
-    },
-  });
-
-  revalidatePath('/teams');
-  return team;
 }
 
 /* =======================
@@ -147,85 +150,91 @@ export async function updateTeam(
   id: string,
   formData: FormData
 ) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) throw new Error('No active organization');
 
-  const team = await prisma.team.findFirst({
-    where: {
-      id,
-      organizationId: organizationId,
-    },
+    const team = await prisma.team.findFirst({
+      where: {
+        id,
+        organizationId: organizationId,
+      },
+    });
+
+    if (!team) throw new Error('Team not found');
+
+    const updated = await prisma.team.update({
+      where: {
+        id,
+      },
+      data: {
+        kode_team: formData.get('kode_team')?.toString() ?? team.kode_team,
+        name: formData.get('nama_team')?.toString() ?? team.name,
+        divisi_id: formData.get('divisi_id')?.toString() ?? team.divisi_id,
+        keterangan: formData.get('keterangan')?.toString() ?? team.keterangan,
+      },
+    });
+
+    revalidatePath('/teams');
+    return updated;
   });
-
-  if (!team) throw new Error('Team not found');
-
-  const updated = await prisma.team.update({
-    where: {
-      id,
-    },
-    data: {
-      kode_team: formData.get('kode_team')?.toString() ?? team.kode_team,
-      name: formData.get('nama_team')?.toString() ?? team.name,
-      divisi_id: formData.get('divisi_id')?.toString() ?? team.divisi_id,
-      keterangan: formData.get('keterangan')?.toString() ?? team.keterangan,
-    },
-  });
-
-  revalidatePath('/teams');
-  return updated;
 }
 
 /* =======================
    DELETE
 ======================= */
 export async function deleteTeam(id: string) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) throw new Error('No active organization');
 
-  const team = await prisma.team.findFirst({
-    where: {
-      id,
-      organizationId: organizationId,
-    },
+    const team = await prisma.team.findFirst({
+      where: {
+        id,
+        organizationId: organizationId,
+      },
+    });
+
+    if (!team) throw new Error('Team not found');
+
+    // Use auth.api to remove team (handles cleanup if any)
+    // Or just pure prisma. Auth API removeTeam might require extra perms
+    await prisma.team.delete({
+      where: {
+        id,
+      },
+    });
+
+    revalidatePath('/teams');
   });
-
-  if (!team) throw new Error('Team not found');
-
-  // Use auth.api to remove team (handles cleanup if any)
-  // Or just pure prisma. Auth API removeTeam might require extra perms
-  await prisma.team.delete({
-    where: {
-      id,
-    },
-  });
-
-  revalidatePath('/teams');
 }
 
 /* =======================
    BULK DELETE
 ======================= */
 export async function deleteTeamBulk(ids: string[]) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  return withContext(async () => {
+    const session = await getServerSession();
+    if (!session) throw new Error('Unauthorized');
 
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) throw new Error('No active organization');
 
-  if (!ids || ids.length === 0) return;
+    if (!ids || ids.length === 0) return;
 
-  await prisma.team.deleteMany({
-    where: {
-      id: { in: ids },
-      organizationId: organizationId,
-    },
+    await prisma.team.deleteMany({
+      where: {
+        id: { in: ids },
+        organizationId: organizationId,
+      },
+    });
+
+    revalidatePath('/teams');
   });
-
-  revalidatePath('/teams');
 }

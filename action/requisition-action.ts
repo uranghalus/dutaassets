@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { withContext } from "@/lib/action-utils";
 import { requisitionFormSchema } from "@/schema/requisition-schema";
 
 export async function getRequisitions({
@@ -55,87 +56,89 @@ export async function getRequisitions({
 }
 
 export async function createRequisition(formData: FormData) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-
-  const organizationId = session.session.activeOrganizationId;
-  const userId = session.user.id;
-
-  if (!organizationId) {
-    throw new Error("No active organization");
-  }
-
-  // Find linked employee (karyawan) for the user
-  const employee = await prisma.karyawan.findUnique({
-    where: { userId },
-  });
-
-  if (!employee) {
-    return { error: "User is not linked to an employee record" };
-  }
-
-  // Parse items from JSON string
-  const itemsJson = formData.get("items") as string;
-  let parsedItems = [];
-  try {
-    parsedItems = JSON.parse(itemsJson);
-  } catch (error) {
-    return { error: "Invalid items data" };
-  }
-
-  const rawData = {
-    warehouseId: formData.get("warehouseId"),
-    remarks: formData.get("remarks"),
-    items: parsedItems,
-  };
-
-  const validatedFields = requisitionFormSchema.safeParse(rawData);
-
-  if (!validatedFields.success) {
-    return {
-      error: "Validation failed",
-      details: validatedFields.error.flatten().fieldErrors,
-    };
-  }
-
-  const { warehouseId, remarks, items } = validatedFields.data;
-
-  try {
-    await prisma.$transaction(async (tx) => {
-      // 1. Create Header
-      const requisition = await tx.requisition.create({
-        data: {
-          organizationId,
-          requesterId: employee.id_karyawan,
-          warehouseId: warehouseId || undefined,
-          remarks,
-          status: "PENDING_SUPERVISOR",
-        },
-      });
-
-      // 2. Create Items
-      for (const item of items) {
-        await tx.requisitionItem.create({
-          data: {
-            requisitionId: requisition.id,
-            itemId: item.itemId,
-            quantity: item.quantity,
-          },
-        });
-      }
+  return withContext(async () => {
+    const session = await auth.api.getSession({
+      headers: await headers(),
     });
 
-    revalidatePath("/inventory/requisitions");
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to create requisition:", error);
-    return { error: "Failed to create requisition" };
-  }
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    const organizationId = session.session.activeOrganizationId;
+    const userId = session.user.id;
+
+    if (!organizationId) {
+      throw new Error("No active organization");
+    }
+
+    // Find linked employee (karyawan) for the user
+    const employee = await prisma.karyawan.findUnique({
+      where: { userId },
+    });
+
+    if (!employee) {
+      return { error: "User is not linked to an employee record" };
+    }
+
+    // Parse items from JSON string
+    const itemsJson = formData.get("items") as string;
+    let parsedItems = [];
+    try {
+      parsedItems = JSON.parse(itemsJson);
+    } catch (error) {
+      return { error: "Invalid items data" };
+    }
+
+    const rawData = {
+      warehouseId: formData.get("warehouseId"),
+      remarks: formData.get("remarks"),
+      items: parsedItems,
+    };
+
+    const validatedFields = requisitionFormSchema.safeParse(rawData);
+
+    if (!validatedFields.success) {
+      return {
+        error: "Validation failed",
+        details: validatedFields.error.flatten().fieldErrors,
+      };
+    }
+
+    const { warehouseId, remarks, items } = validatedFields.data;
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        // 1. Create Header
+        const requisition = await tx.requisition.create({
+          data: {
+            organizationId,
+            requesterId: employee.id_karyawan,
+            warehouseId: warehouseId || undefined,
+            remarks,
+            status: "PENDING_SUPERVISOR",
+          },
+        });
+
+        // 2. Create Items
+        for (const item of items) {
+          await tx.requisitionItem.create({
+            data: {
+              requisitionId: requisition.id,
+              itemId: item.itemId,
+              quantity: item.quantity,
+            },
+          });
+        }
+      });
+
+      revalidatePath("/inventory/requisitions");
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to create requisition:", error);
+      return { error: "Failed to create requisition" };
+    }
+  });
 }
 
 export async function updateRequisitionStatus(
@@ -148,112 +151,114 @@ export async function updateRequisitionStatus(
   status: "PENDING_FA" | "PENDING_GM" | "PENDING_WAREHOUSE" | "COMPLETED" | "REJECTED",
   warehouseId?: string
 ) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-  
-  const userId = session.user.id;
-  const userName = session.user.name; // OR fetch employee name? Using Name for now.
-
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) {
-    throw new Error("No active organization");
-  }
-
-  try {
-    const requisition = await prisma.requisition.findUnique({
-      where: { id, organizationId },
-      include: { items: true },
+  return withContext(async () => {
+    const session = await auth.api.getSession({
+      headers: await headers(),
     });
 
-    if (!requisition) {
-      return { error: "Requisition not found" };
+    if (!session) {
+      throw new Error("Unauthorized");
     }
-    
-    // Find linked employee for audit trail name
-    const employee = await prisma.karyawan.findUnique({ where: { userId }});
-    const approverName = employee?.nama || userName || "Unknown";
 
-    await prisma.$transaction(async (tx) => {
-       // Update warehouse if provided
-       if (warehouseId) {
+    const userId = session.user.id;
+    const userName = session.user.name; // OR fetch employee name? Using Name for now.
+
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) {
+      throw new Error("No active organization");
+    }
+
+    try {
+      const requisition = await prisma.requisition.findUnique({
+        where: { id, organizationId },
+        include: { items: true },
+      });
+
+      if (!requisition) {
+        return { error: "Requisition not found" };
+      }
+
+      // Find linked employee for audit trail name
+      const employee = await prisma.karyawan.findUnique({ where: { userId } });
+      const approverName = employee?.nama || userName || "Unknown";
+
+      await prisma.$transaction(async (tx) => {
+        // Update warehouse if provided
+        if (warehouseId) {
           await tx.requisition.update({
-             where: { id },
-             data: { warehouseId }
+            where: { id },
+            data: { warehouseId }
           });
-       }
-       
-       // Refetch to get latest warehouseId if updated
-       const currentRequisition = warehouseId ? { ...requisition, warehouseId } : requisition;
-       const finalWarehouseId = currentRequisition.warehouseId;
+        }
 
-      // Logic for Status Transitions and Audit
-      let updateData: any = { status };
-      
-      if (status === "PENDING_FA") {
+        // Refetch to get latest warehouseId if updated
+        const currentRequisition = warehouseId ? { ...requisition, warehouseId } : requisition;
+        const finalWarehouseId = currentRequisition.warehouseId;
+
+        // Logic for Status Transitions and Audit
+        let updateData: any = { status };
+
+        if (status === "PENDING_FA") {
           // Supervisor Acknowledged
           updateData.supervisorAckBy = approverName;
           updateData.supervisorAckAt = new Date();
-      } else if (status === "PENDING_GM") {
+        } else if (status === "PENDING_GM") {
           // FA Acknowledged
           updateData.faManagerAckBy = approverName;
           updateData.faManagerAckAt = new Date();
-      } else if (status === "PENDING_WAREHOUSE") {
+        } else if (status === "PENDING_WAREHOUSE") {
           // GM Approved
           updateData.gmApprovedBy = approverName;
           updateData.gmApprovedAt = new Date();
-      } else if (status === "COMPLETED") {
-        // Warehouse Fulfilled
-        
-        if (!finalWarehouseId) {
-            throw new Error("Warehouse must be selected to complete requisition");
-        }
+        } else if (status === "COMPLETED") {
+          // Warehouse Fulfilled
 
-        for (const item of requisition.items) {
-           // Find stock
-           const stock = await tx.stock.findUnique({
+          if (!finalWarehouseId) {
+            throw new Error("Warehouse must be selected to complete requisition");
+          }
+
+          for (const item of requisition.items) {
+            // Find stock
+            const stock = await tx.stock.findUnique({
               where: {
                 warehouseId_itemId: {
-                    warehouseId: finalWarehouseId,
-                    itemId: item.itemId
+                  warehouseId: finalWarehouseId,
+                  itemId: item.itemId
                 }
               }
-           });
+            });
 
-           if (!stock) {
+            if (!stock) {
               // Create stock record if not exists
               await tx.stock.create({
-                  data: {
-                      warehouseId: finalWarehouseId,
-                      itemId: item.itemId,
-                      quantity: -item.quantity
-                  }
+                data: {
+                  warehouseId: finalWarehouseId,
+                  itemId: item.itemId,
+                  quantity: -item.quantity
+                }
               });
-           } else {
-               await tx.stock.update({
-                   where: { id: stock.id },
-                   data: {
-                       quantity: { decrement: item.quantity }
-                   }
-               });
-           }
+            } else {
+              await tx.stock.update({
+                where: { id: stock.id },
+                data: {
+                  quantity: { decrement: item.quantity }
+                }
+              });
+            }
+          }
         }
-      }
 
-      await tx.requisition.update({
-        where: { id },
-        data: updateData,
+        await tx.requisition.update({
+          where: { id },
+          data: updateData,
+        });
       });
-    });
 
-    revalidatePath("/inventory/requisitions");
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to update requisition:", error);
-    return { error: error instanceof Error ? error.message : "Failed to update requisition" };
-  }
+      revalidatePath("/inventory/requisitions");
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to update requisition:", error);
+      return { error: error instanceof Error ? error.message : "Failed to update requisition" };
+    }
+  });
 }

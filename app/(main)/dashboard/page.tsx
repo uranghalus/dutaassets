@@ -145,11 +145,19 @@ export default async function DashboardPage() {
 
           {/* Low Stock Alerts */}
           <Card className="md:col-span-3">
-            <CardHeader>
-              <CardTitle>Stok Kritis</CardTitle>
-              <CardDescription>
-                Barang yang harus segera di-restock
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle>Stok Kritis</CardTitle>
+                <CardDescription>
+                  Barang yang harus segera di-restock
+                </CardDescription>
+              </div>
+              <Link
+                href="/reports?tab=alerts"
+                className="text-xs text-primary font-medium hover:underline flex items-center"
+              >
+                View All <ArrowRight className="ml-1 h-3 w-3" />
+              </Link>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

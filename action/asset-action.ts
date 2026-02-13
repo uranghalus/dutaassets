@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { assetFormSchema } from "@/schema/asset-schema";
 import { withContext } from "@/lib/action-utils";
+import { getActiveOrganizationWithRole } from "./organization-action";
 
 export async function getAssets({
   page = 0,
@@ -16,19 +17,7 @@ export async function getAssets({
   pageSize?: number;
   search?: string;
 }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-
-  const organizationId = session.session.activeOrganizationId;
-
-  if (!organizationId) {
-    return { data: [], pageCount: 0 };
-  }
+  const { organizationId } = await getActiveOrganizationWithRole();
 
   const where: any = {
     organization_id: organizationId,
@@ -66,19 +55,7 @@ export async function getAssets({
 
 export async function createAsset(formData: FormData) {
   return withContext(async () => {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session) {
-      throw new Error("Unauthorized");
-    }
-
-    const organizationId = session.session.activeOrganizationId;
-
-    if (!organizationId) {
-      throw new Error("No active organization");
-    }
+    const { organizationId } = await getActiveOrganizationWithRole();
 
     const rawData = Object.fromEntries(formData.entries());
 
@@ -132,19 +109,7 @@ export async function createAsset(formData: FormData) {
 
 export async function updateAsset(id: string, formData: FormData) {
   return withContext(async () => {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session) {
-      throw new Error("Unauthorized");
-    }
-
-    const organizationId = session.session.activeOrganizationId;
-
-    if (!organizationId) {
-      throw new Error("No active organization");
-    }
+    const { organizationId } = await getActiveOrganizationWithRole();
 
     const rawData = Object.fromEntries(formData.entries());
 
@@ -197,19 +162,7 @@ export async function updateAsset(id: string, formData: FormData) {
 
 export async function deleteAsset(id: string) {
   return withContext(async () => {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session) {
-      throw new Error("Unauthorized");
-    }
-
-    const organizationId = session.session.activeOrganizationId;
-
-    if (!organizationId) {
-      throw new Error("No active organization");
-    }
+    const { organizationId } = await getActiveOrganizationWithRole();
 
     try {
       // Soft delete
@@ -224,5 +177,72 @@ export async function deleteAsset(id: string) {
       console.error("Failed to delete asset:", error);
       return { error: "Failed to delete asset" };
     }
+  });
+}
+export async function getAssetsForExport({ search = "" }: { search?: string }) {
+  const { organizationId } = await getActiveOrganizationWithRole();
+
+  const where: any = {
+    organization_id: organizationId,
+    deleted_at: null,
+    OR: search
+      ? [
+          { nama_asset: { contains: search } },
+          { kode_asset: { contains: search } },
+          { brand: { contains: search } },
+          { serial_number: { contains: search } },
+        ]
+      : undefined,
+  };
+
+  const data = await prisma.asset.findMany({
+    where,
+    include: {
+      department_fk: true,
+      divisi_fk: true,
+      karyawan_fk: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return data;
+}
+
+export async function importAssets(assets: any[]) {
+  return withContext(async () => {
+    const { organizationId } = await getActiveOrganizationWithRole();
+
+    const validatedAssets: any[] = [];
+    const errors: string[] = [];
+
+    assets.forEach((asset, index) => {
+      // Basic transformations
+      const transformed = { ...asset };
+      if (transformed.tgl_pembelian) transformed.tgl_pembelian = new Date(transformed.tgl_pembelian);
+      if (transformed.garansi_exp) transformed.garansi_exp = new Date(transformed.garansi_exp);
+      if (transformed.harga) transformed.harga = parseFloat(transformed.harga);
+
+      const result = assetFormSchema.safeParse(transformed);
+
+      if (result.success) {
+        validatedAssets.push({
+          ...result.data,
+          organization_id: organizationId,
+        });
+      } else {
+        errors.push(`Row ${index + 1}: ${Object.values(result.error.flatten().fieldErrors).flat().join(", ")}`);
+      }
+    });
+
+    if (errors.length > 0) {
+      return { error: "Validation failed", details: errors };
+    }
+
+    await prisma.asset.createMany({
+      data: validatedAssets,
+    });
+
+    revalidatePath("/assets");
+    return { success: true, count: validatedAssets.length };
   });
 }

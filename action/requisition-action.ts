@@ -141,13 +141,83 @@ export async function createRequisition(formData: FormData) {
   });
 }
 
+export async function getPaginatedApprovalRequisitions({
+  page = 1,
+  pageSize = 10,
+  search = "",
+  status = "PENDING_SUPERVISOR", // Default as per requirement (or the first logical pending state)
+}: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: string;
+}) {
+  return withContext(async () => {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) throw new Error("Unauthorized");
+
+    const organizationId = session.session.activeOrganizationId;
+    if (!organizationId) return { data: [], total: 0, pageCount: 0 };
+
+    const safePage = Math.max(1, page);
+    const safePageSize = Math.max(1, pageSize);
+    const skip = (safePage - 1) * safePageSize;
+
+    const where: any = {
+      organizationId,
+      status: status === "PENDING_APPROVAL" ? { in: ["PENDING_SUPERVISOR", "PENDING_FA", "PENDING_GM"] } : status,
+      OR: search
+        ? [
+            { id: { contains: search } },
+            {
+              requester: {
+                nama: { contains: search },
+              },
+            },
+          ]
+        : undefined,
+    };
+
+    const [data, total] = await Promise.all([
+      prisma.requisition.findMany({
+        where,
+        include: {
+          requester: true,
+          warehouse: true,
+          _count: {
+            select: { items: true },
+          },
+        },
+        skip,
+        take: safePageSize,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.requisition.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      pageCount: Math.ceil(total / safePageSize),
+      page: safePage,
+      pageSize: safePageSize,
+    };
+  });
+}
+
+export async function approveRequisition(id: string, nextStatus: any) {
+  return updateRequisitionStatus(id, nextStatus);
+}
+
+export async function rejectRequisition(id: string) {
+  return updateRequisitionStatus(id, "REJECTED");
+}
+
 export async function updateRequisitionStatus(
   id: string,
-  // Status can be the NEXT status or REJECTED.
-  // Ideally we infer the next status from current status if the action is "APPROVE", 
-  // but keeping it explicit allows flexibility.
-  // Actually, let's allow passing "NEXT_STEP" or specific status.
-  // For simplicity matching UI, I'll accept specific status strings.
   status: "PENDING_FA" | "PENDING_GM" | "PENDING_WAREHOUSE" | "COMPLETED" | "REJECTED",
   warehouseId?: string
 ) {
@@ -255,6 +325,7 @@ export async function updateRequisitionStatus(
       });
 
       revalidatePath("/inventory/requisitions");
+      revalidatePath("/inventory/requisition/approval");
       return { success: true };
     } catch (error) {
       console.error("Failed to update requisition:", error);

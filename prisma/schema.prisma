@@ -283,8 +283,7 @@ model AssetCategory {
 
   assets Asset[]
 
-  transfersFrom AssetTransfer[] @relation("TransferFrom")
-  transfersTo   AssetTransfer[] @relation("TransferTo")
+  transfers AssetTransfer[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -434,12 +433,11 @@ model AssetTransfer {
   fromEmployee Karyawan?      @relation("TransferFromEmp", fields: [fromEmployeeId], references: [id_karyawan])
   toEmployee   Karyawan?      @relation("TransferToEmp", fields: [toEmployeeId], references: [id_karyawan])
 
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  assetCategory   AssetCategory? @relation(fields: [assetCategoryId], references: [id])
-  assetCategoryId String?
-  assetCategory   AssetCategory? @relation(fields: [assetCategoryId], references: [id])
-  assetCategoryId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  categoryId    String?
+  assetCategory AssetCategory? @relation(fields: [categoryId], references: [id])
 
   @@index([organizationId], map: "asset_transfer_org_idx")
   @@map("asset_transfer")

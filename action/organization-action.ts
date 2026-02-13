@@ -163,15 +163,32 @@ export async function getActiveOrganizationWithRole() {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
-  const organizationId = session.session.activeOrganizationId;
+  let organizationId = session.session.activeOrganizationId;
+
+  // Fallback to first organization if none is active
   if (!organizationId) {
-    throw new Error('No active organization');
+    const firstMember = await prisma.member.findFirst({
+      where: {
+        userId: session.user.id,
+        deleted_at: null,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    if (!firstMember) {
+      throw new Error('No active organization and no memberships found');
+    }
+
+    organizationId = firstMember.organizationId;
   }
 
   const member = await prisma.member.findFirst({
     where: {
       organizationId,
       userId: session.user.id,
+      deleted_at: null,
     },
   });
 

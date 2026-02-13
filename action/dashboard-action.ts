@@ -2,13 +2,13 @@
 
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "@/lib/get-session";
+import { getActiveOrganizationWithRole } from "./organization-action";
 
 export async function getDashboardStats() {
   const session = await getServerSession();
   if (!session) throw new Error("Unauthorized");
 
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error("No active organization");
+  const { organizationId } = await getActiveOrganizationWithRole();
 
   const [
     assetStats,

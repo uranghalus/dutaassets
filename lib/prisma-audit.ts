@@ -20,7 +20,17 @@ export const auditExtension = Prisma.defineExtension((client) => {
               const actionName = `${operation.toUpperCase()}_${model.toUpperCase()}`;
               
               // Extract entity ID if possible
-              let entityId = (args as any).where?.id || (result as any)?.id;
+              const entityId = 
+                (args as any).where?.id || 
+                (result as any)?.id || 
+                (args as any).where?.id_barang || 
+                (result as any)?.id_barang ||
+                (args as any).where?.id_department ||
+                (result as any)?.id_department ||
+                (args as any).where?.id_divisi ||
+                (result as any)?.id_divisi ||
+                (args as any).where?.id_karyawan ||
+                (result as any)?.id_karyawan;
               
               // We use setTimeout or fire-and-forget to avoid blocking the main UI response
               // but since we are in a server environment, we should ideally await or use a queue.

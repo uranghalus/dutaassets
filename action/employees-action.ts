@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { withContext } from '@/lib/action-utils';
+import { getActiveOrganizationWithRole } from './organization-action';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -21,11 +22,7 @@ export type EmployeeArgs = {
    GET (PAGINATION)
 ======================= */
 export async function getEmployees({ page, pageSize }: EmployeeArgs) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
-
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+  const { organizationId } = await getActiveOrganizationWithRole();
 
   const safePage = Math.max(1, page);
   const safePageSize = Math.max(1, pageSize);
@@ -86,11 +83,7 @@ export async function getEmployees({ page, pageSize }: EmployeeArgs) {
    GET BY ID
 ======================= */
 export async function getEmployeeById(id: string) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
-
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+  const { organizationId } = await getActiveOrganizationWithRole();
 
   const employee = await prisma.karyawan.findFirst({
     where: {
@@ -132,11 +125,7 @@ export async function getEmployeeById(id: string) {
 ======================= */
 export async function createEmployee(formData: FormData) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error('Unauthorized');
-
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error('No active organization');
+    const { organizationId } = await getActiveOrganizationWithRole();
 
     const nik = formData.get('nik')?.toString();
     const nama = formData.get('nama')?.toString();
@@ -195,11 +184,7 @@ export async function createEmployee(formData: FormData) {
 ======================= */
 export async function updateEmployee(id_karyawan: string, formData: FormData) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error('Unauthorized');
-
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error('No active organization');
+    const { organizationId } = await getActiveOrganizationWithRole();
 
     const employee = await prisma.karyawan.findFirst({
       where: {
@@ -270,11 +255,7 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
 ======================= */
 export async function deleteEmployee(id_karyawan: string) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error('Unauthorized');
-
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error('No active organization');
+    const { organizationId } = await getActiveOrganizationWithRole();
 
     const employee = await prisma.karyawan.findFirst({
       where: {
@@ -314,11 +295,7 @@ export async function deleteEmployee(id_karyawan: string) {
 ======================= */
 export async function deleteEmployeeBulk(ids: string[]) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error('Unauthorized');
-
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error('No active organization');
+    const { organizationId } = await getActiveOrganizationWithRole();
 
     if (!ids || ids.length === 0) return;
 
@@ -369,11 +346,7 @@ export async function deleteEmployeeBulk(ids: string[]) {
 ======================= */
 export async function syncEmployeeUser(id_karyawan: string) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error('Unauthorized');
-
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error('No active organization');
+    const { organizationId } = await getActiveOrganizationWithRole();
 
     const employee = await prisma.karyawan.findFirst({
       where: {
@@ -470,20 +443,9 @@ export async function syncEmployeeUser(id_karyawan: string) {
 }
 export async function unlinkEmployeeUser(employeeId: string) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error('Unauthorized');
+    const { organizationId, role } = await getActiveOrganizationWithRole();
 
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error('No active organization');
-
-    const member = await prisma.member.findFirst({
-      where: {
-        userId: session.user.id,
-        organizationId,
-      },
-    });
-
-    if (!member || !['admin', 'owner'].includes(member.role)) {
+    if (!['admin', 'owner'].includes(role)) {
       throw new Error('Forbidden');
     }
 

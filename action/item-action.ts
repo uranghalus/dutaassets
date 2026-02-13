@@ -4,35 +4,49 @@ import { getServerSession } from '@/lib/get-session';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { withContext } from '@/lib/action-utils';
+import { getActiveOrganizationWithRole } from './organization-action';
+import { itemFormSchema } from "@/schema/item-schema";
 
 /* =======================
    TYPES
 ======================= */
 export type ItemArgs = {
-  page: number;
-  pageSize: number;
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  categoryId?: string;
 };
 
 /* =======================
    GET (PAGINATION)
 ======================= */
-export async function getItems({ page, pageSize }: ItemArgs) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
-
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+export async function getItems({ 
+  page = 1, 
+  pageSize = 10, 
+  search = "", 
+  categoryId 
+}: ItemArgs) {
+  const { organizationId } = await getActiveOrganizationWithRole();
 
   const safePage = Math.max(1, page);
   const safePageSize = Math.max(1, pageSize);
   const skip = (safePage - 1) * safePageSize;
   const take = safePageSize;
 
+  const where: any = {
+    organizationId: organizationId,
+    OR: search
+      ? [
+          { name: { contains: search } },
+          { code: { contains: search } },
+        ]
+      : undefined,
+    categoryId: categoryId || undefined,
+  };
+
   const [data, total] = await Promise.all([
     prisma.item.findMany({
-      where: {
-        organizationId: organizationId,
-      },
+      where,
       skip,
       take,
       orderBy: {
@@ -44,9 +58,7 @@ export async function getItems({ page, pageSize }: ItemArgs) {
     }),
 
     prisma.item.count({
-      where: {
-        organizationId: organizationId,
-      },
+      where,
     }),
   ]);
 
@@ -63,11 +75,7 @@ export async function getItems({ page, pageSize }: ItemArgs) {
    GET SINGLE
 ======================= */
 export async function getItem(id: string) {
-  const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
-
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error('No active organization');
+  const { organizationId } = await getActiveOrganizationWithRole();
 
   const item = await prisma.item.findFirst({
     where: {
@@ -84,11 +92,7 @@ export async function getItem(id: string) {
 ======================= */
 export async function createItem(formData: FormData) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error('Unauthorized');
-
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error('No active organization');
+    const { organizationId } = await getActiveOrganizationWithRole();
 
     const code = formData.get('code')?.toString();
     const name = formData.get('name')?.toString();
@@ -131,11 +135,7 @@ export async function updateItem(
   formData: FormData
 ) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error('Unauthorized');
-
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error('No active organization');
+    const { organizationId } = await getActiveOrganizationWithRole();
 
     const item = await prisma.item.findFirst({
       where: {
@@ -172,11 +172,7 @@ export async function updateItem(
 ======================= */
 export async function deleteItem(id: string) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error('Unauthorized');
-
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error('No active organization');
+    const { organizationId } = await getActiveOrganizationWithRole();
 
     const item = await prisma.item.findFirst({
       where: {
@@ -202,11 +198,7 @@ export async function deleteItem(id: string) {
 ======================= */
 export async function deleteItemBulk(ids: string[]) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error('Unauthorized');
-
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error('No active organization');
+    const { organizationId } = await getActiveOrganizationWithRole();
 
     if (!ids || ids.length === 0) return;
 
@@ -218,5 +210,76 @@ export async function deleteItemBulk(ids: string[]) {
     });
 
     revalidatePath('/inventory/items');
+  });
+}
+
+export async function getItemsForExport({ 
+  search = "", 
+  categoryId 
+}: { 
+  search?: string; 
+  categoryId?: string 
+}) {
+  const { organizationId } = await getActiveOrganizationWithRole();
+
+  const where: any = {
+    organizationId,
+    OR: search
+      ? [
+          { name: { contains: search } },
+          { code: { contains: search } },
+        ]
+      : undefined,
+    categoryId: categoryId || undefined,
+  };
+
+  const data = await prisma.item.findMany({
+    where,
+    include: {
+      itemCategory: true,
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  });
+
+  return data;
+}
+
+export async function importItems(items: any[]) {
+  return withContext(async () => {
+    const { organizationId } = await getActiveOrganizationWithRole();
+
+    // Batch validation with Zod
+    const validatedItems: any[] = [];
+    const errors: string[] = [];
+
+    items.forEach((item, index) => {
+      const result = itemFormSchema.safeParse({
+        ...item,
+        minStock: Number(item.minStock || 0),
+      });
+
+      if (result.success) {
+        validatedItems.push({
+          ...result.data,
+          organizationId,
+        });
+      } else {
+        errors.push(`Row ${index + 1}: ${Object.values(result.error.flatten().fieldErrors).flat().join(", ")}`);
+      }
+    });
+
+    if (errors.length > 0) {
+      return { error: "Validation failed", details: errors };
+    }
+
+    // Bulk create
+    await prisma.item.createMany({
+      data: validatedItems,
+    });
+
+    revalidatePath('/inventory/items');
+    return { success: true, count: validatedItems.length };
   });
 }

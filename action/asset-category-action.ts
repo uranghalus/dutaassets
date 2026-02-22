@@ -16,7 +16,10 @@ export type AssetCategoryArgs = {
 /* =======================
    GET (PAGINATION)
  ======================= */
-export async function getAssetCategories({ page, pageSize }: AssetCategoryArgs) {
+export async function getAssetCategories({
+  page,
+  pageSize,
+}: AssetCategoryArgs) {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
@@ -138,10 +141,7 @@ export async function createAssetCategory(formData: FormData) {
 /* =======================
    UPDATE
  ======================= */
-export async function updateAssetCategory(
-  id: string,
-  formData: FormData
-) {
+export async function updateAssetCategory(id: string, formData: FormData) {
   return withContext(async () => {
     const session = await getServerSession();
     if (!session) throw new Error('Unauthorized');
@@ -164,7 +164,8 @@ export async function updateAssetCategory(
       },
       data: {
         name: formData.get('name')?.toString() ?? category.name,
-        description: formData.get('description')?.toString() ?? category.description,
+        description:
+          formData.get('description')?.toString() ?? category.description,
       },
     });
 
@@ -224,5 +225,10 @@ export async function deleteAssetCategoryBulk(ids: string[]) {
     });
 
     revalidatePath('/assets/categories');
+  });
+}
+export async function getAsCategories() {
+  return prisma.assetCategory.findMany({
+    orderBy: { name: 'asc' },
   });
 }

@@ -12,14 +12,22 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
 import { useAssetDialog } from "./asset-dialog-provider";
-import { Asset, Department, Divisi, Karyawan } from "@/generated/prisma/client";
+import {
+  Asset,
+  Department,
+  Divisi,
+  Karyawan,
+  AssetCategory,
+} from "@/generated/prisma/client";
+import Link from "next/link";
 
 type AssetWithRelations = Asset & {
   department_fk: Department;
   divisi_fk?: Divisi | null;
   karyawan_fk?: Karyawan | null;
+  assetCategory?: AssetCategory | null;
 };
 
 const ActionCell = ({ row }: { row: AssetWithRelations }) => {
@@ -35,6 +43,12 @@ const ActionCell = ({ row }: { row: AssetWithRelations }) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuItem asChild>
+          <Link href={`/assets/${row.id_barang}`}>
+            <Eye className="mr-2 h-4 w-4" />
+            View Details
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
             setCurrentAsset(row);
@@ -98,15 +112,24 @@ export const assetColumns: ColumnDef<AssetWithRelations>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Name" />
     ),
-    cell: ({ cell }) => (
-      <span className="font-medium">{cell.getValue() as string}</span>
+    cell: ({ row }) => (
+      <Link
+        href={`/assets/${row.original.id_barang}`}
+        className="font-medium hover:underline text-primary"
+      >
+        {row.original.nama_asset}
+      </Link>
     ),
   },
   {
-    accessorKey: "kategori_asset",
+    accessorKey: "assetCategory.name",
+    id: "category",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Category" />
     ),
+    cell: ({ row }) => {
+      return row.original.assetCategory?.name || "-";
+    },
     size: 150,
   },
   {

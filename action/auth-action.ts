@@ -1,12 +1,12 @@
-'use server';
+"use server";
 
-import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { LoginSchema } from '@/schema/auth-schema';
-import { ActionState } from '@/types';
-import { APIError } from 'better-auth';
-import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { LoginSchema } from "@/schema/auth-schema";
+import { ActionState } from "@/types";
+import { APIError } from "better-auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 interface AuthPayload {
   email: string;
@@ -20,12 +20,12 @@ export async function loginAction(formData: AuthPayload): Promise<ActionState> {
 
     if (!parsed.success) {
       return {
-        status: 'error',
+        status: "error",
         fieldErrors: {
-          email: parsed.error.cause,
-          password: parsed.error.message,
+          email: parsed.error.format().email?._errors[0] ?? "",
+          password: parsed.error.format().password?._errors[0] ?? "",
         },
-        message: 'Data login tidak valid',
+        message: "Data login tidak valid",
       };
     }
 
@@ -37,11 +37,11 @@ export async function loginAction(formData: AuthPayload): Promise<ActionState> {
 
     if (!user) {
       return {
-        status: 'error',
+        status: "error",
         fieldErrors: {
-          email: 'Email belum terdaftar',
+          email: "Email belum terdaftar",
         },
-        message: 'Email belum terdaftar',
+        message: "Email belum terdaftar",
       };
     }
     await auth.api.signInEmail({
@@ -54,37 +54,168 @@ export async function loginAction(formData: AuthPayload): Promise<ActionState> {
       returnStatus: true,
     });
     return {
-      status: 'success',
-      message: 'Login berhasil',
+      status: "success",
+      message: "Login berhasil",
     };
   } catch (error) {
     if (error instanceof APIError) {
       if (error?.statusCode === 401) {
         return {
-          status: 'error',
+          status: "error",
           fieldErrors: {
-            password: 'Password salah',
+            password: "Password salah",
           },
         };
       }
       if (error?.statusCode === 429) {
         return {
-          status: 'error',
+          status: "error",
           fieldErrors: {
-            password: 'Terlalu banyak percobaan login',
+            password: "Terlalu banyak percobaan login",
           },
         };
       }
       // fallback APIError
       return {
-        status: 'error',
+        status: "error",
         message: error.message,
       };
     }
 
     return {
-      status: 'error',
-      message: 'Terjadi kesalahan',
+      status: "error",
+      message: "Terjadi kesalahan",
+    };
+  }
+}
+
+export async function validateNIKAction(nik: string) {
+  try {
+    const employee = await prisma.karyawan.findFirst({
+      where: { nik, deleted_at: null },
+      include: {
+        divisi_fk: {
+          include: {
+            department: true,
+          },
+        },
+      },
+    });
+
+    if (!employee) {
+      return {
+        status: "error",
+        message:
+          "NIK tidak ditemukan. Silakan hubungi HR untuk mendaftarkan data karyawan Anda.",
+      };
+    }
+
+    if (employee.userId) {
+      return {
+        status: "error",
+        message:
+          "Akun untuk NIK ini sudah terdaftar. Silakan login atau hubungi admin jika Anda lupa password.",
+      };
+    }
+
+    return {
+      status: "success",
+      data: {
+        id_karyawan: employee.id_karyawan,
+        nama: employee.nama,
+        organization_id: employee.organization_id,
+        jabatan: employee.jabatan,
+      },
+    };
+  } catch (error) {
+    console.error("NIK validation error:", error);
+    return {
+      status: "error",
+      message: "Terjadi kesalahan saat memvalidasi NIK.",
+    };
+  }
+}
+
+export async function signupWithNIKAction(data: any) {
+  try {
+    const { nik, email, username, password, name } = data;
+
+    // 1. Double check NIK
+    const employee = await prisma.karyawan.findFirst({
+      where: { nik, deleted_at: null },
+    });
+
+    if (!employee) {
+      return { status: "error", message: "NIK tidak valid." };
+    }
+
+    if (employee.userId) {
+      return {
+        status: "error",
+        message: "Akun untuk NIK ini sudah terdaftar.",
+      };
+    }
+
+    // 2. Create User
+    const newUser = await auth.api.createUser({
+      body: {
+        email,
+        password,
+        name,
+        role: "user",
+        data: {
+          employeeId: employee.id_karyawan,
+          username,
+        },
+      },
+    });
+
+    if (!newUser) {
+      return { status: "error", message: "Gagal membuat akun user." };
+    }
+
+    const userId = newUser.user.id;
+
+    // 3. Add to Organization
+    const organizationId = employee.organization_id;
+    let roleToAssign = "member";
+
+    if (employee.jabatan) {
+      const roleExists = await prisma.organizationRole.findFirst({
+        where: {
+          organizationId,
+          role: employee.jabatan,
+        },
+      });
+      if (roleExists) {
+        roleToAssign = employee.jabatan;
+      }
+    }
+
+    await auth.api.addMember({
+      body: {
+        userId,
+        organizationId,
+        role: roleToAssign as any,
+      },
+      headers: await headers(),
+    });
+
+    // 4. Link back to Karyawan
+    await prisma.karyawan.update({
+      where: { id_karyawan: employee.id_karyawan },
+      data: { userId },
+    });
+
+    return {
+      status: "success",
+      message: "Registrasi berhasil. Silakan login.",
+    };
+  } catch (error: any) {
+    console.error("Signup error:", error);
+    return {
+      status: "error",
+      message: error.message || "Terjadi kesalahan saat registrasi.",
     };
   }
 }

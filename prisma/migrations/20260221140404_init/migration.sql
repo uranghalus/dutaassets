@@ -1,48 +1,190 @@
-/*
-  Warnings:
+-- CreateTable
+CREATE TABLE `user` (
+    `id` VARCHAR(191) NOT NULL,
+    `name` TEXT NOT NULL,
+    `email` VARCHAR(191) NOT NULL,
+    `emailVerified` BOOLEAN NOT NULL DEFAULT false,
+    `image` TEXT NULL,
+    `username` TEXT NULL,
+    `displayUsername` TEXT NULL,
+    `role` TEXT NULL,
+    `banned` BOOLEAN NOT NULL DEFAULT false,
+    `banReason` TEXT NULL,
+    `banExpires` DATETIME(3) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
-  - You are about to drop the column `metadata` on the `organization` table. All the data in the column will be lost.
-  - You are about to drop the `_departmenttoorganization` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `inventory` table. If the table is not empty, all the data it contains will be lost.
-  - Added the required column `department_id` to the `Karyawan` table without a default value. This is not possible if the table is not empty.
+    INDEX `user_email_idx`(`email`(191)),
+    UNIQUE INDEX `user_email_key`(`email`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-*/
--- DropForeignKey
-ALTER TABLE `_departmenttoorganization` DROP FOREIGN KEY `_DepartmentToOrganization_A_fkey`;
+-- CreateTable
+CREATE TABLE `session` (
+    `id` VARCHAR(191) NOT NULL,
+    `token` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `expiresAt` DATETIME(3) NOT NULL,
+    `ipAddress` TEXT NULL,
+    `userAgent` TEXT NULL,
+    `activeOrganizationId` TEXT NULL,
+    `activeTeamId` TEXT NULL,
+    `impersonatedBy` TEXT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
--- DropForeignKey
-ALTER TABLE `_departmenttoorganization` DROP FOREIGN KEY `_DepartmentToOrganization_B_fkey`;
+    INDEX `session_userId_idx_custom_v12`(`userId`(191)),
+    UNIQUE INDEX `session_token_key`(`token`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- DropForeignKey
-ALTER TABLE `inventory` DROP FOREIGN KEY `Inventory_department_id_fkey`;
+-- CreateTable
+CREATE TABLE `account` (
+    `id` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `providerId` TEXT NOT NULL,
+    `accountId` TEXT NOT NULL,
+    `accessToken` TEXT NULL,
+    `refreshToken` TEXT NULL,
+    `idToken` TEXT NULL,
+    `accessTokenExpiresAt` DATETIME(3) NULL,
+    `refreshTokenExpiresAt` DATETIME(3) NULL,
+    `scope` TEXT NULL,
+    `password` TEXT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
--- DropForeignKey
-ALTER TABLE `inventory` DROP FOREIGN KEY `Inventory_divisi_id_fkey`;
+    INDEX `account_userId_idx_custom_v10`(`userId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- DropForeignKey
-ALTER TABLE `inventory` DROP FOREIGN KEY `Inventory_karyawan_id_fkey`;
+-- CreateTable
+CREATE TABLE `verification` (
+    `id` VARCHAR(191) NOT NULL,
+    `identifier` TEXT NOT NULL,
+    `value` TEXT NOT NULL,
+    `expiresAt` DATETIME(3) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
--- DropIndex
-DROP INDEX `user_email_idx` ON `user`;
+    INDEX `verification_identifier_idx_custom_v10`(`identifier`(191)),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- AlterTable
-ALTER TABLE `invitation` ADD COLUMN `teamId` VARCHAR(191) NULL;
+-- CreateTable
+CREATE TABLE `organization` (
+    `id` VARCHAR(191) NOT NULL,
+    `name` TEXT NOT NULL,
+    `slug` VARCHAR(191) NOT NULL,
+    `logo` TEXT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
--- AlterTable
-ALTER TABLE `karyawan` ADD COLUMN `department_id` VARCHAR(191) NOT NULL,
-    ADD COLUMN `foto` TEXT NULL,
-    ADD COLUMN `tempat_lahir` TEXT NULL,
-    ADD COLUMN `tgl_lahir` DATETIME(3) NULL,
-    ADD COLUMN `tgl_masuk` DATETIME(3) NULL;
+    UNIQUE INDEX `organization_slug_key`(`slug`),
+    INDEX `organization_deleted_at_idx_custom`(`deleted_at`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- AlterTable
-ALTER TABLE `organization` DROP COLUMN `metadata`;
+-- CreateTable
+CREATE TABLE `member` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `role` TEXT NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
--- DropTable
-DROP TABLE `_departmenttoorganization`;
+    INDEX `member_organizationId_idx_custom_v9`(`organizationId`),
+    INDEX `member_userId_idx_custom_v9`(`userId`),
+    INDEX `member_deleted_at_idx_custom_v9`(`deleted_at`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- DropTable
-DROP TABLE `inventory`;
+-- CreateTable
+CREATE TABLE `invitation` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `email` TEXT NOT NULL,
+    `role` TEXT NULL,
+    `status` TEXT NOT NULL,
+    `expiresAt` DATETIME(3) NOT NULL,
+    `inviterId` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `teamId` VARCHAR(191) NULL,
+
+    INDEX `invitation_organizationId_idx_custom_v9`(`organizationId`),
+    INDEX `invitation_email_idx_custom_v9`(`email`(191)),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Department` (
+    `id_department` VARCHAR(191) NOT NULL,
+    `organization_id` VARCHAR(191) NOT NULL,
+    `kode_department` TEXT NOT NULL,
+    `nama_department` TEXT NOT NULL,
+    `id_hod` TEXT NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
+
+    INDEX `department_organization_id_idx_custom_v9`(`organization_id`),
+    INDEX `department_deleted_at_idx_custom_v9`(`deleted_at`),
+    UNIQUE INDEX `department_org_kode_unique_custom_v9`(`organization_id`, `kode_department`(191)),
+    PRIMARY KEY (`id_department`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Divisi` (
+    `id_divisi` VARCHAR(191) NOT NULL,
+    `department_id` VARCHAR(191) NOT NULL,
+    `organization_id` VARCHAR(191) NOT NULL,
+    `nama_divisi` TEXT NOT NULL,
+    `ext_tlp` TEXT NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
+
+    INDEX `divisi_org_dept_idx_custom_v9`(`organization_id`, `department_id`),
+    INDEX `divisi_deleted_at_idx_custom_v9`(`deleted_at`),
+    PRIMARY KEY (`id_divisi`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Karyawan` (
+    `id_karyawan` VARCHAR(191) NOT NULL,
+    `organization_id` VARCHAR(191) NOT NULL,
+    `divisi_id` VARCHAR(191) NOT NULL,
+    `nik` CHAR(50) NOT NULL,
+    `nama` TEXT NOT NULL,
+    `nama_alias` VARCHAR(191) NOT NULL,
+    `alamat` LONGTEXT NOT NULL,
+    `no_ktp` CHAR(16) NOT NULL,
+    `telp` TEXT NOT NULL,
+    `jabatan` TEXT NOT NULL,
+    `call_sign` CHAR(150) NOT NULL,
+    `status_karyawan` CHAR(50) NOT NULL,
+    `keterangan` CHAR(150) NOT NULL,
+    `tempat_lahir` TEXT NULL,
+    `tgl_lahir` DATETIME(3) NULL,
+    `tgl_masuk` DATETIME(3) NULL,
+    `foto` TEXT NULL,
+    `userId` VARCHAR(191) NULL,
+    `department_id` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
+
+    UNIQUE INDEX `karyawan_userId_unique_custom_v9`(`userId`),
+    INDEX `karyawan_department_id_idx`(`department_id`),
+    INDEX `karyawan_deleted_at_idx_custom_v9`(`deleted_at`),
+    UNIQUE INDEX `karyawan_org_nik_unique_custom_v9`(`organization_id`, `nik`),
+    UNIQUE INDEX `karyawan_org_no_ktp_unique_custom_v9`(`organization_id`, `no_ktp`),
+    PRIMARY KEY (`id_karyawan`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `asset_category` (
@@ -66,7 +208,7 @@ CREATE TABLE `asset` (
     `karyawan_id` VARCHAR(191) NULL,
     `kode_asset` CHAR(50) NOT NULL,
     `nama_asset` TEXT NOT NULL,
-    `kategori_asset` CHAR(100) NOT NULL,
+    `categoryId` VARCHAR(191) NULL,
     `deskripsi` TEXT NULL,
     `brand` CHAR(100) NULL,
     `model` CHAR(100) NULL,
@@ -77,18 +219,11 @@ CREATE TABLE `asset` (
     `kondisi` CHAR(50) NULL,
     `lokasi` CHAR(200) NULL,
     `garansi_exp` DATETIME(3) NULL,
-    `path_folder` TEXT NULL,
-    `gambar` TEXT NULL,
-    `expand_data` JSON NULL,
-    `keterangan` TEXT NULL,
-    `categoryId` VARCHAR(191) NULL,
     `status` VARCHAR(191) NOT NULL DEFAULT 'AVAILABLE',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     `deleted_at` DATETIME(3) NULL,
 
-    INDEX `asset_org_dept_idx`(`organization_id`, `department_id`),
-    INDEX `asset_deleted_at_idx`(`deleted_at`),
     UNIQUE INDEX `asset_org_kode_unique`(`organization_id`, `kode_asset`),
     PRIMARY KEY (`id_barang`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -126,6 +261,39 @@ CREATE TABLE `asset_maintenance` (
     `updatedAt` DATETIME(3) NOT NULL,
 
     INDEX `asset_maintenance_org_idx`(`organizationId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `asset_location` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `name` TEXT NOT NULL,
+    `description` TEXT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `asset_location_org_name_unique`(`organizationId`, `name`(191)),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `asset_transfer` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `assetId` VARCHAR(191) NOT NULL,
+    `fromLocationId` VARCHAR(191) NULL,
+    `toLocationId` VARCHAR(191) NULL,
+    `fromEmployeeId` VARCHAR(191) NULL,
+    `toEmployeeId` VARCHAR(191) NULL,
+    `transferDate` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `status` VARCHAR(191) NOT NULL DEFAULT 'COMPLETED',
+    `remarks` TEXT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `categoryId` VARCHAR(191) NULL,
+
+    INDEX `asset_transfer_org_idx`(`organizationId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -313,6 +481,19 @@ CREATE TABLE `activity_log` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `organizationRole` (
+    `id` VARCHAR(191) NOT NULL,
+    `organizationId` VARCHAR(191) NOT NULL,
+    `role` TEXT NOT NULL,
+    `permission` TEXT NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NULL,
+
+    INDEX `organizationRole_role_idx_custom_v9`(`role`(191)),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `team` (
     `id` VARCHAR(191) NOT NULL,
     `organizationId` VARCHAR(191) NOT NULL,
@@ -343,14 +524,32 @@ CREATE TABLE `teamMember` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- CreateIndex
-CREATE INDEX `karyawan_department_id_idx` ON `Karyawan`(`department_id`);
+-- CreateTable
+CREATE TABLE `_AssetToAssetLocation` (
+    `A` VARCHAR(191) NOT NULL,
+    `B` VARCHAR(191) NOT NULL,
 
--- CreateIndex
-CREATE INDEX `session_userId_idx_custom_v12` ON `session`(`userId`(191));
+    UNIQUE INDEX `_AssetToAssetLocation_AB_unique`(`A`, `B`),
+    INDEX `_AssetToAssetLocation_B_index`(`B`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- CreateIndex
-CREATE INDEX `user_email_idx` ON `user`(`email`(191));
+-- AddForeignKey
+ALTER TABLE `session` ADD CONSTRAINT `session_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `account` ADD CONSTRAINT `account_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `member` ADD CONSTRAINT `member_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `member` ADD CONSTRAINT `member_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `invitation` ADD CONSTRAINT `invitation_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `invitation` ADD CONSTRAINT `invitation_inviterId_fkey` FOREIGN KEY (`inviterId`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `invitation` ADD CONSTRAINT `invitation_teamId_fkey` FOREIGN KEY (`teamId`) REFERENCES `team`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -359,7 +558,16 @@ ALTER TABLE `invitation` ADD CONSTRAINT `invitation_teamId_fkey` FOREIGN KEY (`t
 ALTER TABLE `Department` ADD CONSTRAINT `Department_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `Divisi` ADD CONSTRAINT `Divisi_department_id_fkey` FOREIGN KEY (`department_id`) REFERENCES `Department`(`id_department`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Divisi` ADD CONSTRAINT `Divisi_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Karyawan` ADD CONSTRAINT `Karyawan_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Karyawan` ADD CONSTRAINT `Karyawan_divisi_id_fkey` FOREIGN KEY (`divisi_id`) REFERENCES `Divisi`(`id_divisi`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Karyawan` ADD CONSTRAINT `Karyawan_department_id_fkey` FOREIGN KEY (`department_id`) REFERENCES `Department`(`id_department`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -384,6 +592,24 @@ ALTER TABLE `asset_loan` ADD CONSTRAINT `asset_loan_employeeId_fkey` FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE `asset_maintenance` ADD CONSTRAINT `asset_maintenance_assetId_fkey` FOREIGN KEY (`assetId`) REFERENCES `asset`(`id_barang`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `asset_transfer` ADD CONSTRAINT `asset_transfer_assetId_fkey` FOREIGN KEY (`assetId`) REFERENCES `asset`(`id_barang`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `asset_transfer` ADD CONSTRAINT `asset_transfer_fromLocationId_fkey` FOREIGN KEY (`fromLocationId`) REFERENCES `asset_location`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `asset_transfer` ADD CONSTRAINT `asset_transfer_toLocationId_fkey` FOREIGN KEY (`toLocationId`) REFERENCES `asset_location`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `asset_transfer` ADD CONSTRAINT `asset_transfer_fromEmployeeId_fkey` FOREIGN KEY (`fromEmployeeId`) REFERENCES `Karyawan`(`id_karyawan`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `asset_transfer` ADD CONSTRAINT `asset_transfer_toEmployeeId_fkey` FOREIGN KEY (`toEmployeeId`) REFERENCES `Karyawan`(`id_karyawan`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `asset_transfer` ADD CONSTRAINT `asset_transfer_categoryId_fkey` FOREIGN KEY (`categoryId`) REFERENCES `asset_category`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `item` ADD CONSTRAINT `item_categoryId_fkey` FOREIGN KEY (`categoryId`) REFERENCES `item_category`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -443,6 +669,9 @@ ALTER TABLE `activity_log` ADD CONSTRAINT `activity_log_userId_fkey` FOREIGN KEY
 ALTER TABLE `activity_log` ADD CONSTRAINT `activity_log_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `organizationRole` ADD CONSTRAINT `organizationRole_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `team` ADD CONSTRAINT `team_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -454,74 +683,8 @@ ALTER TABLE `teamMember` ADD CONSTRAINT `teamMember_teamId_fkey` FOREIGN KEY (`t
 -- AddForeignKey
 ALTER TABLE `teamMember` ADD CONSTRAINT `teamMember_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
--- RedefineIndex
-CREATE INDEX `account_userId_idx_custom_v10` ON `account`(`userId`);
-DROP INDEX `account_userId_idx` ON `account`;
+-- AddForeignKey
+ALTER TABLE `_AssetToAssetLocation` ADD CONSTRAINT `_AssetToAssetLocation_A_fkey` FOREIGN KEY (`A`) REFERENCES `asset`(`id_barang`) ON DELETE CASCADE ON UPDATE CASCADE;
 
--- RedefineIndex
-CREATE INDEX `department_deleted_at_idx_custom_v9` ON `Department`(`deleted_at`);
-DROP INDEX `Department_deleted_at_idx` ON `department`;
-
--- RedefineIndex
-CREATE INDEX `department_organization_id_idx_custom_v9` ON `Department`(`organization_id`);
-DROP INDEX `Department_organization_id_idx` ON `department`;
-
--- RedefineIndex
-CREATE UNIQUE INDEX `department_org_kode_unique_custom_v9` ON `Department`(`organization_id`, `kode_department`(191));
-DROP INDEX `Department_organization_id_kode_department_key` ON `department`;
-
--- RedefineIndex
-CREATE INDEX `divisi_deleted_at_idx_custom_v9` ON `Divisi`(`deleted_at`);
-DROP INDEX `Divisi_deleted_at_idx` ON `divisi`;
-
--- RedefineIndex
-CREATE INDEX `divisi_org_dept_idx_custom_v9` ON `Divisi`(`organization_id`, `department_id`);
-DROP INDEX `Divisi_organization_id_department_id_idx` ON `divisi`;
-
--- RedefineIndex
-CREATE INDEX `invitation_email_idx_custom_v9` ON `invitation`(`email`(191));
-DROP INDEX `invitation_email_idx` ON `invitation`;
-
--- RedefineIndex
-CREATE INDEX `invitation_organizationId_idx_custom_v9` ON `invitation`(`organizationId`);
-DROP INDEX `invitation_organizationId_idx` ON `invitation`;
-
--- RedefineIndex
-CREATE INDEX `karyawan_deleted_at_idx_custom_v9` ON `Karyawan`(`deleted_at`);
-DROP INDEX `Karyawan_deleted_at_idx` ON `karyawan`;
-
--- RedefineIndex
-CREATE UNIQUE INDEX `karyawan_org_nik_unique_custom_v9` ON `Karyawan`(`organization_id`, `nik`);
-DROP INDEX `Karyawan_organization_id_nik_key` ON `karyawan`;
-
--- RedefineIndex
-CREATE UNIQUE INDEX `karyawan_org_no_ktp_unique_custom_v9` ON `Karyawan`(`organization_id`, `no_ktp`);
-DROP INDEX `Karyawan_organization_id_no_ktp_key` ON `karyawan`;
-
--- RedefineIndex
-CREATE UNIQUE INDEX `karyawan_userId_unique_custom_v9` ON `Karyawan`(`userId`);
-DROP INDEX `Karyawan_userId_key` ON `karyawan`;
-
--- RedefineIndex
-CREATE INDEX `member_deleted_at_idx_custom_v9` ON `member`(`deleted_at`);
-DROP INDEX `member_deleted_at_idx` ON `member`;
-
--- RedefineIndex
-CREATE INDEX `member_organizationId_idx_custom_v9` ON `member`(`organizationId`);
-DROP INDEX `member_organizationId_idx` ON `member`;
-
--- RedefineIndex
-CREATE INDEX `member_userId_idx_custom_v9` ON `member`(`userId`);
-DROP INDEX `member_userId_idx` ON `member`;
-
--- RedefineIndex
-CREATE INDEX `organization_deleted_at_idx_custom` ON `organization`(`deleted_at`);
-DROP INDEX `organization_deleted_at_idx` ON `organization`;
-
--- RedefineIndex
-CREATE INDEX `organizationRole_role_idx_custom_v9` ON `organizationRole`(`role`(191));
-DROP INDEX `organizationRole_role_idx` ON `organizationrole`;
-
--- RedefineIndex
-CREATE INDEX `verification_identifier_idx_custom_v10` ON `verification`(`identifier`(191));
-DROP INDEX `verification_identifier_idx` ON `verification`;
+-- AddForeignKey
+ALTER TABLE `_AssetToAssetLocation` ADD CONSTRAINT `_AssetToAssetLocation_B_fkey` FOREIGN KEY (`B`) REFERENCES `asset_location`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

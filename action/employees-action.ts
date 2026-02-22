@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import { auth } from '@/lib/auth';
@@ -44,7 +45,7 @@ export async function getEmployees({ page, pageSize }: EmployeeArgs) {
         nik: true,
         nama: true,
         nama_alias: true,
-        no_ktp:true,
+        no_ktp: true,
         jabatan: true,
         status_karyawan: true,
         telp: true,
@@ -119,7 +120,47 @@ export async function getEmployeeById(id: string) {
 
   return employee;
 }
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
+function parseDate(value: FormDataEntryValue | null) {
+  if (!value) return null;
+  const date = new Date(value.toString());
+  return isNaN(date.getTime()) ? null : date;
+}
+
+async function saveEmployeePhoto(file: File) {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    throw new Error('Format foto tidak valid (jpg, png, webp)');
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error('Ukuran foto maksimal 2MB');
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '-');
+  const fileName = `${Date.now()}-${safeName}`;
+  const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'employees');
+
+  await fs.mkdir(uploadDir, { recursive: true });
+  await fs.writeFile(path.join(uploadDir, fileName), buffer);
+
+  return `/uploads/employees/${fileName}`;
+}
+
+async function deleteEmployeePhoto(photoPath: string | null) {
+  if (!photoPath) return;
+
+  if (!photoPath.startsWith('/uploads/employees/')) return;
+
+  try {
+    const filePath = path.join(process.cwd(), 'public', photoPath);
+    await fs.unlink(filePath);
+  } catch {
+    // silent fail (file mungkin sudah tidak ada)
+  }
+}
 /* =======================
    CREATE
 ======================= */
@@ -136,46 +177,72 @@ export async function createEmployee(formData: FormData) {
       throw new Error('Required fields are missing');
     }
 
-    // Handle Foto Upload
-    let fotoPath = null;
-    const fotoFile = formData.get('foto');
+    return await prisma.$transaction(async (tx) => {
+      // Validate Divisi
+      const divisi = await tx.divisi.findFirst({
+        where: {
+          id_divisi: divisi_id,
+          organization_id: organizationId,
+        },
+      });
 
-    if (fotoFile instanceof File && fotoFile.size > 0) {
-      const buffer = Buffer.from(await fotoFile.arrayBuffer());
-      const fileName = `${Date.now()}-${fotoFile.name.replace(/\s+/g, '-')}`;
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'employees');
+      if (!divisi) throw new Error('Divisi tidak valid');
 
-      // Ensure directory exists
-      await fs.mkdir(uploadDir, { recursive: true });
+      // Validate Department
+      const department = await tx.department.findFirst({
+        where: {
+          id_department: department_id,
+          organization_id: organizationId,
+        },
+      });
 
-      await fs.writeFile(path.join(uploadDir, fileName), buffer);
-      fotoPath = `/uploads/employees/${fileName}`;
-    }
+      if (!department) throw new Error('Department tidak valid');
 
-    const employee = await prisma.karyawan.create({
-      data: {
-        organization_id: organizationId, // 🔒 auto
-        divisi_id,
-        department_id,
-        nik,
-        nama,
-        nama_alias: formData.get('nama_alias')?.toString() ?? '',
-        alamat: formData.get('alamat')?.toString() ?? '',
-        no_ktp: formData.get('no_ktp')?.toString() ?? '',
-        telp: formData.get('telp')?.toString() ?? '',
-        jabatan: formData.get('jabatan')?.toString() ?? '',
-        call_sign: formData.get('call_sign')?.toString() ?? '',
-        status_karyawan: formData.get('status_karyawan')?.toString() ?? '',
-        keterangan: formData.get('keterangan')?.toString() ?? '',
-        tempat_lahir: formData.get('tempat_lahir')?.toString() ?? null,
-        tgl_lahir: formData.get('tgl_lahir') ? new Date(formData.get('tgl_lahir')!.toString()) : null,
-        tgl_masuk: formData.get('tgl_masuk') ? new Date(formData.get('tgl_masuk')!.toString()) : null,
-        foto: fotoPath,
-      },
+      // Validate unique NIK per organization
+      const existingNik = await tx.karyawan.findFirst({
+        where: {
+          nik,
+          organization_id: organizationId,
+        },
+      });
+
+      if (existingNik) {
+        throw new Error('NIK sudah terdaftar');
+      }
+
+      // Handle foto
+      let fotoPath: string | null = null;
+      const fotoFile = formData.get('foto');
+
+      if (fotoFile instanceof File && fotoFile.size > 0) {
+        fotoPath = await saveEmployeePhoto(fotoFile);
+      }
+
+      const employee = await tx.karyawan.create({
+        data: {
+          organization_id: organizationId,
+          divisi_id,
+          department_id,
+          nik,
+          nama,
+          nama_alias: formData.get('nama_alias')?.toString() ?? '',
+          alamat: formData.get('alamat')?.toString() ?? '',
+          no_ktp: formData.get('no_ktp')?.toString() ?? '',
+          telp: formData.get('telp')?.toString() ?? '',
+          jabatan: formData.get('jabatan')?.toString() ?? '',
+          call_sign: formData.get('call_sign')?.toString() ?? '',
+          status_karyawan: formData.get('status_karyawan')?.toString() ?? '',
+          keterangan: formData.get('keterangan')?.toString() ?? '',
+          tempat_lahir: formData.get('tempat_lahir')?.toString() ?? null,
+          tgl_lahir: parseDate(formData.get('tgl_lahir')),
+          tgl_masuk: parseDate(formData.get('tgl_masuk')),
+          foto: fotoPath,
+        },
+      });
+
+      revalidatePath('/employees');
+      return employee;
     });
-
-    revalidatePath('/employees');
-    return employee;
   });
 }
 
@@ -186,67 +253,77 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
   return withContext(async () => {
     const { organizationId } = await getActiveOrganizationWithRole();
 
-    const employee = await prisma.karyawan.findFirst({
-      where: {
-        id_karyawan,
-        organization_id: organizationId, // 🔒 ownership
-      },
-    });
+    return await prisma.$transaction(async (tx) => {
+      const employee = await tx.karyawan.findFirst({
+        where: {
+          id_karyawan,
+          organization_id: organizationId,
+        },
+      });
 
-    if (!employee) throw new Error('Employee not found');
+      if (!employee) throw new Error('Employee not found');
 
-    // Handle Foto Upload
-    let fotoPath = employee.foto;
-    const fotoFile = formData.get('foto');
+      // Validate NIK uniqueness (if changed)
+      const newNik = formData.get('nik')?.toString();
 
-    if (fotoFile instanceof File && fotoFile.size > 0) {
-      const buffer = Buffer.from(await fotoFile.arrayBuffer());
-      const fileName = `${Date.now()}-${fotoFile.name.replace(/\s+/g, '-')}`;
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'employees');
+      if (newNik && newNik !== employee.nik) {
+        const nikExists = await tx.karyawan.findFirst({
+          where: {
+            nik: newNik,
+            organization_id: organizationId,
+          },
+        });
 
-      // Ensure directory exists
-      await fs.mkdir(uploadDir, { recursive: true });
-
-      // Delete old file if exists
-      if (employee.foto && employee.foto.startsWith('/uploads/')) {
-        try {
-          await fs.unlink(path.join(process.cwd(), 'public', employee.foto));
-        } catch (err) {
-          console.error('Failed to delete old photo:', err);
+        if (nikExists) {
+          throw new Error('NIK sudah digunakan');
         }
       }
 
-      await fs.writeFile(path.join(uploadDir, fileName), buffer);
-      fotoPath = `/uploads/employees/${fileName}`;
-    }
+      // Handle photo
+      let fotoPath = employee.foto;
+      const fotoFile = formData.get('foto');
 
-    const updated = await prisma.karyawan.update({
-      where: {
-        id_karyawan,
-      },
-      data: {
-        nik: formData.get('nik')?.toString() ?? employee.nik,
-        nama: formData.get('nama')?.toString() ?? employee.nama,
-        nama_alias: formData.get('nama_alias')?.toString() ?? employee.nama_alias,
-        alamat: formData.get('alamat')?.toString() ?? employee.alamat,
-        no_ktp: formData.get('no_ktp')?.toString() ?? employee.no_ktp,
-        telp: formData.get('telp')?.toString() ?? employee.telp,
-        jabatan: formData.get('jabatan')?.toString() ?? employee.jabatan,
-        call_sign: formData.get('call_sign')?.toString() ?? employee.call_sign,
-        status_karyawan:
-          formData.get('status_karyawan')?.toString() ?? employee.status_karyawan,
-        keterangan: formData.get('keterangan')?.toString() ?? employee.keterangan,
-        divisi_id: formData.get('divisi_id')?.toString() ?? employee.divisi_id,
-        department_id: formData.get('department_id')?.toString() ?? employee.department_id,
-        tempat_lahir: formData.get('tempat_lahir')?.toString() ?? employee.tempat_lahir,
-        tgl_lahir: formData.get('tgl_lahir') ? new Date(formData.get('tgl_lahir')!.toString()) : employee.tgl_lahir,
-        tgl_masuk: formData.get('tgl_masuk') ? new Date(formData.get('tgl_masuk')!.toString()) : employee.tgl_masuk,
-        foto: fotoPath,
-      },
+      if (fotoFile instanceof File && fotoFile.size > 0) {
+        const newPhoto = await saveEmployeePhoto(fotoFile);
+        await deleteEmployeePhoto(employee.foto);
+        fotoPath = newPhoto;
+      }
+
+      const updated = await tx.karyawan.update({
+        where: {
+          id_karyawan,
+        },
+        data: {
+          nik: newNik ?? employee.nik,
+          nama: formData.get('nama')?.toString() ?? employee.nama,
+          nama_alias:
+            formData.get('nama_alias')?.toString() ?? employee.nama_alias,
+          alamat: formData.get('alamat')?.toString() ?? employee.alamat,
+          no_ktp: formData.get('no_ktp')?.toString() ?? employee.no_ktp,
+          telp: formData.get('telp')?.toString() ?? employee.telp,
+          jabatan: formData.get('jabatan')?.toString() ?? employee.jabatan,
+          call_sign:
+            formData.get('call_sign')?.toString() ?? employee.call_sign,
+          status_karyawan:
+            formData.get('status_karyawan')?.toString() ??
+            employee.status_karyawan,
+          keterangan:
+            formData.get('keterangan')?.toString() ?? employee.keterangan,
+          divisi_id:
+            formData.get('divisi_id')?.toString() ?? employee.divisi_id,
+          department_id:
+            formData.get('department_id')?.toString() ?? employee.department_id,
+          tempat_lahir:
+            formData.get('tempat_lahir')?.toString() ?? employee.tempat_lahir,
+          tgl_lahir: parseDate(formData.get('tgl_lahir')) ?? employee.tgl_lahir,
+          tgl_masuk: parseDate(formData.get('tgl_masuk')) ?? employee.tgl_masuk,
+          foto: fotoPath,
+        },
+      });
+
+      revalidatePath('/employees');
+      return updated;
     });
-
-    revalidatePath('/employees');
-    return updated;
   });
 }
 

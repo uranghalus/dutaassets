@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils'
 import { getServerSession } from '@/lib/get-session'
 import { ThemeProvider } from '@/context/theme-provider'
+import { syncUserOrganization } from '@/action/organization-action'
 
 export default async function DashboardLayout({
     children,
@@ -26,9 +27,9 @@ export default async function DashboardLayout({
     const cookieStore = await cookies()
     const sidebarState = cookieStore.get('sidebar_state')?.value
     const defaultOpen = sidebarState !== 'false'
-
     const session = await getServerSession()
     if (!session) redirect('/')
+    await syncUserOrganization();
 
     return (
         <ThemeProvider>

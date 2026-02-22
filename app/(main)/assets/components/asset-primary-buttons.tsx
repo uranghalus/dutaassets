@@ -16,7 +16,7 @@ export function AssetPrimaryButtons() {
   const assetHeaders = [
     { label: "Asset Code", key: "kode_asset" },
     { label: "Asset Name", key: "nama_asset" },
-    { label: "Category", key: "kategori_asset" },
+    { label: "Category", key: "assetCategory.name" },
     { label: "Department", key: "department_fk.nama" },
     { label: "Division", key: "divisi_fk.nama" },
     { label: "Employee", key: "karyawan_fk.nama" },

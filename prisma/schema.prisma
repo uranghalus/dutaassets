@@ -283,10 +283,9 @@ model AssetCategory {
 
   assets Asset[]
 
-  transfers AssetTransfer[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  assetTransfers AssetTransfer[]
 
   @@unique([organizationId, name(length: 191)], map: "asset_category_org_name_unique")
   @@map("asset_category")
@@ -300,9 +299,11 @@ model Asset {
   divisi_id       String?
   karyawan_id     String?
 
-  kode_asset     String @db.Char(50) // Renamed from kode_barang
-  nama_asset     String @db.Text // Renamed from nama_barang
-  kategori_asset String @db.Char(100) // Renamed from kelompok_barang
+  kode_asset String @db.Char(50)
+  nama_asset String @db.Text
+
+  categoryId    String?
+  assetCategory AssetCategory? @relation(fields: [categoryId], references: [id])
 
   deskripsi     String? @db.Text
   brand         String? @db.Char(100)
@@ -311,42 +312,28 @@ model Asset {
 
   tgl_pembelian DateTime?
   harga         Decimal?  @db.Decimal(15, 2)
-  vendor        String?   @db.Char(100) // Renamed from tempat_pembelian/provider
+  vendor        String?   @db.Char(100)
 
-  kondisi String? @db.Char(50) // GOOD, DAMAGED
-  lokasi  String? @db.Char(200) // Specific location description
+  kondisi String? @db.Char(50)
+  lokasi  String? @db.Char(200)
 
-  // warranty/expiry
   garansi_exp DateTime?
 
-  path_folder String? @db.Text
-  gambar      String? @db.Text
-  expand_data Json?
-  keterangan  String? @db.Text
-
-  categoryId    String?
-  assetCategory AssetCategory? @relation(fields: [categoryId], references: [id])
-
-  locationId    String?
-  assetLocation AssetLocation? @relation(fields: [locationId], references: [id])
-
-  status String @default("AVAILABLE") // AVAILABLE, IN_USE, MAINTENANCE, DISPOSED
+  status String @default("AVAILABLE")
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   deleted_at DateTime?
 
-  department_fk Department @relation(fields: [department_id], references: [id_department], onDelete: Restrict)
-  divisi_fk     Divisi?    @relation(fields: [divisi_id], references: [id_divisi], onDelete: SetNull)
-  karyawan_fk   Karyawan?  @relation(fields: [karyawan_id], references: [id_karyawan], onDelete: SetNull)
-
-  loans        AssetLoan[]
-  maintenances AssetMaintenance[]
-  transfers    AssetTransfer[]
+  department_fk     Department         @relation(fields: [department_id], references: [id_department])
+  divisi_fk         Divisi?            @relation(fields: [divisi_id], references: [id_divisi])
+  karyawan_fk       Karyawan?          @relation(fields: [karyawan_id], references: [id_karyawan])
+  assetLoans        AssetLoan[]
+  assetMaintenances AssetMaintenance[]
+  assetLocations    AssetLocation[]
+  assetTransfers    AssetTransfer[]
 
   @@unique([organization_id, kode_asset], map: "asset_org_kode_unique")
-  @@index([organization_id, department_id], map: "asset_org_dept_idx")
-  @@index([deleted_at], map: "asset_deleted_at_idx")
   @@map("asset")
 }
 

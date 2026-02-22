@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { withContext } from '@/lib/action-utils';
+import { nanoid } from 'nanoid';
 
 type GetOrganizationsArgs = {
   page: number;
@@ -63,7 +64,7 @@ export async function createOrganization(formData: FormData) {
 }
 export async function updateOrganization(
   organizationId: string,
-  formData: FormData
+  formData: FormData,
 ) {
   return withContext(async () => {
     const data = await auth.api.updateOrganization({
@@ -112,8 +113,8 @@ export async function deleteOrganizationsBulk(organizationIds: string[]) {
         auth.api.deleteOrganization({
           body: { organizationId },
           headers: await headers(),
-        })
-      )
+        }),
+      ),
     );
 
     revalidatePath('/organizations');
@@ -163,31 +164,37 @@ export async function getActiveOrganizationWithRole() {
   const session = await getServerSession();
   if (!session) throw new Error('Unauthorized');
 
-  let organizationId = session.session.activeOrganizationId;
+  const userId = session.user.id;
 
-  // Fallback to first organization if none is active
-  if (!organizationId) {
-    const firstMember = await prisma.member.findFirst({
-      where: {
-        userId: session.user.id,
-        deleted_at: null,
-      },
-      orderBy: {
-        createdAt: 'asc',
-      },
-    });
+  // 🔐 1. Ambil karyawan
+  const employee = await prisma.karyawan.findUnique({
+    where: { userId },
+    select: { organization_id: true },
+  });
 
-    if (!firstMember) {
-      throw new Error('No active organization and no memberships found');
-    }
-
-    organizationId = firstMember.organizationId;
+  if (!employee?.organization_id) {
+    throw new Error('User is not bound to any organization');
   }
 
+  const organizationId = employee.organization_id;
+
+  // 🔐 2. Pastikan organization valid
+  const organization = await prisma.organization.findFirst({
+    where: {
+      id: organizationId,
+      deleted_at: null,
+    },
+  });
+
+  if (!organization) {
+    throw new Error('Organization not found or deleted');
+  }
+
+  // 🔐 3. Validasi membership untuk ambil role
   const member = await prisma.member.findFirst({
     where: {
       organizationId,
-      userId: session.user.id,
+      userId,
       deleted_at: null,
     },
   });
@@ -199,6 +206,111 @@ export async function getActiveOrganizationWithRole() {
   return {
     organizationId,
     role: member.role as 'owner' | 'admin' | 'member',
-    userId: session.user.id,
+    userId,
   };
+}
+export async function setActiveOrganizationAction(organizationId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user?.id) {
+    throw new Error('Unauthorized');
+  }
+
+  // 🔐 1. Pastikan user adalah member di organization tsb
+  const member = await prisma.member.findFirst({
+    where: {
+      organizationId,
+      userId: session.user.id,
+      deleted_at: null,
+    },
+    select: {
+      role: true,
+    },
+  });
+
+  if (!member) {
+    throw new Error('Forbidden: Not a member of this organization');
+  }
+
+  // 🔐 2. Validasi role (ERP mode)
+  const allowedRoles = ['owner', 'admin'];
+
+  if (!allowedRoles.includes(member.role)) {
+    throw new Error('Forbidden: Insufficient role to switch organization');
+  }
+
+  // ✅ 3. Set active organization
+  await auth.api.setActiveOrganization({
+    body: {
+      organizationId,
+    },
+    headers: await headers(),
+  });
+
+  return { success: true };
+}
+
+export async function syncUserOrganization() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user?.id) return;
+
+  const userId = session.user.id;
+  const activeOrgId = session.session.activeOrganizationId;
+
+  // ✅ Jika sudah ada, tidak perlu sync
+  if (activeOrgId) return;
+
+  // 🔎 Cari organization dari relasi karyawan
+  const employee = await prisma.karyawan.findFirst({
+    where: {
+      userId,
+      deleted_at: null,
+    },
+    include: {
+      department: {
+        include: {
+          organization: true,
+        },
+      },
+    },
+  });
+
+  const organizationId = employee?.department?.organization?.id;
+
+  if (!organizationId) {
+    throw new Error('User is not bound to any organization');
+  }
+
+  // 🔐 Pastikan membership ada (Better Auth butuh ini)
+  const existingMember = await prisma.member.findFirst({
+    where: {
+      userId,
+      organizationId,
+      deleted_at: null,
+    },
+  });
+
+  if (!existingMember) {
+    await prisma.member.create({
+      data: {
+        id: nanoid() as unknown as string,
+        userId,
+        organizationId,
+        role: 'member',
+      },
+    });
+  }
+
+  // ✅ Set active organization ke session
+  await auth.api.setActiveOrganization({
+    body: {
+      organizationId,
+    },
+    headers: await headers(),
+  });
 }

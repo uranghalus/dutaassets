@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { auth } from "@/lib/auth";
@@ -39,6 +40,7 @@ export async function getAssets({
         department_fk: true,
         divisi_fk: true,
         karyawan_fk: true,
+        assetCategory: true,
       },
       skip: page * pageSize,
       take: pageSize,
@@ -62,21 +64,36 @@ export async function createAsset(formData: FormData) {
     // Transform empty strings to null for optional fields
     const transformedData: any = { ...rawData };
 
-    const optionalFields = ["divisi_id", "karyawan_id", "brand", "model", "serial_number", "lokasi", "deskripsi", "vendor", "kondisi", "tgl_pembelian", "garansi_exp", "harga"];
+    const optionalFields = [
+      "divisi_id",
+      "karyawan_id",
+      "brand",
+      "model",
+      "serial_number",
+      "lokasi",
+      "deskripsi",
+      "vendor",
+      "kondisi",
+      "tgl_pembelian",
+      "garansi_exp",
+      "harga",
+    ];
 
-    optionalFields.forEach(field => {
+    optionalFields.forEach((field) => {
       if (transformedData[field] === "") {
         transformedData[field] = null;
       }
     });
 
     // Handle dates properly
-    if (transformedData.tgl_pembelian) transformedData.tgl_pembelian = new Date(transformedData.tgl_pembelian);
-    if (transformedData.garansi_exp) transformedData.garansi_exp = new Date(transformedData.garansi_exp);
+    if (transformedData.tgl_pembelian)
+      transformedData.tgl_pembelian = new Date(transformedData.tgl_pembelian);
+    if (transformedData.garansi_exp)
+      transformedData.garansi_exp = new Date(transformedData.garansi_exp);
 
     // Handle number properly
-    if (transformedData.harga) transformedData.harga = parseFloat(transformedData.harga as string);
-
+    if (transformedData.harga)
+      transformedData.harga = parseFloat(transformedData.harga as string);
 
     const validatedFields = assetFormSchema.safeParse(transformedData);
 
@@ -87,6 +104,12 @@ export async function createAsset(formData: FormData) {
       };
     }
 
+    // LOGGING FOR DEBUGGING
+    console.log(
+      "Creating Asset with Data:",
+      JSON.stringify(validatedFields.data, null, 2),
+    );
+
     try {
       const asset = await prisma.asset.create({
         data: {
@@ -95,6 +118,7 @@ export async function createAsset(formData: FormData) {
           // Ensure relations are connected properly if provided
           divisi_id: validatedFields.data.divisi_id || null,
           karyawan_id: validatedFields.data.karyawan_id || null,
+          categoryId: validatedFields.data.categoryId,
         },
       });
 
@@ -116,21 +140,36 @@ export async function updateAsset(id: string, formData: FormData) {
     // Transform empty strings to null for optional fields
     const transformedData: any = { ...rawData };
 
-    const optionalFields = ["divisi_id", "karyawan_id", "brand", "model", "serial_number", "lokasi", "deskripsi", "vendor", "kondisi", "tgl_pembelian", "garansi_exp", "harga"];
+    const optionalFields = [
+      "divisi_id",
+      "karyawan_id",
+      "brand",
+      "model",
+      "serial_number",
+      "lokasi",
+      "deskripsi",
+      "vendor",
+      "kondisi",
+      "tgl_pembelian",
+      "garansi_exp",
+      "harga",
+    ];
 
-    optionalFields.forEach(field => {
+    optionalFields.forEach((field) => {
       if (transformedData[field] === "") {
         transformedData[field] = null;
       }
     });
 
     // Handle dates properly
-    if (transformedData.tgl_pembelian) transformedData.tgl_pembelian = new Date(transformedData.tgl_pembelian);
-    if (transformedData.garansi_exp) transformedData.garansi_exp = new Date(transformedData.garansi_exp);
+    if (transformedData.tgl_pembelian)
+      transformedData.tgl_pembelian = new Date(transformedData.tgl_pembelian);
+    if (transformedData.garansi_exp)
+      transformedData.garansi_exp = new Date(transformedData.garansi_exp);
 
     // Handle number properly
-    if (transformedData.harga) transformedData.harga = parseFloat(transformedData.harga as string);
-
+    if (transformedData.harga)
+      transformedData.harga = parseFloat(transformedData.harga as string);
 
     const validatedFields = assetFormSchema.safeParse(transformedData);
 
@@ -148,6 +187,7 @@ export async function updateAsset(id: string, formData: FormData) {
           ...validatedFields.data,
           divisi_id: validatedFields.data.divisi_id || null,
           karyawan_id: validatedFields.data.karyawan_id || null,
+          categoryId: validatedFields.data.categoryId,
         },
       });
 
@@ -201,6 +241,7 @@ export async function getAssetsForExport({ search = "" }: { search?: string }) {
       department_fk: true,
       divisi_fk: true,
       karyawan_fk: true,
+      assetCategory: true,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -218,8 +259,10 @@ export async function importAssets(assets: any[]) {
     assets.forEach((asset, index) => {
       // Basic transformations
       const transformed = { ...asset };
-      if (transformed.tgl_pembelian) transformed.tgl_pembelian = new Date(transformed.tgl_pembelian);
-      if (transformed.garansi_exp) transformed.garansi_exp = new Date(transformed.garansi_exp);
+      if (transformed.tgl_pembelian)
+        transformed.tgl_pembelian = new Date(transformed.tgl_pembelian);
+      if (transformed.garansi_exp)
+        transformed.garansi_exp = new Date(transformed.garansi_exp);
       if (transformed.harga) transformed.harga = parseFloat(transformed.harga);
 
       const result = assetFormSchema.safeParse(transformed);
@@ -230,7 +273,9 @@ export async function importAssets(assets: any[]) {
           organization_id: organizationId,
         });
       } else {
-        errors.push(`Row ${index + 1}: ${Object.values(result.error.flatten().fieldErrors).flat().join(", ")}`);
+        errors.push(
+          `Row ${index + 1}: ${Object.values(result.error.flatten().fieldErrors).flat().join(", ")}`,
+        );
       }
     });
 
@@ -245,4 +290,24 @@ export async function importAssets(assets: any[]) {
     revalidatePath("/assets");
     return { success: true, count: validatedAssets.length };
   });
+}
+
+export async function getAssetById(id: string) {
+  const { organizationId } = await getActiveOrganizationWithRole();
+
+  const asset = await prisma.asset.findFirst({
+    where: {
+      id_barang: id,
+      organization_id: organizationId,
+      deleted_at: null,
+    },
+    include: {
+      department_fk: true,
+      divisi_fk: true,
+      karyawan_fk: true,
+      assetCategory: true,
+    },
+  });
+
+  return asset;
 }

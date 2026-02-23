@@ -13,28 +13,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Form } from "@/components/ui/form";
 
 import { ItemForm, itemFormSchema } from "@/schema/item-schema";
 import { useCreateItem, useUpdateItem } from "@/hooks/use-item";
-import { useAllItemCategories } from "@/hooks/use-item-category";
 import { Item } from "@/generated/prisma/client";
+import { SupplyAssetFormFields } from "../../../assets/components/supply-asset-form-fields";
 
 type Props = {
   open: boolean;
@@ -47,7 +31,6 @@ export function ItemActionDialog({ open, onOpenChange, currentRow }: Props) {
 
   const createMutation = useCreateItem();
   const updateMutation = useUpdateItem();
-  const { data: categories } = useAllItemCategories();
 
   const form = useForm<ItemForm>({
     resolver: zodResolver(itemFormSchema) as Resolver<ItemForm>,
@@ -59,7 +42,6 @@ export function ItemActionDialog({ open, onOpenChange, currentRow }: Props) {
       category: "",
       minStock: 0,
       description: "",
-      // image: ""
     },
   });
 
@@ -140,114 +122,7 @@ export function ItemActionDialog({ open, onOpenChange, currentRow }: Props) {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4"
           >
-            <div className="grid grid-cols-2 gap-4">
-              {/* CODE */}
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Item Code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="ITM-001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* NAME */}
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="A4 Paper" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* CATEGORY */}
-              <FormField
-                control={form.control}
-                name="categoryId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories?.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* UNIT */}
-              <FormField
-                control={form.control}
-                name="unit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unit</FormLabel>
-                    <FormControl>
-                      <Input placeholder="PCS, BOX..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* MIN STOCK */}
-            <FormField
-              control={form.control}
-              name="minStock"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Minimum Stock</FormLabel>
-                  <FormControl>
-                    <Input type="number" min={0} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* DESCRIPTION */}
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Details..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <SupplyAssetFormFields form={form} />
           </form>
         </Form>
 

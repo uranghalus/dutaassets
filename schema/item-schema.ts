@@ -7,7 +7,7 @@ export const itemFormSchema = z.object({
   category: z.string().optional(), // Kept for legacy/fallback
   categoryId: z.string().optional(),
   unit: z.string().min(1, 'Unit is required'),
-  minStock: z.coerce.number().min(0, 'Minimum stock cannot be negative'),
+  minStock: z.number().min(0, 'Minimum stock cannot be negative'),
   description: z.string().optional(),
   image: z.string().optional(),
 });

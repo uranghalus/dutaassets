@@ -2,7 +2,6 @@ import React from "react";
 import { Main } from "@/components/main";
 import { AssetDialogProvider } from "./components/asset-dialog-provider";
 import { Metadata } from "next";
-import { AssetDialog } from "./components/asset-dialog";
 import { AssetPrimaryButtons } from "./components/asset-primary-buttons";
 import { AssetTable } from "./components/asset-table";
 
@@ -27,7 +26,6 @@ export default function AssetsPage() {
         <div className="-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0">
           <AssetTable />
         </div>
-        <AssetDialog />
       </Main>
     </AssetDialogProvider>
   );

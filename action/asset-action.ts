@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { assetFormSchema } from "@/schema/asset-schema";
 import { withContext } from "@/lib/action-utils";
 import { getActiveOrganizationWithRole } from "./organization-action";
+import { serializePrisma } from "@/lib/utils";
 
 export async function getAssets({
   page = 0,
@@ -50,7 +51,7 @@ export async function getAssets({
   ]);
 
   return {
-    data,
+    data: serializePrisma(data),
     pageCount: Math.ceil(total / pageSize),
   };
 }
@@ -219,6 +220,34 @@ export async function deleteAsset(id: string) {
     }
   });
 }
+
+export async function deleteAssetsBulk(ids: string[]) {
+  return withContext(async () => {
+    const { organizationId, role } = await getActiveOrganizationWithRole();
+
+    if (role !== "owner" && role !== "admin") {
+      throw new Error("Forbidden");
+    }
+
+    if (!ids || ids.length === 0) return;
+
+    try {
+      await prisma.asset.updateMany({
+        where: {
+          id_barang: { in: ids },
+          organization_id: organizationId,
+        },
+        data: { deleted_at: new Date() },
+      });
+
+      revalidatePath("/assets");
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to delete assets in bulk:", error);
+      return { error: "Failed to delete assets in bulk" };
+    }
+  });
+}
 export async function getAssetsForExport({ search = "" }: { search?: string }) {
   const { organizationId } = await getActiveOrganizationWithRole();
 
@@ -246,7 +275,7 @@ export async function getAssetsForExport({ search = "" }: { search?: string }) {
     orderBy: { createdAt: "desc" },
   });
 
-  return data;
+  return serializePrisma(data);
 }
 
 export async function importAssets(assets: any[]) {
@@ -309,5 +338,5 @@ export async function getAssetById(id: string) {
     },
   });
 
-  return asset;
+  return serializePrisma(asset);
 }

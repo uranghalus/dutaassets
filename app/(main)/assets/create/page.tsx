@@ -99,7 +99,7 @@ export default function CreateAssetPage() {
     const isPending = createAssetMutation.isPending || createItemMutation.isPending;
 
     return (
-        <Main fluid className="max-w-5xl mx-auto py-8">
+        <Main fluid>
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
                     <Link href="/assets">

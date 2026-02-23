@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -50,4 +51,46 @@ export function formatPhone(value: string) {
     return `${digits.slice(0, 4)}-${digits.slice(4, 8)}-${digits.slice(8)}`;
 
   return `${digits.slice(0, 4)}-${digits.slice(4, 8)}-${digits.slice(8, 12)}`;
+}
+
+/**
+ * Recursively converts Prisma Decimal objects into plain numbers/strings
+ * so they can be passed to Client Components.
+ */
+export function serializePrisma<T>(data: T): T {
+  if (data === null || data === undefined) return data;
+
+  // Array
+  if (Array.isArray(data)) {
+    return data.map((item) => serializePrisma(item)) as unknown as T;
+  }
+
+  // Decimal detection (lebih aman)
+  if (
+    typeof data === 'object' &&
+    data !== null &&
+    typeof (data as any).toNumber === 'function' &&
+    typeof (data as any).toString === 'function' &&
+    (data as any).constructor?.name?.toLowerCase().includes('decimal')
+  ) {
+    return (data as any).toNumber() as unknown as T;
+  }
+
+  // Date (optional but recommended)
+  if (data instanceof Date) {
+    return data.toISOString() as unknown as T;
+  }
+
+  // Object
+  if (typeof data === 'object') {
+    const serialized: any = {};
+    for (const key in data) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        serialized[key] = serializePrisma((data as any)[key]);
+      }
+    }
+    return serialized as T;
+  }
+
+  return data;
 }

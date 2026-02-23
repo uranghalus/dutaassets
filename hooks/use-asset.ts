@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createAsset,
   deleteAsset,
+  deleteAssetsBulk,
   getAssets,
   updateAsset,
 } from "@/action/asset-action";
@@ -47,7 +48,13 @@ export const useUpdateAsset = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
+    mutationFn: async ({
+      id,
+      formData,
+    }: {
+      id: string;
+      formData: FormData;
+    }) => {
       const result = await updateAsset(id, formData);
       if (result?.error) {
         throw new Error(result.error);
@@ -77,6 +84,27 @@ export const useDeleteAsset = () => {
     },
     onSuccess: () => {
       toast.success("Asset deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+};
+
+export const useDeleteAssetsBulk = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const result = await deleteAssetsBulk(ids);
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+      return result;
+    },
+    onSuccess: () => {
+      toast.success("Assets deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     },
     onError: (error) => {

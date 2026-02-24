@@ -20,6 +20,7 @@ import {
   Divisi,
   Karyawan,
   AssetCategory,
+  AssetLocation,
 } from "@/generated/prisma/client";
 import Link from "next/link";
 
@@ -28,6 +29,7 @@ type AssetWithRelations = Asset & {
   divisi_fk?: Divisi | null;
   karyawan_fk?: Karyawan | null;
   assetCategory?: AssetCategory | null;
+  assetLocation?: AssetLocation | null;
 };
 
 const ActionCell = ({ row }: { row: AssetWithRelations }) => {
@@ -157,15 +159,22 @@ export const assetColumns: ColumnDef<AssetWithRelations>[] = [
     ),
     cell: ({ cell }) => {
       const status = cell.getValue() as string;
-      let variant: "default" | "secondary" | "destructive" | "outline" =
-        "outline";
+      let variant:
+        | "default"
+        | "secondary"
+        | "destructive"
+        | "outline"
+        | "warning" = "outline";
 
-      if (status === "AVAILABLE") variant = "default"; // Green-ish usually default is black/primary
-      if (status === "IN_USE") variant = "secondary";
-      if (status === "MAINTENANCE") variant = "destructive"; // Or warning color if supported
-      if (status === "DISPOSED") variant = "outline";
+      if (status === "AVAILABLE") variant = "default";
+      if (status === "IN_USE" || status === "LOANED") variant = "secondary";
+      if (status === "MAINTENANCE" || status === "UNDER_MAINTENANCE")
+        variant = "warning" as any;
+      if (status === "LOST" || status === "DISPOSED") variant = "destructive";
 
-      return <Badge variant={variant}>{status.replace(/_/g, " ")}</Badge>;
+      return (
+        <Badge variant={variant as any}>{status.replace(/_/g, " ")}</Badge>
+      );
     },
     size: 100,
   },
@@ -176,11 +185,25 @@ export const assetColumns: ColumnDef<AssetWithRelations>[] = [
     ),
     cell: ({ row }) => {
       const dept = row.original.department_fk?.nama_department;
-      const location = row.original.lokasi;
+      const locationName = row.original.assetLocation?.name;
+      const locationNotes = row.original.lokasi;
 
       return (
         <div className="flex flex-col text-xs">
-          {location && <span className="font-medium">{location}</span>}
+          {locationName ? (
+            <span className="font-medium text-primary">
+              {locationName}
+              {locationNotes && (
+                <span className="text-muted-foreground ml-1">
+                  ({locationNotes})
+                </span>
+              )}
+            </span>
+          ) : (
+            locationNotes && (
+              <span className="font-medium">{locationNotes}</span>
+            )
+          )}
           {dept && <span className="text-muted-foreground">{dept}</span>}
         </div>
       );

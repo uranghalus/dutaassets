@@ -85,11 +85,13 @@ export default async function AssetDetailsPage({
                     variant={
                       asset.status === "AVAILABLE"
                         ? "default"
-                        : asset.status === "IN_USE"
+                        : ["IN_USE", "LOANED"].includes(asset.status)
                           ? "secondary"
-                          : asset.status === "MAINTENANCE"
-                            ? "destructive"
-                            : "outline"
+                          : ["MAINTENANCE", "UNDER_MAINTENANCE"].includes(
+                                asset.status,
+                              )
+                            ? "outline" // Using outline as fallback for warning if not in theme
+                            : "destructive"
                     }
                   >
                     {asset.status.replace(/_/g, " ")}
@@ -112,14 +114,21 @@ export default async function AssetDetailsPage({
                       <span>{asset.department_fk.nama_department}</span>
                     </div>
                   </div>
-                  {asset.lokasi && (
+                  {(asset.assetLocation || asset.lokasi) && (
                     <div className="flex items-center gap-3 text-sm">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
                       <div className="flex flex-col">
                         <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
                           Location
                         </span>
-                        <span>{asset.lokasi}</span>
+                        <span>
+                          {asset.assetLocation?.name || asset.lokasi}
+                          {asset.assetLocation && asset.lokasi && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              ({asset.lokasi})
+                            </span>
+                          )}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -231,7 +240,9 @@ export default async function AssetDetailsPage({
                         <h4 className="text-sm font-medium text-muted-foreground">
                           Location
                         </h4>
-                        <p className="text-base">{asset.lokasi || "-"}</p>
+                        <p className="text-base">
+                          {asset.assetLocation?.name || asset.lokasi || "-"}
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
@@ -298,9 +309,9 @@ export default async function AssetDetailsPage({
                         <p className="text-base">
                           {asset.harga
                             ? new Intl.NumberFormat("id-ID", {
-                              style: "currency",
-                              currency: "IDR",
-                            }).format(Number(asset.harga))
+                                style: "currency",
+                                currency: "IDR",
+                              }).format(Number(asset.harga))
                             : "-"}
                         </p>
                       </div>

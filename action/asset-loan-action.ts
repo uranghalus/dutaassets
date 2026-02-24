@@ -84,7 +84,8 @@ export async function createAssetLoan(formData: FormData) {
       };
     }
 
-    const { assetId, employeeId, loanDate, returnDate, notes } = validatedFields.data;
+    const { assetId, employeeId, loanDate, returnDate, notes } =
+      validatedFields.data;
 
     try {
       const result = await prisma.$transaction(async (tx) => {
@@ -94,7 +95,8 @@ export async function createAssetLoan(formData: FormData) {
         });
 
         if (!asset) throw new Error("Asset not found");
-        if (asset.status !== "AVAILABLE") throw new Error("Asset is not available for loan");
+        if (asset.status !== "AVAILABLE")
+          throw new Error("Asset is not available for loan");
 
         // 2. Create Loan Record
         const loan = await tx.assetLoan.create({
@@ -146,7 +148,8 @@ export async function returnAssetLoan(id: string, notes?: string) {
         });
 
         if (!loan) throw new Error("Loan record not found");
-        if (loan.status === "RETURNED") throw new Error("Asset already returned");
+        if (loan.status === "RETURNED")
+          throw new Error("Asset already returned");
 
         // 1. Update Loan Record
         await tx.assetLoan.update({

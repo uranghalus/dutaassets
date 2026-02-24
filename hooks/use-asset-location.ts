@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createAssetLocation,
   deleteAssetLocation,
+  getAllAssetLocations,
   getAssetLocations,
   updateAssetLocation,
 } from "@/action/asset-location-action";
@@ -79,8 +80,12 @@ export const useDeleteAssetLocation = () => {
       toast.success("Location deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["asset-locations"] });
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+  });
+};
+
+export const useAllAssetLocations = () => {
+  return useQuery({
+    queryKey: ["asset-locations", "all"],
+    queryFn: () => getAllAssetLocations(),
   });
 };

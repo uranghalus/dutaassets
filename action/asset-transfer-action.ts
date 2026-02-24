@@ -74,10 +74,14 @@ export async function createAssetTransfer(data: any) {
     // Filter out "none" values from Select components
     const cleanData = {
       ...validated,
-      fromLocationId: validated.fromLocationId === "none" ? null : validated.fromLocationId,
-      toLocationId: validated.toLocationId === "none" ? null : validated.toLocationId,
-      fromEmployeeId: validated.fromEmployeeId === "none" ? null : validated.fromEmployeeId,
-      toEmployeeId: validated.toEmployeeId === "none" ? null : validated.toEmployeeId,
+      fromLocationId:
+        validated.fromLocationId === "none" ? null : validated.fromLocationId,
+      toLocationId:
+        validated.toLocationId === "none" ? null : validated.toLocationId,
+      fromEmployeeId:
+        validated.fromEmployeeId === "none" ? null : validated.fromEmployeeId,
+      toEmployeeId:
+        validated.toEmployeeId === "none" ? null : validated.toEmployeeId,
     };
 
     const transfer = await prisma.assetTransfer.create({
@@ -128,8 +132,8 @@ export async function completeAssetTransfer(id: string) {
       await tx.asset.update({
         where: { id_barang: transfer.assetId },
         data: {
-          locationId: transfer.toLocationId || undefined,
-          karyawan_id: transfer.toEmployeeId || undefined,
+          locationId: transfer.toLocationId || null,
+          karyawan_id: transfer.toEmployeeId || null,
         },
       });
 

@@ -23,7 +23,7 @@ export async function getAssets({
 
   const where: any = {
     organization_id: organizationId,
-    deleted_at: null,
+
     OR: search
       ? [
           { nama_asset: { contains: search } },
@@ -42,6 +42,7 @@ export async function getAssets({
         divisi_fk: true,
         karyawan_fk: true,
         assetCategory: true,
+        assetLocation: true,
       },
       skip: page * pageSize,
       take: pageSize,
@@ -72,6 +73,7 @@ export async function createAsset(formData: FormData) {
       "model",
       "serial_number",
       "lokasi",
+      "locationId",
       "deskripsi",
       "vendor",
       "kondisi",
@@ -119,14 +121,19 @@ export async function createAsset(formData: FormData) {
           // Ensure relations are connected properly if provided
           divisi_id: validatedFields.data.divisi_id || null,
           karyawan_id: validatedFields.data.karyawan_id || null,
+          locationId: validatedFields.data.locationId || null,
+          lokasi: validatedFields.data.lokasi || null,
           categoryId: validatedFields.data.categoryId,
         },
       });
 
       revalidatePath("/assets");
       return { success: true, data: asset };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create asset:", error);
+      if (error.code === "P2002") {
+        return { error: "Asset code already exists for this organization" };
+      }
       return { error: "Failed to create asset" };
     }
   });
@@ -148,6 +155,7 @@ export async function updateAsset(id: string, formData: FormData) {
       "model",
       "serial_number",
       "lokasi",
+      "locationId",
       "deskripsi",
       "vendor",
       "kondisi",
@@ -188,14 +196,19 @@ export async function updateAsset(id: string, formData: FormData) {
           ...validatedFields.data,
           divisi_id: validatedFields.data.divisi_id || null,
           karyawan_id: validatedFields.data.karyawan_id || null,
+          locationId: validatedFields.data.locationId || null,
+          lokasi: validatedFields.data.lokasi || null,
           categoryId: validatedFields.data.categoryId,
         },
       });
 
       revalidatePath("/assets");
       return { success: true };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update asset:", error);
+      if (error.code === "P2002") {
+        return { error: "Asset code already exists for this organization" };
+      }
       return { error: "Failed to update asset" };
     }
   });
@@ -206,10 +219,9 @@ export async function deleteAsset(id: string) {
     const { organizationId } = await getActiveOrganizationWithRole();
 
     try {
-      // Soft delete
-      await prisma.asset.update({
+      // Hard delete
+      await prisma.asset.delete({
         where: { id_barang: id, organization_id: organizationId },
-        data: { deleted_at: new Date() },
       });
 
       revalidatePath("/assets");
@@ -232,12 +244,11 @@ export async function deleteAssetsBulk(ids: string[]) {
     if (!ids || ids.length === 0) return;
 
     try {
-      await prisma.asset.updateMany({
+      await prisma.asset.deleteMany({
         where: {
           id_barang: { in: ids },
           organization_id: organizationId,
         },
-        data: { deleted_at: new Date() },
       });
 
       revalidatePath("/assets");
@@ -253,7 +264,7 @@ export async function getAssetsForExport({ search = "" }: { search?: string }) {
 
   const where: any = {
     organization_id: organizationId,
-    deleted_at: null,
+
     OR: search
       ? [
           { nama_asset: { contains: search } },
@@ -271,6 +282,7 @@ export async function getAssetsForExport({ search = "" }: { search?: string }) {
       divisi_fk: true,
       karyawan_fk: true,
       assetCategory: true,
+      assetLocation: true,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -328,13 +340,13 @@ export async function getAssetById(id: string) {
     where: {
       id_barang: id,
       organization_id: organizationId,
-      deleted_at: null,
     },
     include: {
       department_fk: true,
       divisi_fk: true,
       karyawan_fk: true,
       assetCategory: true,
+      assetLocation: true,
     },
   });
 

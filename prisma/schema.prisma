@@ -8,6 +8,53 @@ datasource db {
 }
 
 //////////////////////////////////////////////////
+// ENUM
+//////////////////////////////////////////////////
+
+enum AssetStatus {
+  AVAILABLE
+  LOANED
+  UNDER_MAINTENANCE
+  DISPOSED
+  LOST
+  IN_USE
+  MAINTENANCE
+}
+
+enum LoanStatus {
+  ACTIVE
+  RETURNED
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  COMPLETED
+}
+
+enum TransferStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  CANCELLED
+}
+
+enum RequisitionStatus {
+  PENDING_SUPERVISOR
+  PENDING_FA
+  PENDING_GM
+  PENDING_WAREHOUSE
+  COMPLETED
+  REJECTED
+}
+
+enum LedgerType {
+  IN
+  OUT
+  ADJUSTMENT
+  TRANSFER
+}
+
+//////////////////////////////////////////////////
 // USER & AUTH
 //////////////////////////////////////////////////
 
@@ -124,6 +171,7 @@ model Organization {
   divisis           Divisi[]
   teams             Team[]
   activityLogs      ActivityLog[]
+  stockLedgers      StockLedger[]
 
   @@index([deleted_at], map: "organization_deleted_at_idx_custom")
   @@map("organization")
@@ -317,24 +365,40 @@ model Asset {
   kondisi String? @db.Char(50)
   lokasi  String? @db.Char(200)
 
+  locationId    String?
+  assetLocation AssetLocation? @relation(fields: [locationId], references: [id])
+
   garansi_exp DateTime?
 
-  status String @default("AVAILABLE")
+  status AssetStatus @default(AVAILABLE)
 
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deleted_at DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  department_fk     Department         @relation(fields: [department_id], references: [id_department])
-  divisi_fk         Divisi?            @relation(fields: [divisi_id], references: [id_divisi])
-  karyawan_fk       Karyawan?          @relation(fields: [karyawan_id], references: [id_karyawan])
-  assetLoans        AssetLoan[]
-  assetMaintenances AssetMaintenance[]
-  assetLocations    AssetLocation[]
-  assetTransfers    AssetTransfer[]
+  department_fk      Department          @relation(fields: [department_id], references: [id_department])
+  divisi_fk          Divisi?             @relation(fields: [divisi_id], references: [id_divisi])
+  karyawan_fk        Karyawan?           @relation(fields: [karyawan_id], references: [id_karyawan])
+  assetLoans         AssetLoan[]
+  assetMaintenances  AssetMaintenance[]
+  assetTransfers     AssetTransfer[]
+  assetDepreciations AssetDepreciation[]
 
   @@unique([organization_id, kode_asset], map: "asset_org_kode_unique")
   @@map("asset")
+}
+
+model AssetDepreciation {
+  id       String   @id @default(uuid())
+  asset_id String
+  period   DateTime
+  amount   Decimal  @db.Decimal(15, 2)
+
+  asset Asset @relation(fields: [asset_id], references: [id_barang], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([asset_id, period])
+  @@map("asset_depreciation")
 }
 
 model AssetLoan {
@@ -347,8 +411,8 @@ model AssetLoan {
   returnDate       DateTime?
   actualReturnDate DateTime?
 
-  status String  @db.Char(50) // ACTIVE, RETURNED
-  notes  String? @db.Text
+  status LoanStatus @default(ACTIVE)
+  notes  String?    @db.Text
 
   asset    Asset    @relation(fields: [assetId], references: [id_barang])
   employee Karyawan @relation(fields: [employeeId], references: [id_karyawan])
@@ -368,9 +432,9 @@ model AssetMaintenance {
   maintenanceDate DateTime
   type            String // PREVENTIVE, REPAIR
   provider        String?
-  cost            Decimal  @db.Decimal(15, 2)
-  description     String?  @db.Text
-  status          String // SCHEDULED, COMPLETED
+  cost            Decimal           @db.Decimal(15, 2)
+  description     String?           @db.Text
+  status          MaintenanceStatus
 
   asset Asset @relation(fields: [assetId], references: [id_barang])
 
@@ -410,9 +474,9 @@ model AssetTransfer {
   fromEmployeeId String?
   toEmployeeId   String?
 
-  transferDate DateTime @default(now())
-  status       String   @default("COMPLETED") // PENDING, COMPLETED, CANCELLED
-  remarks      String?  @db.Text
+  transferDate DateTime       @default(now())
+  status       TransferStatus @default(COMPLETED)
+  remarks      String?        @db.Text
 
   asset        Asset          @relation(fields: [assetId], references: [id_barang])
   fromLocation AssetLocation? @relation("TransferFrom", fields: [fromLocationId], references: [id])
@@ -474,6 +538,7 @@ model Item {
   stockAdjustmentItems StockAdjustmentItem[]
   stockTransferItems   StockTransferItem[]
   stockReceiptItems    StockReceiptItem[]
+  stockLedgers         StockLedger[]
 
   @@unique([organizationId, code], map: "item_org_code_unique")
   @@map("item")
@@ -495,6 +560,7 @@ model Warehouse {
   transfersFrom    StockTransfer[]   @relation("FromWarehouse")
   transfersTo      StockTransfer[]   @relation("ToWarehouse")
   receipts         StockReceipt[]
+  stockLedgers     StockLedger[]
 
   @@map("warehouse")
 }
@@ -512,6 +578,29 @@ model Stock {
 
   @@unique([warehouseId, itemId], map: "stock_warehouse_item_unique")
   @@map("stock")
+}
+
+model StockLedger {
+  id              String @id @default(uuid())
+  organization_id String
+  warehouse_id    String
+  item_id         String
+
+  type       LedgerType
+  quantity   Int
+  unit_cost  Decimal    @db.Decimal(15, 2)
+  total_cost Decimal    @db.Decimal(15, 2)
+
+  reference String?
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  warehouse    Warehouse    @relation(fields: [warehouse_id], references: [id])
+  item         Item         @relation(fields: [item_id], references: [id])
+
+  @@index([organization_id])
+  @@index([item_id])
+  @@map("stock_ledger")
 }
 
 model StockAdjustment {
@@ -553,9 +642,9 @@ model Requisition {
   organizationId String
   requesterId    String
 
-  date    DateTime @default(now())
-  status  String   @default("PENDING_SUPERVISOR") // PENDING_SUPERVISOR, PENDING_FA, PENDING_GM, PENDING_WAREHOUSE, COMPLETED, REJECTED
-  remarks String?  @db.Text
+  date    DateTime          @default(now())
+  status  RequisitionStatus @default(PENDING_SUPERVISOR) // PENDING_SUPERVISOR, PENDING_FA, PENDING_GM, PENDING_WAREHOUSE, COMPLETED, REJECTED
+  remarks String?           @db.Text
 
   requester Karyawan          @relation(fields: [requesterId], references: [id_karyawan])
   items     RequisitionItem[]

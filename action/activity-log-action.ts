@@ -7,9 +7,13 @@ import { headers } from "next/headers";
 export async function getActivityLogs({
   page = 0,
   pageSize = 10,
+  entityId,
+  entityType,
 }: {
   page?: number;
   pageSize?: number;
+  entityId?: string;
+  entityType?: string;
 }) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -19,15 +23,29 @@ export async function getActivityLogs({
     throw new Error("Unauthorized");
   }
 
-  const organizationId = session.session.activeOrganizationId;
+  let organizationId = session.session.activeOrganizationId;
+
+  if (!organizationId) {
+    const employee = await prisma.karyawan.findUnique({
+      where: { userId: session.user.id },
+      select: { organization_id: true },
+    });
+    organizationId = employee?.organization_id || null;
+  }
 
   if (!organizationId) {
     return { data: [], pageCount: 0 };
   }
 
+  const where = {
+    organizationId,
+    entityId: entityId || undefined,
+    entityType: entityType || undefined,
+  };
+
   const [data, total] = await Promise.all([
     prisma.activityLog.findMany({
-      where: { organizationId },
+      where,
       include: {
         user: true,
       },
@@ -36,7 +54,7 @@ export async function getActivityLogs({
       orderBy: { createdAt: "desc" },
     }),
     prisma.activityLog.count({
-      where: { organizationId },
+      where,
     }),
   ]);
 

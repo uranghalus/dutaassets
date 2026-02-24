@@ -53,6 +53,11 @@ export const sidebarData: SidebarData = {
           url: '/dashboard',
           icon: LayoutDashboard,
         },
+        {
+          title: 'Tambah Aset',
+          url: '/assets/create',
+          icon: Package,
+        },
       ],
     },
 
@@ -65,11 +70,7 @@ export const sidebarData: SidebarData = {
           url: '/assets',
           icon: Boxes,
         },
-        {
-          title: 'Tambah Aset',
-          url: '/assets/create',
-          icon: Package,
-        },
+
         {
           title: 'Kategori Aset',
           url: '/assets/categories',
@@ -163,12 +164,7 @@ export const sidebarData: SidebarData = {
       title: 'Audit & Laporan',
       items: [
         {
-          title: 'Riwayat Aset',
-          url: '/asset-history',
-          icon: History,
-        },
-        {
-          title: 'Audit Log',
+          title: 'Log Audit',
           url: '/audit-logs',
           icon: ShieldCheck,
         },

@@ -14,6 +14,7 @@ export const auditExtension = Prisma.defineExtension((client) => {
           
           if (auditOperations.includes(operation) && model !== "ActivityLog") {
             const context = getContext();
+            console.log(`[AuditExtension] Operation: ${operation}, Model: ${model}, OrgContext: ${context.organizationId}`);
             
             // Only log if we have an organizationId (don't log public/system actions without org context)
             if (context.organizationId) {
@@ -32,23 +33,28 @@ export const auditExtension = Prisma.defineExtension((client) => {
                 (args as any).where?.id_karyawan ||
                 (result as any)?.id_karyawan;
               
-              // We use setTimeout or fire-and-forget to avoid blocking the main UI response
-              // but since we are in a server environment, we should ideally await or use a queue.
-              // For simplicity here, we use the client's internal activityLog to avoid circular dependencies.
-              (client as any).activityLog.create({
-                data: {
-                  organizationId: context.organizationId,
-                  userId: context.userId,
-                  action: actionName,
-                  entityType: model,
-                  entityId: typeof entityId === "string" ? entityId : undefined,
-                  details: {
-                    args: JSON.parse(JSON.stringify(args)), // Ensure it's serializable
-                  },
-                  ipAddress: context.ipAddress,
-                  userAgent: context.userAgent,
-                },
-              }).catch((err: any) => console.error("Audit Logging Error:", err));
+              const logData = {
+                organizationId: context.organizationId,
+                userId: context.userId,
+                action: actionName,
+                entityType: model,
+                entityId: typeof entityId === "string" ? entityId : undefined,
+                details: args ? JSON.parse(JSON.stringify(args)) : {}, 
+                ipAddress: context.ipAddress,
+                userAgent: context.userAgent,
+              };
+
+              // Await for diagnostic purposes, in production this could be fire-and-forget
+              try {
+                await (client as any).activityLog.create({
+                  data: logData,
+                });
+                console.log(`[AuditExtension] Successfully logged ${actionName} for ${model}`);
+              } catch (err: any) {
+                console.error("[AuditExtension] Error saving activity log:", err);
+              }
+            } else {
+              console.warn(`[AuditExtension] Skip logging ${operation} ${model}: Missing organizationId.`);
             }
           }
 

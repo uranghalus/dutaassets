@@ -29,6 +29,7 @@ import {
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AssetDetailsActions } from "./asset-details-actions";
+import { AssetActivityLogTable } from "../components/asset-activity-log-table";
 
 export default async function AssetDetailsPage({
   params,
@@ -142,6 +143,7 @@ export default async function AssetDetailsPage({
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="specs">Specifications</TabsTrigger>
                   <TabsTrigger value="procurement">Procurement</TabsTrigger>
+                  <TabsTrigger value="history">History</TabsTrigger>
                 </TabsList>
 
                 {/* OVERVIEW TAB */}
@@ -296,9 +298,9 @@ export default async function AssetDetailsPage({
                         <p className="text-base">
                           {asset.harga
                             ? new Intl.NumberFormat("id-ID", {
-                                style: "currency",
-                                currency: "IDR",
-                              }).format(Number(asset.harga))
+                              style: "currency",
+                              currency: "IDR",
+                            }).format(Number(asset.harga))
                             : "-"}
                         </p>
                       </div>
@@ -320,6 +322,11 @@ export default async function AssetDetailsPage({
                       </div>
                     </CardContent>
                   </Card>
+                </TabsContent>
+
+                {/* HISTORY TAB */}
+                <TabsContent value="history" className="space-y-6 mt-4">
+                  <AssetActivityLogTable assetId={assetId} />
                 </TabsContent>
               </Tabs>
             </div>

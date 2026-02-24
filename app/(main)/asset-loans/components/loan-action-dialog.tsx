@@ -45,6 +45,7 @@ import { useLoanDialog } from "./loan-dialog-provider";
 import { useCreateAssetLoan } from "@/hooks/use-asset-loan";
 import { useAssets } from "@/hooks/use-asset";
 import { useEmployees } from "@/hooks/use-employee";
+import { useDepartmentsSimple } from "@/hooks/use-departments";
 
 export function LoanActionDialog() {
   const { open, setOpen } = useLoanDialog();
@@ -52,15 +53,17 @@ export function LoanActionDialog() {
 
   // Fetch all assets but we'll filter for AVAILABLE ones in the UI
   const { data: assetsData } = useAssets({ page: 0, pageSize: 100 });
-  const availableAssets =
-    assetsData?.data.filter((a) => a.status === "AVAILABLE") || [];
 
   const { data: employeesData } = useEmployees({ page: 1, pageSize: 100 });
   const employees = employeesData?.data || [];
 
+  const { data: deptsData } = useDepartmentsSimple();
+  const departments = deptsData || [];
+
   const form = useForm<AssetLoanForm>({
     resolver: zodResolver(assetLoanFormSchema) as any,
     defaultValues: {
+      departmentId: "",
       assetId: "",
       employeeId: "",
       loanDate: new Date(),
@@ -69,9 +72,27 @@ export function LoanActionDialog() {
     } as DefaultValues<AssetLoanForm>,
   });
 
+  const selectedDeptId = form.watch("departmentId");
+
+  const availableAssets =
+    assetsData?.data.filter((a: any) => {
+      const isAvailable = a.status === "AVAILABLE";
+      const matchesDept =
+        selectedDeptId && selectedDeptId !== "none"
+          ? a.department_id === selectedDeptId
+          : true;
+      return isAvailable && matchesDept;
+    }) || [];
+
+  const filteredEmployees =
+    selectedDeptId && selectedDeptId !== "none"
+      ? employees.filter((emp: any) => emp.department_id === selectedDeptId)
+      : employees;
+
   useEffect(() => {
     if (open === "loan") {
       form.reset({
+        departmentId: "",
         assetId: "",
         employeeId: "",
         loanDate: new Date(),
@@ -113,13 +134,49 @@ export function LoanActionDialog() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
+              name="departmentId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Department</FormLabel>
+                  <Select
+                    onValueChange={(val) => {
+                      field.onChange(val);
+                      form.setValue("assetId", "");
+                      form.setValue("employeeId", "");
+                    }}
+                    value={field.value || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Departments" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">All Departments</SelectItem>
+                      {departments.map((dept) => (
+                        <SelectItem
+                          key={dept.id_department}
+                          value={dept.id_department}
+                        >
+                          {dept.nama_department}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="assetId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Asset *</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -163,7 +220,7 @@ export function LoanActionDialog() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {employees.map((emp) => (
+                      {filteredEmployees.map((emp) => (
                         <SelectItem
                           key={emp.id_karyawan}
                           value={emp.id_karyawan}

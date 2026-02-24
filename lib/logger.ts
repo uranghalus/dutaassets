@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { Prisma } from "@/generated/prisma/client";
+import { getClientIp } from "./ip-utils";
 
 export type LogData = {
   organizationId: string;
@@ -19,7 +20,7 @@ export async function logActivity(data: LogData, tx?: Prisma.TransactionClient) 
   const client = tx || prisma;
   const headerList = await headers();
   
-  const ipAddress = headerList.get("x-forwarded-for") || "unknown";
+  const ipAddress = getClientIp(headerList);
   const userAgent = headerList.get("user-agent") || "unknown";
 
   try {

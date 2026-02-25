@@ -1,60 +1,108 @@
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma, PrismaClient } from "@/generated/prisma/client";
+import { createDiff } from "./audit-diff";
 import { getContext } from "./context";
 
 export const auditExtension = Prisma.defineExtension((client) => {
   return client.$extends({
+    name: "audit-extension",
     query: {
       $allModels: {
         async $allOperations({ model, operation, args, query }) {
-          // 1. Execute the actual query first
-          const result = await query(args);
+          const executeQuery = query as (args: any) => Promise<any>;
 
-          // 2. Define which operations we want to log
-          const auditOperations = ["create", "update", "delete", "upsert", "deleteMany", "updateMany"];
-          
-          if (auditOperations.includes(operation) && model !== "ActivityLog") {
-            const context = getContext();
-            console.log(`[AuditExtension] Operation: ${operation}, Model: ${model}, OrgContext: ${context.organizationId}`);
-            
-            // Only log if we have an organizationId (don't log public/system actions without org context)
-            if (context.organizationId) {
-              const actionName = `${operation.toUpperCase()}_${model.toUpperCase()}`;
-              
-              // Extract entity ID if possible
-              const entityId = 
-                (args as any).where?.id || 
-                (result as any)?.id || 
-                (args as any).where?.id_barang || 
-                (result as any)?.id_barang ||
-                (args as any).where?.id_department ||
-                (result as any)?.id_department ||
-                (args as any).where?.id_divisi ||
-                (result as any)?.id_divisi ||
-                (args as any).where?.id_karyawan ||
-                (result as any)?.id_karyawan;
-              
-              const logData = {
-                organizationId: context.organizationId,
-                userId: context.userId,
-                action: actionName,
-                entityType: model,
-                entityId: typeof entityId === "string" ? entityId : undefined,
-                details: args ? JSON.parse(JSON.stringify(args)) : {}, 
-                ipAddress: context.ipAddress,
-                userAgent: context.userAgent,
-              };
+          if (!model) return executeQuery(args);
 
-              // Await for diagnostic purposes, in production this could be fire-and-forget
-              try {
-                await (client as any).activityLog.create({
-                  data: logData,
-                });
-                console.log(`[AuditExtension] Successfully logged ${actionName} for ${model}`);
-              } catch (err: any) {
-                console.error("[AuditExtension] Error saving activity log:", err);
+          // All mutation operations we want to audit
+          const AUDIT_OPERATIONS = [
+            "create",
+            "update",
+            "delete",
+            "upsert",
+            "createMany",
+            "updateMany",
+            "deleteMany",
+          ];
+
+          if (!AUDIT_OPERATIONS.includes(operation)) {
+            return executeQuery(args);
+          }
+
+          // Skip AuditLog and ActivityLog to avoid recursion or redundant logging
+          if (model === "AuditLog" || model === "ActivityLog") {
+            return executeQuery(args);
+          }
+
+          const context = getContext();
+          const { userId, organizationId } = context;
+
+          let oldData: any = null;
+
+          // For single record updates/deletes, try to get the old state for diffing
+          if (
+            operation === "update" ||
+            operation === "delete" ||
+            operation === "upsert"
+          ) {
+            if (args?.where && !operation.endsWith("Many")) {
+              const delegate = (client as any)[model as keyof typeof client];
+              if (delegate?.findUnique) {
+                try {
+                  oldData = await delegate.findUnique({
+                    where: args.where,
+                  });
+                } catch (e) {
+                  // Ignore errors in fetching old data
+                }
               }
-            } else {
-              console.warn(`[AuditExtension] Skip logging ${operation} ${model}: Missing organizationId.`);
+            }
+          }
+
+          const result = await executeQuery(args);
+
+          // Only log if we have a context (at least a userId or organizationId)
+          if (organizationId || userId) {
+            try {
+              // Extract a meaningful record ID
+              let recordId: any = "";
+              const anyArgs = args as any;
+
+              if (result) {
+                recordId =
+                  result.id ||
+                  result.id_barang ||
+                  result.id_department ||
+                  result.id_divisi ||
+                  result.id_karyawan ||
+                  "";
+              }
+              if (!recordId && oldData) {
+                recordId =
+                  oldData.id ||
+                  oldData.id_barang ||
+                  oldData.id_department ||
+                  oldData.id_divisi ||
+                  oldData.id_karyawan ||
+                  "";
+              }
+              if (!recordId && anyArgs?.where?.id) recordId = anyArgs.where.id;
+              if (!recordId && anyArgs?.where?.id_barang)
+                recordId = anyArgs.where.id_barang;
+
+              await (client as any).auditLog.create({
+                data: {
+                  model,
+                  action: operation,
+                  recordId: recordId ? String(recordId) : "",
+                  changes: createDiff(oldData, result),
+                  userId: userId || null,
+                  organizationId: organizationId || null,
+                },
+              });
+            } catch (err) {
+              console.error(
+                `[AuditExtension] Error saving log for ${model}.${operation}:`,
+                err,
+              );
             }
           }
 

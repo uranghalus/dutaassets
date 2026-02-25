@@ -9,7 +9,7 @@ import { DataTableToolbar } from "@/components/datatable/datatable-toolbar";
 import { useDataTable } from "@/hooks/use-data-table";
 import { useActivityLogs } from "@/hooks/use-activity-log";
 import { activityLogColumns } from "./activity-log-columns";
-import { ActivityLog, User } from "@/generated/prisma/client";
+import { AuditLog, User } from "@/generated/prisma/client";
 
 export function ActivityLogTable() {
   const [pagination, setPagination] = useState({
@@ -23,7 +23,7 @@ export function ActivityLogTable() {
   });
 
   const { table } = useDataTable({
-    data: (data?.data ?? []) as (ActivityLog & { user: User | null })[],
+    data: (data?.data ?? []) as (AuditLog & { user: User | null })[],
     columns: activityLogColumns,
     columnResizeMode: "onEnd",
 

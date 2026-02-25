@@ -10,18 +10,20 @@ export async function getAssetReportData() {
   const assets = await prisma.asset.findMany({
     where: {
       organization_id: organizationId,
-      deleted_at: null,
     },
     select: {
       harga: true,
       status: true,
       assetCategory: {
-        select: { name: true }
-      }
-    }
+        select: { name: true },
+      },
+    },
   });
 
-  const totalValue = assets.reduce((sum, asset) => sum + Number(asset.harga || 0), 0);
+  const totalValue = assets.reduce(
+    (sum, asset) => sum + Number(asset.harga || 0),
+    0,
+  );
   const totalCount = assets.length;
 
   // Group by Status
@@ -30,7 +32,9 @@ export async function getAssetReportData() {
     return acc;
   }, {});
 
-  const statusData = Object.entries(statusDistribution).map(([name, value]) => ({ name, value }));
+  const statusData = Object.entries(statusDistribution).map(
+    ([name, value]) => ({ name, value }),
+  );
 
   // Group by Category
   const categoryDistribution = assets.reduce((acc: any, asset) => {
@@ -39,7 +43,9 @@ export async function getAssetReportData() {
     return acc;
   }, {});
 
-  const categoryData = Object.entries(categoryDistribution).map(([name, value]) => ({ name, value }));
+  const categoryData = Object.entries(categoryDistribution).map(
+    ([name, value]) => ({ name, value }),
+  );
 
   return {
     totalValue,
@@ -62,7 +68,7 @@ export async function getMaintenanceReportData() {
     select: {
       cost: true,
       maintenanceDate: true,
-    }
+    },
   });
 
   // Group by Month
@@ -75,7 +81,10 @@ export async function getMaintenanceReportData() {
   maintenances.forEach((m) => {
     const month = format(m.maintenanceDate, "MMM yyyy");
     if (monthlyDataMap.has(month)) {
-      monthlyDataMap.set(month, monthlyDataMap.get(month) + Number(m.cost || 0));
+      monthlyDataMap.set(
+        month,
+        monthlyDataMap.get(month) + Number(m.cost || 0),
+      );
     }
   });
 
@@ -83,7 +92,10 @@ export async function getMaintenanceReportData() {
     .map(([name, cost]) => ({ name, cost }))
     .reverse();
 
-  const totalMaintenanceCost = maintenances.reduce((sum, m) => sum + Number(m.cost || 0), 0);
+  const totalMaintenanceCost = maintenances.reduce(
+    (sum, m) => sum + Number(m.cost || 0),
+    0,
+  );
 
   return {
     costTrend,
@@ -96,23 +108,25 @@ export async function getInventoryReportData() {
 
   const stocks = await prisma.stock.findMany({
     where: {
-      warehouse: { organizationId }
+      warehouse: { organizationId },
     },
     include: {
       item: true,
       warehouse: true,
-    }
+    },
   });
 
   // Stock value by warehouse
   const warehouseValueMap = new Map();
-  stocks.forEach(s => {
+  stocks.forEach((s) => {
     const val = Number(s.quantity) * 0; // price field is missing in schema
     const wName = s.warehouse.name;
     warehouseValueMap.set(wName, (warehouseValueMap.get(wName) || 0) + val);
   });
 
-  const warehouseSummary = Array.from(warehouseValueMap.entries()).map(([name, value]) => ({ name, value }));
+  const warehouseSummary = Array.from(warehouseValueMap.entries()).map(
+    ([name, value]) => ({ name, value }),
+  );
 
   // Top items by quantity
   const itemQuantities = stocks.reduce((acc: any, s) => {
@@ -125,7 +139,10 @@ export async function getInventoryReportData() {
     .sort((a: any, b: any) => b.quantity - a.quantity)
     .slice(0, 5);
 
-  const totalInventoryValue = stocks.reduce((sum, s) => sum + (Number(s.quantity) * 0), 0); // Using 0 as price field is missing in schema
+  const totalInventoryValue = stocks.reduce(
+    (sum, s) => sum + Number(s.quantity) * 0,
+    0,
+  ); // Using 0 as price field is missing in schema
 
   return {
     warehouseSummary,
@@ -142,24 +159,26 @@ export async function getLowStockReportData() {
     include: {
       stocks: {
         include: {
-          warehouse: true
-        }
+          warehouse: true,
+        },
       },
       itemCategory: true,
-    }
+    },
   });
 
-  const lowStockItems = items.map(item => {
-    const totalStock = item.stocks.reduce((sum, s) => sum + s.quantity, 0);
-    return {
-      ...item,
-      totalStock,
-      warehouseDetails: item.stocks.map(s => ({
-        warehouseName: s.warehouse.name,
-        quantity: s.quantity
-      }))
-    };
-  }).filter(item => item.totalStock < item.minStock);
+  const lowStockItems = items
+    .map((item) => {
+      const totalStock = item.stocks.reduce((sum, s) => sum + s.quantity, 0);
+      return {
+        ...item,
+        totalStock,
+        warehouseDetails: item.stocks.map((s) => ({
+          warehouseName: s.warehouse.name,
+          quantity: s.quantity,
+        })),
+      };
+    })
+    .filter((item) => item.totalStock < item.minStock);
 
   return lowStockItems;
 }

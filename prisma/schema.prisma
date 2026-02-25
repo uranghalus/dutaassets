@@ -84,6 +84,7 @@ model User {
   karyawan     Karyawan?
   teamMembers  TeamMember[]
   activityLogs ActivityLog[]
+  auditLogs    AuditLog[]
 
   @@unique([email])
   @@index([email(length: 191)])
@@ -109,7 +110,7 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
-  @@index([userId(length: 191)], map: "session_userId_idx_custom_v12")
+  @@index([userId(length: 191)], map: "session_userId_idx_custom_v15")
   @@map("session")
 }
 
@@ -821,4 +822,22 @@ model TeamMember {
   @@index([teamId], map: "teamMember_teamId_idx")
   @@index([userId], map: "teamMember_userId_idx")
   @@map("teamMember")
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  model          String
+  action         String
+  recordId       String
+  changes        Json?
+  userId         String?
+  organizationId String?
+  createdAt      DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([model])
+  @@index([recordId])
+  @@index([organizationId])
+  @@index([userId])
 }

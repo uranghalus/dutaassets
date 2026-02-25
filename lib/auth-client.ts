@@ -1,15 +1,14 @@
-import { nextCookies } from 'better-auth/next-js';
-import { createAuthClient } from 'better-auth/react';
+import { nextCookies } from "better-auth/next-js";
+import { createAuthClient } from "better-auth/react";
 import {
   adminClient,
   inferAdditionalFields,
   organizationClient,
   usernameClient,
-} from 'better-auth/client/plugins';
+} from "better-auth/client/plugins";
 
-import { auth } from './auth';
-import { ac, owner } from './auth-permission';
-// import { ac, admin, inspector, manager, superadmin } from './permissions';
+import { auth } from "./auth";
+import { ac, owner } from "./auth-permission";
 
 export const authClient = createAuthClient({
   plugins: [

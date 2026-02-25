@@ -39,12 +39,12 @@ export async function getActivityLogs({
 
   const where = {
     organizationId,
-    entityId: entityId || undefined,
-    entityType: entityType || undefined,
+    recordId: entityId || undefined,
+    model: entityType || undefined,
   };
 
   const [data, total] = await Promise.all([
-    prisma.activityLog.findMany({
+    prisma.auditLog.findMany({
       where,
       include: {
         user: true,
@@ -53,7 +53,7 @@ export async function getActivityLogs({
       take: pageSize,
       orderBy: { createdAt: "desc" },
     }),
-    prisma.activityLog.count({
+    prisma.auditLog.count({
       where,
     }),
   ]);

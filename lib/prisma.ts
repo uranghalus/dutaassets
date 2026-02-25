@@ -1,9 +1,7 @@
 import "dotenv/config";
-import { PrismaMariaDb } from '@prisma/adapter-mariadb';
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
 import { auditExtension } from "./prisma-audit";
-
-
 
 const prismaClientSingleton = () => {
   const adapter = new PrismaMariaDb({
@@ -11,8 +9,9 @@ const prismaClientSingleton = () => {
     user: process.env.DATABASE_USER,
     password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE_NAME,
-    connectionLimit: 5
+    connectionLimit: 5,
   });
+
   return new PrismaClient({ adapter }).$extends(auditExtension);
 };
 
@@ -27,4 +26,3 @@ const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 export { prisma };
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
-

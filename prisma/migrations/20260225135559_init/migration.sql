@@ -218,14 +218,26 @@ CREATE TABLE `asset` (
     `vendor` CHAR(100) NULL,
     `kondisi` CHAR(50) NULL,
     `lokasi` CHAR(200) NULL,
+    `locationId` VARCHAR(191) NULL,
     `garansi_exp` DATETIME(3) NULL,
-    `status` VARCHAR(191) NOT NULL DEFAULT 'AVAILABLE',
+    `status` ENUM('AVAILABLE', 'LOANED', 'UNDER_MAINTENANCE', 'DISPOSED', 'LOST', 'IN_USE', 'MAINTENANCE') NOT NULL DEFAULT 'AVAILABLE',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
-    `deleted_at` DATETIME(3) NULL,
 
     UNIQUE INDEX `asset_org_kode_unique`(`organization_id`, `kode_asset`),
     PRIMARY KEY (`id_barang`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `asset_depreciation` (
+    `id` VARCHAR(191) NOT NULL,
+    `asset_id` VARCHAR(191) NOT NULL,
+    `period` DATETIME(3) NOT NULL,
+    `amount` DECIMAL(15, 2) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `asset_depreciation_asset_id_period_key`(`asset_id`, `period`),
+    PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -237,7 +249,7 @@ CREATE TABLE `asset_loan` (
     `loanDate` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `returnDate` DATETIME(3) NULL,
     `actualReturnDate` DATETIME(3) NULL,
-    `status` CHAR(50) NOT NULL,
+    `status` ENUM('ACTIVE', 'RETURNED') NOT NULL DEFAULT 'ACTIVE',
     `notes` TEXT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
@@ -256,7 +268,7 @@ CREATE TABLE `asset_maintenance` (
     `provider` VARCHAR(191) NULL,
     `cost` DECIMAL(15, 2) NOT NULL,
     `description` TEXT NULL,
-    `status` VARCHAR(191) NOT NULL,
+    `status` ENUM('SCHEDULED', 'COMPLETED') NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -287,7 +299,7 @@ CREATE TABLE `asset_transfer` (
     `fromEmployeeId` VARCHAR(191) NULL,
     `toEmployeeId` VARCHAR(191) NULL,
     `transferDate` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `status` VARCHAR(191) NOT NULL DEFAULT 'COMPLETED',
+    `status` ENUM('PENDING', 'APPROVED', 'COMPLETED', 'CANCELLED') NOT NULL DEFAULT 'COMPLETED',
     `remarks` TEXT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
@@ -354,6 +366,24 @@ CREATE TABLE `stock` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `stock_ledger` (
+    `id` VARCHAR(191) NOT NULL,
+    `organization_id` VARCHAR(191) NOT NULL,
+    `warehouse_id` VARCHAR(191) NOT NULL,
+    `item_id` VARCHAR(191) NOT NULL,
+    `type` ENUM('IN', 'OUT', 'ADJUSTMENT', 'TRANSFER') NOT NULL,
+    `quantity` INTEGER NOT NULL,
+    `unit_cost` DECIMAL(15, 2) NOT NULL,
+    `total_cost` DECIMAL(15, 2) NOT NULL,
+    `reference` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `stock_ledger_organization_id_idx`(`organization_id`),
+    INDEX `stock_ledger_item_id_idx`(`item_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `stock_adjustment` (
     `id` VARCHAR(191) NOT NULL,
     `organizationId` VARCHAR(191) NOT NULL,
@@ -386,7 +416,7 @@ CREATE TABLE `requisition` (
     `organizationId` VARCHAR(191) NOT NULL,
     `requesterId` VARCHAR(191) NOT NULL,
     `date` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING_SUPERVISOR',
+    `status` ENUM('PENDING_SUPERVISOR', 'PENDING_FA', 'PENDING_GM', 'PENDING_WAREHOUSE', 'COMPLETED', 'REJECTED') NOT NULL DEFAULT 'PENDING_SUPERVISOR',
     `remarks` TEXT NULL,
     `warehouseId` VARCHAR(191) NULL,
     `supervisorAckBy` VARCHAR(191) NULL,
@@ -525,12 +555,20 @@ CREATE TABLE `teamMember` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `_AssetToAssetLocation` (
-    `A` VARCHAR(191) NOT NULL,
-    `B` VARCHAR(191) NOT NULL,
+CREATE TABLE `AuditLog` (
+    `id` VARCHAR(191) NOT NULL,
+    `model` VARCHAR(191) NOT NULL,
+    `action` VARCHAR(191) NOT NULL,
+    `recordId` VARCHAR(191) NOT NULL,
+    `changes` JSON NULL,
+    `userId` VARCHAR(191) NULL,
+    `organizationId` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    UNIQUE INDEX `_AssetToAssetLocation_AB_unique`(`A`, `B`),
-    INDEX `_AssetToAssetLocation_B_index`(`B`)
+    INDEX `AuditLog_model_idx`(`model`),
+    INDEX `AuditLog_recordId_idx`(`recordId`),
+    INDEX `AuditLog_organizationId_idx`(`organizationId`),
+    PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
@@ -576,6 +614,9 @@ ALTER TABLE `Karyawan` ADD CONSTRAINT `Karyawan_department_id_fkey` FOREIGN KEY 
 ALTER TABLE `asset` ADD CONSTRAINT `asset_categoryId_fkey` FOREIGN KEY (`categoryId`) REFERENCES `asset_category`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `asset` ADD CONSTRAINT `asset_locationId_fkey` FOREIGN KEY (`locationId`) REFERENCES `asset_location`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `asset` ADD CONSTRAINT `asset_department_id_fkey` FOREIGN KEY (`department_id`) REFERENCES `Department`(`id_department`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -583,6 +624,9 @@ ALTER TABLE `asset` ADD CONSTRAINT `asset_divisi_id_fkey` FOREIGN KEY (`divisi_i
 
 -- AddForeignKey
 ALTER TABLE `asset` ADD CONSTRAINT `asset_karyawan_id_fkey` FOREIGN KEY (`karyawan_id`) REFERENCES `Karyawan`(`id_karyawan`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `asset_depreciation` ADD CONSTRAINT `asset_depreciation_asset_id_fkey` FOREIGN KEY (`asset_id`) REFERENCES `asset`(`id_barang`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `asset_loan` ADD CONSTRAINT `asset_loan_assetId_fkey` FOREIGN KEY (`assetId`) REFERENCES `asset`(`id_barang`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -619,6 +663,15 @@ ALTER TABLE `stock` ADD CONSTRAINT `stock_itemId_fkey` FOREIGN KEY (`itemId`) RE
 
 -- AddForeignKey
 ALTER TABLE `stock` ADD CONSTRAINT `stock_warehouseId_fkey` FOREIGN KEY (`warehouseId`) REFERENCES `warehouse`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `stock_ledger` ADD CONSTRAINT `stock_ledger_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organization`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `stock_ledger` ADD CONSTRAINT `stock_ledger_warehouse_id_fkey` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouse`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `stock_ledger` ADD CONSTRAINT `stock_ledger_item_id_fkey` FOREIGN KEY (`item_id`) REFERENCES `item`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `stock_adjustment` ADD CONSTRAINT `stock_adjustment_warehouseId_fkey` FOREIGN KEY (`warehouseId`) REFERENCES `warehouse`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -682,9 +735,3 @@ ALTER TABLE `teamMember` ADD CONSTRAINT `teamMember_teamId_fkey` FOREIGN KEY (`t
 
 -- AddForeignKey
 ALTER TABLE `teamMember` ADD CONSTRAINT `teamMember_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `_AssetToAssetLocation` ADD CONSTRAINT `_AssetToAssetLocation_A_fkey` FOREIGN KEY (`A`) REFERENCES `asset`(`id_barang`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `_AssetToAssetLocation` ADD CONSTRAINT `_AssetToAssetLocation_B_fkey` FOREIGN KEY (`B`) REFERENCES `asset_location`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

@@ -8,7 +8,17 @@ import {
 } from "better-auth/client/plugins";
 
 import { auth } from "./auth";
-import { ac, owner } from "./auth-permission";
+import {
+  ac,
+  owner,
+  admin,
+  member,
+  manager,
+  supervisor,
+  staff_lapangan,
+  finance_manager,
+  staff_asset,
+} from "./auth-permission";
 
 export const authClient = createAuthClient({
   plugins: [
@@ -23,6 +33,13 @@ export const authClient = createAuthClient({
       },
       roles: {
         owner,
+        admin,
+        member,
+        manager,
+        supervisor,
+        staff_lapangan,
+        finance_manager,
+        staff_asset,
       },
       teams: {
         enabled: true,

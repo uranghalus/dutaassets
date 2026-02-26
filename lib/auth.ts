@@ -4,7 +4,17 @@ import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 
 import { admin as adminPg, organization, username } from "better-auth/plugins";
-import { ac, owner, admin, member } from "./auth-permission";
+import {
+  ac,
+  owner,
+  admin,
+  member,
+  manager,
+  supervisor,
+  staff_lapangan,
+  finance_manager,
+  staff_asset,
+} from "./auth-permission";
 import { sendEmail } from "./email";
 
 export const auth = betterAuth({
@@ -14,7 +24,7 @@ export const auth = betterAuth({
   //...
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    requireEmailVerification: false,
     autoSignIn: false,
     sendResetPassword: async ({ user, url, token }, request) => {
       await sendEmail(
@@ -62,6 +72,11 @@ export const auth = betterAuth({
         owner,
         admin,
         member,
+        manager,
+        supervisor,
+        staff_lapangan,
+        finance_manager,
+        staff_asset,
       },
       dynamicAccessControl: {
         enabled: true,

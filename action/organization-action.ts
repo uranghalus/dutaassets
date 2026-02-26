@@ -1,12 +1,12 @@
-'use server';
+"use server";
 
-import { auth } from '@/lib/auth';
-import { getServerSession } from '@/lib/get-session';
-import { prisma } from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
-import { withContext } from '@/lib/action-utils';
-import { nanoid } from 'nanoid';
+import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/get-session";
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { withContext } from "@/lib/action-utils";
+import { nanoid } from "nanoid";
 
 type GetOrganizationsArgs = {
   page: number;
@@ -19,7 +19,7 @@ export async function getOrganizations({
 }: GetOrganizationsArgs) {
   const session = await getServerSession();
   if (!session) {
-    throw new Error('Unauthorized');
+    throw new Error("Unauthorized");
   }
 
   const organizations = await auth.api.listOrganizations({
@@ -45,12 +45,12 @@ export async function createOrganization(formData: FormData) {
   return withContext(async () => {
     const session = await getServerSession();
 
-    if (!session) throw new Error('Unauthorized');
+    if (!session) throw new Error("Unauthorized");
 
     const data = await auth.api.createOrganization({
       body: {
-        name: formData.get('name') as string, // required
-        slug: formData.get('slug') as string, // required
+        name: formData.get("name") as string, // required
+        slug: formData.get("slug") as string, // required
         userId: session.user.id,
         keepCurrentActiveOrganization: false,
       },
@@ -58,7 +58,7 @@ export async function createOrganization(formData: FormData) {
       headers: await headers(),
     });
 
-    revalidatePath('/organizations');
+    revalidatePath("/organizations");
     return data;
   });
 }
@@ -70,15 +70,15 @@ export async function updateOrganization(
     const data = await auth.api.updateOrganization({
       body: {
         data: {
-          name: formData.get('name') as string, // required
-          slug: formData.get('slug') as string, // required
+          name: formData.get("name") as string, // required
+          slug: formData.get("slug") as string, // required
         },
         organizationId: organizationId,
       },
       // This endpoint requires session cookies.
       headers: await headers(),
     });
-    revalidatePath('/organizations');
+    revalidatePath("/organizations");
     return data;
   });
 }
@@ -87,7 +87,7 @@ export async function deleteOrganization(organizationId: string) {
     const session = await getServerSession();
 
     if (!session) {
-      throw new Error('Unauthorized');
+      throw new Error("Unauthorized");
     }
 
     const data = await auth.api.deleteOrganization({
@@ -97,14 +97,14 @@ export async function deleteOrganization(organizationId: string) {
       headers: await headers(),
     });
 
-    revalidatePath('/organizations');
+    revalidatePath("/organizations");
     return data;
   });
 }
 export async function deleteOrganizationsBulk(organizationIds: string[]) {
   return withContext(async () => {
     const session = await getServerSession();
-    if (!session) throw new Error('Unauthorized');
+    if (!session) throw new Error("Unauthorized");
 
     if (!organizationIds.length) return;
 
@@ -117,7 +117,7 @@ export async function deleteOrganizationsBulk(organizationIds: string[]) {
       ),
     );
 
-    revalidatePath('/organizations');
+    revalidatePath("/organizations");
   });
 }
 type getOrganizations = {
@@ -132,7 +132,7 @@ export async function getOrganizationDetail({
   membersLimit = 250,
 }: getOrganizations) {
   const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  if (!session) throw new Error("Unauthorized");
   const data = await auth.api.getFullOrganization({
     query: {
       organizationId: organizationId,
@@ -146,7 +146,7 @@ export async function getOrganizationDetail({
 export async function getOrganizationsSimple() {
   const session = await getServerSession();
   if (!session) {
-    throw new Error('Unauthorized');
+    throw new Error("Unauthorized");
   }
 
   const organizations = await auth.api.listOrganizations({
@@ -160,23 +160,39 @@ export async function getOrganizationsSimple() {
     slug: org.slug,
   }));
 }
+/** Semua role yang valid dalam sistem */
+export type OrgRole =
+  | "owner"
+  | "admin"
+  | "member"
+  | "manager"
+  | "supervisor"
+  | "staff_lapangan"
+  | "staff_administrasi"
+  | "finance_manager"
+  | "staff_asset";
+
 export async function getActiveOrganizationWithRole() {
   const session = await getServerSession();
-  if (!session) throw new Error('Unauthorized');
+  if (!session) throw new Error("Unauthorized");
 
   const userId = session.user.id;
 
-  // 🔐 1. Ambil karyawan
+  // 🔐 1. Ambil karyawan beserta departemen
   const employee = await prisma.karyawan.findUnique({
     where: { userId },
-    select: { organization_id: true },
+    select: {
+      organization_id: true,
+      department_id: true,
+    },
   });
 
   if (!employee?.organization_id) {
-    throw new Error('User is not bound to any organization');
+    throw new Error("User is not bound to any organization");
   }
 
   const organizationId = employee.organization_id;
+  const departmentId = employee.department_id;
 
   // 🔐 2. Pastikan organization valid
   const organization = await prisma.organization.findFirst({
@@ -187,7 +203,7 @@ export async function getActiveOrganizationWithRole() {
   });
 
   if (!organization) {
-    throw new Error('Organization not found or deleted');
+    throw new Error("Organization not found or deleted");
   }
 
   // 🔐 3. Validasi membership untuk ambil role
@@ -200,12 +216,13 @@ export async function getActiveOrganizationWithRole() {
   });
 
   if (!member) {
-    throw new Error('You are not a member of this organization');
+    throw new Error("You are not a member of this organization");
   }
 
   return {
     organizationId,
-    role: member.role as 'owner' | 'admin' | 'member',
+    departmentId,
+    role: member.role as OrgRole,
     userId,
   };
 }
@@ -215,7 +232,7 @@ export async function setActiveOrganizationAction(organizationId: string) {
   });
 
   if (!session?.user?.id) {
-    throw new Error('Unauthorized');
+    throw new Error("Unauthorized");
   }
 
   // 🔐 1. Pastikan user adalah member di organization tsb
@@ -231,14 +248,14 @@ export async function setActiveOrganizationAction(organizationId: string) {
   });
 
   if (!member) {
-    throw new Error('Forbidden: Not a member of this organization');
+    throw new Error("Forbidden: Not a member of this organization");
   }
 
   // 🔐 2. Validasi role (ERP mode)
-  const allowedRoles = ['owner', 'admin'];
+  const allowedRoles = ["owner", "admin"];
 
   if (!allowedRoles.includes(member.role)) {
-    throw new Error('Forbidden: Insufficient role to switch organization');
+    throw new Error("Forbidden: Insufficient role to switch organization");
   }
 
   // ✅ 3. Set active organization
@@ -283,7 +300,7 @@ export async function syncUserOrganization() {
   const organizationId = employee?.department?.organization?.id;
 
   if (!organizationId) {
-    throw new Error('User is not bound to any organization');
+    throw new Error("User is not bound to any organization");
   }
 
   // 🔐 Pastikan membership ada (Better Auth butuh ini)
@@ -301,7 +318,7 @@ export async function syncUserOrganization() {
         id: nanoid() as unknown as string,
         userId,
         organizationId,
-        role: 'member',
+        role: "member",
       },
     });
   }

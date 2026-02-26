@@ -4,6 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { getActiveOrganizationWithRole } from "./organization-action";
 import { revalidatePath } from "next/cache";
 import { assetTransferSchema } from "@/schema/asset-transfer-schema";
+import { withContext } from "@/lib/action-utils";
+import {
+  requireAssetPermission,
+  getDepartmentFilter,
+  requireCrossDepartmentPermissionIfNeeded,
+} from "@/lib/asset-guard";
 
 export type AssetTransferArgs = {
   page?: number;
@@ -12,25 +18,41 @@ export type AssetTransferArgs = {
   status?: string;
 };
 
+// =============================================================================
+// READ
+// =============================================================================
+
 export async function getPaginatedAssetTransfers({
   page = 1,
   pageSize = 10,
   search,
   status,
 }: AssetTransferArgs) {
-  const { organizationId } = await getActiveOrganizationWithRole();
+  const { organizationId, role, departmentId } =
+    await getActiveOrganizationWithRole();
 
   const safePage = Math.max(1, page);
   const safePageSize = Math.max(1, pageSize);
   const skip = (safePage - 1) * safePageSize;
 
+  // 🔐 Department scope for transfers:
+  // Global roles see all transfers. Department roles only see transfers
+  // that involve an asset belonging to their department.
+  const deptFilter = getDepartmentFilter(role, departmentId);
+  const assetFilter =
+    Object.keys(deptFilter).length > 0
+      ? { asset: { department_id: deptFilter.department_id } }
+      : {};
+
   const where: any = {
     organizationId,
+    ...assetFilter,
   };
 
   if (search) {
     where.asset = {
-      name: { contains: search },
+      ...where.asset,
+      nama_asset: { contains: search },
     };
   }
 
@@ -64,14 +86,19 @@ export async function getPaginatedAssetTransfers({
   };
 }
 
-import { withContext } from "@/lib/action-utils";
+// =============================================================================
+// CREATE
+// =============================================================================
 
 export async function createAssetTransfer(data: any) {
   return withContext(async () => {
     const { organizationId } = await getActiveOrganizationWithRole();
+
+    // 🔐 Basic permission: can user create transfers at all?
+    await requireAssetPermission({ "asset.transfer": ["create"] });
+
     const validated = assetTransferSchema.parse(data);
 
-    // Filter out "none" values from Select components
     const cleanData = {
       ...validated,
       fromLocationId:
@@ -83,6 +110,31 @@ export async function createAssetTransfer(data: any) {
       toEmployeeId:
         validated.toEmployeeId === "none" ? null : validated.toEmployeeId,
     };
+
+    // 🔐 Cross-department check:
+    // Resolve the departments of the source and destination employees to
+    // determine if this is a cross-department transfer.
+    let fromDeptId: string | null = null;
+    let toDeptId: string | null = null;
+
+    if (cleanData.fromEmployeeId) {
+      const fromEmp = await prisma.karyawan.findUnique({
+        where: { id_karyawan: cleanData.fromEmployeeId },
+        select: { department_id: true },
+      });
+      fromDeptId = fromEmp?.department_id ?? null;
+    }
+
+    if (cleanData.toEmployeeId) {
+      const toEmp = await prisma.karyawan.findUnique({
+        where: { id_karyawan: cleanData.toEmployeeId },
+        select: { department_id: true },
+      });
+      toDeptId = toEmp?.department_id ?? null;
+    }
+
+    // 🔐 If departments differ, require cross_department permission
+    await requireCrossDepartmentPermissionIfNeeded(fromDeptId, toDeptId);
 
     const transfer = await prisma.assetTransfer.create({
       data: {
@@ -97,9 +149,16 @@ export async function createAssetTransfer(data: any) {
   });
 }
 
+// =============================================================================
+// APPROVE  (finance_manager / staff_asset only)
+// =============================================================================
+
 export async function approveAssetTransfer(id: string) {
   return withContext(async () => {
     const { organizationId } = await getActiveOrganizationWithRole();
+
+    // 🔐 Only finance_manager and staff_asset have this permission
+    await requireAssetPermission({ "asset.transfer": ["approve"] });
 
     const transfer = await prisma.assetTransfer.update({
       where: { id, organizationId },
@@ -111,9 +170,16 @@ export async function approveAssetTransfer(id: string) {
   });
 }
 
+// =============================================================================
+// COMPLETE
+// =============================================================================
+
 export async function completeAssetTransfer(id: string) {
   return withContext(async () => {
     const { organizationId } = await getActiveOrganizationWithRole();
+
+    // 🔐 Permission check
+    await requireAssetPermission({ "asset.transfer": ["complete"] });
 
     const result = await prisma.$transaction(async (tx) => {
       const transfer = await tx.assetTransfer.findUnique({
@@ -122,13 +188,12 @@ export async function completeAssetTransfer(id: string) {
 
       if (!transfer) throw new Error("Transfer not found");
 
-      // Update transfer status
       const updatedTransfer = await tx.assetTransfer.update({
         where: { id },
         data: { status: "COMPLETED" },
       });
 
-      // Update asset's current location/holder
+      // 🔄 Update asset's current location/holder after completion
       await tx.asset.update({
         where: { id_barang: transfer.assetId },
         data: {
@@ -143,5 +208,26 @@ export async function completeAssetTransfer(id: string) {
     revalidatePath("/asset-transfers");
     revalidatePath("/assets");
     return { success: true, data: result };
+  });
+}
+
+// =============================================================================
+// CANCEL
+// =============================================================================
+
+export async function cancelAssetTransfer(id: string) {
+  return withContext(async () => {
+    const { organizationId } = await getActiveOrganizationWithRole();
+
+    // 🔐 Permission check
+    await requireAssetPermission({ "asset.transfer": ["cancel"] });
+
+    const transfer = await prisma.assetTransfer.update({
+      where: { id, organizationId },
+      data: { status: "CANCELLED" },
+    });
+
+    revalidatePath("/asset-transfers");
+    return { success: true, data: transfer };
   });
 }

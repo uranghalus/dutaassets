@@ -1,5 +1,5 @@
-import type { LinkProps } from 'next/link';
-import type React from 'react';
+import type { LinkProps } from "next/link";
+import type React from "react";
 
 /* ===================== */
 /* RBAC */
@@ -15,7 +15,7 @@ export type PermissionRequirement = {
 /* ===================== */
 
 export type ActionState = {
-  status: 'idle' | 'success' | 'error';
+  status: "idle" | "success" | "error";
   message?: string;
   fieldErrors?: Record<string, string>;
 };
@@ -35,10 +35,13 @@ export type BaseNavItem = {
   badge?: string;
   icon?: React.ElementType;
   permission?: PermissionRequirement;
+  /** Jika diisi, hanya role yang ada di array ini yang bisa melihat item ini.
+   *  Jika tidak diisi (undefined), item visible untuk semua role. */
+  roles?: string[];
 };
 
 export type NavLink = BaseNavItem & {
-  url: LinkProps['to'] | (string & {});
+  url: LinkProps["to"] | (string & {});
   items?: never;
 };
 
@@ -52,6 +55,8 @@ export type NavItem = NavLink | NavCollapsible;
 export type NavGroup = {
   title: string;
   items: NavItem[];
+  /** Jika diisi, seluruh group ini hanya tampil untuk role yang terdaftar. */
+  roles?: string[];
 };
 
 export type SidebarData = {

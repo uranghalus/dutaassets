@@ -88,7 +88,7 @@ export function OrgRoleActionDialog({ open, onOpenChange, currentRow }: Props) {
         onOpenChange(state);
       }}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Role" : "Add Role"}</DialogTitle>
           <DialogDescription>

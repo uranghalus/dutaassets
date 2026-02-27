@@ -10,11 +10,14 @@ const prismaClientSingleton = () => {
     password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE_NAME,
     port: Number(process.env.DATABASE_PORT),
+
     ssl: {
-      cert: process.env.DATABASE_CA_CERT,
-      rejectUnauthorized: false,
+      ca: process.env.DATABASE_CA_CERT,
+      rejectUnauthorized: true,
     },
-    // connectionLimit: 5,
+
+    connectionLimit: 1, // 🔥 PENTING
+    connectTimeout: 10000,
   });
 
   return new PrismaClient({ adapter }).$extends(auditExtension);

@@ -13,7 +13,6 @@ interface AuthPayload {
   password: string;
   rememberMe?: boolean;
 }
-
 export async function loginAction(formData: AuthPayload): Promise<ActionState> {
   try {
     const parsed = LoginSchema.safeParse(formData);
@@ -30,6 +29,7 @@ export async function loginAction(formData: AuthPayload): Promise<ActionState> {
     }
 
     const { email, password, rememberMe } = parsed.data;
+
     const user = await prisma.user.findUnique({
       where: { email },
       select: { id: true },
@@ -44,7 +44,8 @@ export async function loginAction(formData: AuthPayload): Promise<ActionState> {
         message: "Email belum terdaftar",
       };
     }
-    await auth.api.signInEmail({
+
+    const result = await auth.api.signInEmail({
       body: {
         email,
         password,
@@ -53,38 +54,24 @@ export async function loginAction(formData: AuthPayload): Promise<ActionState> {
       headers: await headers(),
       returnStatus: true,
     });
+
+    if (result.status !== 200) {
+      return {
+        status: "error",
+        message: "Email atau password salah",
+      };
+    }
+
     return {
       status: "success",
       message: "Login berhasil",
     };
   } catch (error) {
-    if (error instanceof APIError) {
-      if (error?.statusCode === 401) {
-        return {
-          status: "error",
-          fieldErrors: {
-            password: "Password salah",
-          },
-        };
-      }
-      if (error?.statusCode === 429) {
-        return {
-          status: "error",
-          fieldErrors: {
-            password: "Terlalu banyak percobaan login",
-          },
-        };
-      }
-      // fallback APIError
-      return {
-        status: "error",
-        message: error.message,
-      };
-    }
+    console.error("LOGIN ERROR:", error);
 
     return {
       status: "error",
-      message: "Terjadi kesalahan",
+      message: "Terjadi kesalahan saat login",
     };
   }
 }

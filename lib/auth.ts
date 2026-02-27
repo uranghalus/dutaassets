@@ -22,6 +22,9 @@ export const auth = betterAuth({
     provider: "mysql", // or "mysql", "postgresql", ...etc
   }),
   //...
+  baseURL: process.env.BETTER_AUTH_URL,
+  secret: process.env.BETTER_AUTH_SECRET,
+  trustedOrigins: [process.env.BETTER_AUTH_URL!],
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -8,7 +8,7 @@ import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export default function VerifyEmailPage() {
+function VerifyEmailInner() {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading",
   );
@@ -44,6 +44,9 @@ export default function VerifyEmailPage() {
 
     verify();
   }, [token]);
+
+  // suppress unused warning
+  void router;
 
   return (
     <>
@@ -81,5 +84,13 @@ export default function VerifyEmailPage() {
         )}
       </div>
     </>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense>
+      <VerifyEmailInner />
+    </Suspense>
   );
 }

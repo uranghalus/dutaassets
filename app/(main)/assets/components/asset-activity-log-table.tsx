@@ -7,45 +7,45 @@ import { DataTableToolbar } from "@/components/datatable/datatable-toolbar";
 import { useDataTable } from "@/hooks/use-data-table";
 import { useActivityLogs } from "@/hooks/use-activity-log";
 import { activityLogColumns } from "../../audit-logs/components/activity-log-columns";
-import { ActivityLog, User } from "@/generated/prisma/client";
+import { AuditLog, User } from "@/generated/prisma/client";
 
 interface AssetActivityLogTableProps {
-    assetId: string;
+  assetId: string;
 }
 
 export function AssetActivityLogTable({ assetId }: AssetActivityLogTableProps) {
-    const [pagination, setPagination] = useState({
-        pageIndex: 0,
-        pageSize: 10,
-    });
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
-    const { data, isLoading } = useActivityLogs({
-        page: pagination.pageIndex,
-        pageSize: pagination.pageSize,
-        entityId: assetId,
-        entityType: "Asset",
-    });
+  const { data, isLoading } = useActivityLogs({
+    page: pagination.pageIndex,
+    pageSize: pagination.pageSize,
+    entityId: assetId,
+    entityType: "Asset",
+  });
 
-    const { table } = useDataTable({
-        data: (data?.data ?? []) as (ActivityLog & { user: User | null })[],
-        columns: activityLogColumns,
-        columnResizeMode: "onEnd",
-        pageCount: data?.pageCount ?? 0,
-        pagination,
-        onPaginationChange: setPagination,
-    });
+  const { table } = useDataTable({
+    data: (data?.data ?? []) as (AuditLog & { user: User | null })[],
+    columns: activityLogColumns,
+    columnResizeMode: "onEnd",
+    pageCount: data?.pageCount ?? 0,
+    pagination,
+    onPaginationChange: setPagination,
+  });
 
-    return (
-        <div className="rounded-md border p-3 space-y-4">
-            <DataTableToolbar
-                table={table}
-                searchKey="action"
-                searchPlaceholder="Filter by action..."
-            />
+  return (
+    <div className="rounded-md border p-3 space-y-4">
+      <DataTableToolbar
+        table={table}
+        searchKey="action"
+        searchPlaceholder="Filter by action..."
+      />
 
-            <DataTable table={table} loading={isLoading} />
+      <DataTable table={table} loading={isLoading} />
 
-            <DataTablePagination table={table} pageCount={data?.pageCount ?? 0} />
-        </div>
-    );
+      <DataTablePagination table={table} pageCount={data?.pageCount ?? 0} />
+    </div>
+  );
 }

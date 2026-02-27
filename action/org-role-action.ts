@@ -1,28 +1,38 @@
 "use server";
 
 import { headers } from "next/headers";
-import { getServerSession } from "@/lib/get-session";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { withContext } from "@/lib/action-utils";
+import { getActiveOrganizationWithRole } from "./organization-action";
 
 // =============================================================================
 // HELPER — menggunakan auth.api.hasPermission() langsung
 // Resource yang dijaga: `role` dan `ac` (Role & Permission menu)
 // =============================================================================
 
-async function requireRolePermission(actions: string[]) {
-  try {
-    await auth.api.hasPermission({
+type PermissionAction =
+  | "create"
+  | "delete"
+  | "update"
+  | "list"
+  | "view"
+  | "edit"
+  | "read";
+
+async function requireRolePermission(actions: PermissionAction[]) {
+  await auth.api
+    .hasPermission({
       headers: await headers(),
       body: {
         permissions: {
           role: actions,
         },
       },
+    })
+    .catch(() => {
+      throw new Error("Forbidden: insufficient permissions");
     });
-  } catch {
-    throw new Error("Forbidden: insufficient permissions");
-  }
 }
 
 // =============================================================================
@@ -45,40 +55,31 @@ export type UpdateOrgRoleInput = {
 // =============================================================================
 
 export async function listOrgRoles({ page, pageSize }: ListOrgRoleArgs) {
-  const session = await getServerSession();
-  if (!session) throw new Error("Unauthorized");
-
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new Error("No active organization");
+  const { organizationId } = await getActiveOrganizationWithRole();
 
   // 🔐 Hanya role yang punya izin `role: read` (owner & admin)
-  await auth.api
-    .hasPermission({
-      headers: await headers(),
-      body: { permissions: { role: ["read"] } },
-    })
-    .catch(() => {
-      throw new Error("Forbidden");
-    });
-
-  const res = await auth.api.listOrgRoles({
-    query: { organizationId },
-    headers: await headers(),
-  });
-
-  const allRoles = res ?? [];
+  await requireRolePermission(["read"]);
 
   const safePage = Math.max(1, page);
   const safePageSize = Math.max(1, pageSize);
-  const start = (safePage - 1) * safePageSize;
-  const end = start + safePageSize;
+  const skip = (safePage - 1) * safePageSize;
+
+  const [allRoles, total] = await Promise.all([
+    prisma.organizationRole.findMany({
+      where: { organizationId },
+      orderBy: { createdAt: "asc" },
+      skip,
+      take: safePageSize,
+    }),
+    prisma.organizationRole.count({ where: { organizationId } }),
+  ]);
 
   return {
-    data: allRoles.slice(start, end),
-    total: allRoles.length,
+    data: allRoles,
+    total,
     page: safePage,
     pageSize: safePageSize,
-    pageCount: Math.ceil(allRoles.length / safePageSize),
+    pageCount: Math.ceil(total / safePageSize),
   };
 }
 
@@ -91,11 +92,7 @@ export async function createOrgRole(input: {
   permission: Record<string, string[]>;
 }) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error("Unauthorized");
-
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error("No active organization");
+    const { organizationId } = await getActiveOrganizationWithRole();
 
     // 🔐 Butuh role:create DAN ac:create
     await auth.api
@@ -103,8 +100,8 @@ export async function createOrgRole(input: {
         headers: await headers(),
         body: {
           permissions: {
-            role: ["create"],
-            ac: ["create"],
+            role: ["create"] as PermissionAction[],
+            ac: ["create"] as PermissionAction[],
           },
         },
       })
@@ -112,13 +109,13 @@ export async function createOrgRole(input: {
         throw new Error("Forbidden");
       });
 
-    return auth.api.createOrgRole({
-      body: {
-        role: input.role,
-        permission: input.permission,
+    return prisma.organizationRole.create({
+      data: {
+        id: crypto.randomUUID(),
         organizationId,
+        role: input.role,
+        permission: JSON.stringify(input.permission),
       },
-      headers: await headers(),
     });
   });
 }
@@ -129,11 +126,7 @@ export async function createOrgRole(input: {
 
 export async function updateOrgRole(input: UpdateOrgRoleInput) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error("Unauthorized");
-
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error("No active organization");
+    await getActiveOrganizationWithRole();
 
     // 🔐 Butuh role:edit DAN ac:edit
     await auth.api
@@ -141,8 +134,8 @@ export async function updateOrgRole(input: UpdateOrgRoleInput) {
         headers: await headers(),
         body: {
           permissions: {
-            role: ["edit"],
-            ac: ["edit"],
+            role: ["edit"] as PermissionAction[],
+            ac: ["edit"] as PermissionAction[],
           },
         },
       })
@@ -150,17 +143,12 @@ export async function updateOrgRole(input: UpdateOrgRoleInput) {
         throw new Error("Forbidden");
       });
 
-    return auth.api.updateOrgRole({
-      body: {
-        roleId: input.roleId,
-        roleName: input.roleName,
-        organizationId,
-        data: {
-          roleName: input.roleName,
-          permission: input.permission,
-        },
+    return prisma.organizationRole.update({
+      where: { id: input.roleId },
+      data: {
+        role: input.roleName,
+        permission: JSON.stringify(input.permission),
       },
-      headers: await headers(),
     });
   });
 }
@@ -171,11 +159,7 @@ export async function updateOrgRole(input: UpdateOrgRoleInput) {
 
 export async function deleteOrgRole(roleId: string) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error("Unauthorized");
-
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error("No active organization");
+    await getActiveOrganizationWithRole();
 
     // 🔐 Butuh role:delete DAN ac:delete
     await auth.api
@@ -183,8 +167,8 @@ export async function deleteOrgRole(roleId: string) {
         headers: await headers(),
         body: {
           permissions: {
-            role: ["delete"],
-            ac: ["delete"],
+            role: ["delete"] as PermissionAction[],
+            ac: ["delete"] as PermissionAction[],
           },
         },
       })
@@ -192,20 +176,15 @@ export async function deleteOrgRole(roleId: string) {
         throw new Error("Forbidden");
       });
 
-    return auth.api.deleteOrgRole({
-      body: { roleId, organizationId },
-      headers: await headers(),
+    return prisma.organizationRole.delete({
+      where: { id: roleId },
     });
   });
 }
 
 export async function deleteOrgRolesBulk(roleIds: string[]) {
   return withContext(async () => {
-    const session = await getServerSession();
-    if (!session) throw new Error("Unauthorized");
-
-    const organizationId = session.session.activeOrganizationId;
-    if (!organizationId) throw new Error("No active organization");
+    await getActiveOrganizationWithRole();
 
     // 🔐 Butuh role:delete DAN ac:delete
     await auth.api
@@ -213,8 +192,8 @@ export async function deleteOrgRolesBulk(roleIds: string[]) {
         headers: await headers(),
         body: {
           permissions: {
-            role: ["delete"],
-            ac: ["delete"],
+            role: ["delete"] as PermissionAction[],
+            ac: ["delete"] as PermissionAction[],
           },
         },
       })
@@ -222,15 +201,9 @@ export async function deleteOrgRolesBulk(roleIds: string[]) {
         throw new Error("Forbidden");
       });
 
-    const reqHeaders = await headers();
-    await Promise.all(
-      roleIds.map((roleId) =>
-        auth.api.deleteOrgRole({
-          body: { roleId, organizationId },
-          headers: reqHeaders,
-        }),
-      ),
-    );
+    await prisma.organizationRole.deleteMany({
+      where: { id: { in: roleIds } },
+    });
 
     return { success: true };
   });

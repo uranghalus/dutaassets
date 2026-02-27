@@ -1,23 +1,11 @@
-'use client'
+"use client";
 
-import { OrganizationProvider } from "@/context/organization-provider"
-import { useOrganizationOptions } from "@/hooks/use-organization"
-
-
+import { OrganizationProvider } from "@/context/organization-provider";
 
 export function OrganizationProviderClient({
-    children,
+  children,
 }: {
-    children: React.ReactNode
+  children: React.ReactNode;
 }) {
-    const { data = [], isLoading } = useOrganizationOptions()
-
-    return (
-        <OrganizationProvider
-            organizations={data}
-            isLoading={isLoading}
-        >
-            {children}
-        </OrganizationProvider>
-    )
+  return <OrganizationProvider>{children}</OrganizationProvider>;
 }

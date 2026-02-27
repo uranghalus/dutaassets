@@ -2,6 +2,7 @@ import { FloatingThemeMenu } from "@/components/floating-theme-menu";
 import LoginForm from "@/components/login-form";
 import { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Masuk",
@@ -18,7 +19,9 @@ export default function Home() {
         </p>
       </div>
 
-      <LoginForm />
+      <Suspense>
+        <LoginForm />
+      </Suspense>
       <div className="flex justify-center text-sm">
         <p className="text-muted-foreground">
           Belum punya akun?{" "}

@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-'use server';
+"use server";
 
-import { auth } from '@/lib/auth';
-import { getServerSession } from '@/lib/get-session';
-import { prisma } from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
-import { withContext } from '@/lib/action-utils';
-import { getActiveOrganizationWithRole } from './organization-action';
-import fs from 'fs/promises';
-import path from 'path';
+import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/get-session";
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { withContext } from "@/lib/action-utils";
+import { getActiveOrganizationWithRole } from "./organization-action";
+import fs from "fs/promises";
+import path from "path";
 
 /* =======================
    TYPES
@@ -38,7 +38,7 @@ export async function getEmployees({ page, pageSize }: EmployeeArgs) {
       skip,
       take,
       orderBy: {
-        nama: 'asc',
+        nama: "asc",
       },
       select: {
         id_karyawan: true,
@@ -101,7 +101,10 @@ export async function getEmployeeById(id: string) {
       user: true,
       assets: {
         where: {
-          status: 'IN_USE',
+          status: "IN_USE",
+        },
+        include: {
+          assetCategory: true,
         },
       },
       assetLoans: {
@@ -112,7 +115,7 @@ export async function getEmployeeById(id: string) {
           asset: true,
         },
         orderBy: {
-          loanDate: 'desc',
+          loanDate: "desc",
         },
       },
     },
@@ -120,7 +123,7 @@ export async function getEmployeeById(id: string) {
 
   return employee;
 }
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 function parseDate(value: FormDataEntryValue | null) {
@@ -131,17 +134,17 @@ function parseDate(value: FormDataEntryValue | null) {
 
 async function saveEmployeePhoto(file: File) {
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    throw new Error('Format foto tidak valid (jpg, png, webp)');
+    throw new Error("Format foto tidak valid (jpg, png, webp)");
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    throw new Error('Ukuran foto maksimal 2MB');
+    throw new Error("Ukuran foto maksimal 2MB");
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '-');
+  const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "-");
   const fileName = `${Date.now()}-${safeName}`;
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'employees');
+  const uploadDir = path.join(process.cwd(), "public", "uploads", "employees");
 
   await fs.mkdir(uploadDir, { recursive: true });
   await fs.writeFile(path.join(uploadDir, fileName), buffer);
@@ -152,10 +155,10 @@ async function saveEmployeePhoto(file: File) {
 async function deleteEmployeePhoto(photoPath: string | null) {
   if (!photoPath) return;
 
-  if (!photoPath.startsWith('/uploads/employees/')) return;
+  if (!photoPath.startsWith("/uploads/employees/")) return;
 
   try {
-    const filePath = path.join(process.cwd(), 'public', photoPath);
+    const filePath = path.join(process.cwd(), "public", photoPath);
     await fs.unlink(filePath);
   } catch {
     // silent fail (file mungkin sudah tidak ada)
@@ -168,13 +171,13 @@ export async function createEmployee(formData: FormData) {
   return withContext(async () => {
     const { organizationId } = await getActiveOrganizationWithRole();
 
-    const nik = formData.get('nik')?.toString();
-    const nama = formData.get('nama')?.toString();
-    const divisi_id = formData.get('divisi_id')?.toString();
-    const department_id = formData.get('department_id')?.toString();
+    const nik = formData.get("nik")?.toString();
+    const nama = formData.get("nama")?.toString();
+    const divisi_id = formData.get("divisi_id")?.toString();
+    const department_id = formData.get("department_id")?.toString();
 
     if (!nik || !nama || !divisi_id || !department_id) {
-      throw new Error('Required fields are missing');
+      throw new Error("Required fields are missing");
     }
 
     return await prisma.$transaction(async (tx) => {
@@ -186,7 +189,7 @@ export async function createEmployee(formData: FormData) {
         },
       });
 
-      if (!divisi) throw new Error('Divisi tidak valid');
+      if (!divisi) throw new Error("Divisi tidak valid");
 
       // Validate Department
       const department = await tx.department.findFirst({
@@ -196,7 +199,7 @@ export async function createEmployee(formData: FormData) {
         },
       });
 
-      if (!department) throw new Error('Department tidak valid');
+      if (!department) throw new Error("Department tidak valid");
 
       // Validate unique NIK per organization
       const existingNik = await tx.karyawan.findFirst({
@@ -207,12 +210,12 @@ export async function createEmployee(formData: FormData) {
       });
 
       if (existingNik) {
-        throw new Error('NIK sudah terdaftar');
+        throw new Error("NIK sudah terdaftar");
       }
 
       // Handle foto
       let fotoPath: string | null = null;
-      const fotoFile = formData.get('foto');
+      const fotoFile = formData.get("foto");
 
       if (fotoFile instanceof File && fotoFile.size > 0) {
         fotoPath = await saveEmployeePhoto(fotoFile);
@@ -225,22 +228,22 @@ export async function createEmployee(formData: FormData) {
           department_id,
           nik,
           nama,
-          nama_alias: formData.get('nama_alias')?.toString() ?? '',
-          alamat: formData.get('alamat')?.toString() ?? '',
-          no_ktp: formData.get('no_ktp')?.toString() ?? '',
-          telp: formData.get('telp')?.toString() ?? '',
-          jabatan: formData.get('jabatan')?.toString() ?? '',
-          call_sign: formData.get('call_sign')?.toString() ?? '',
-          status_karyawan: formData.get('status_karyawan')?.toString() ?? '',
-          keterangan: formData.get('keterangan')?.toString() ?? '',
-          tempat_lahir: formData.get('tempat_lahir')?.toString() ?? null,
-          tgl_lahir: parseDate(formData.get('tgl_lahir')),
-          tgl_masuk: parseDate(formData.get('tgl_masuk')),
+          nama_alias: formData.get("nama_alias")?.toString() ?? "",
+          alamat: formData.get("alamat")?.toString() ?? "",
+          no_ktp: formData.get("no_ktp")?.toString() ?? "",
+          telp: formData.get("telp")?.toString() ?? "",
+          jabatan: formData.get("jabatan")?.toString() ?? "",
+          call_sign: formData.get("call_sign")?.toString() ?? "",
+          status_karyawan: formData.get("status_karyawan")?.toString() ?? "",
+          keterangan: formData.get("keterangan")?.toString() ?? "",
+          tempat_lahir: formData.get("tempat_lahir")?.toString() ?? null,
+          tgl_lahir: parseDate(formData.get("tgl_lahir")),
+          tgl_masuk: parseDate(formData.get("tgl_masuk")),
           foto: fotoPath,
         },
       });
 
-      revalidatePath('/employees');
+      revalidatePath("/employees");
       return employee;
     });
   });
@@ -261,10 +264,10 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
         },
       });
 
-      if (!employee) throw new Error('Employee not found');
+      if (!employee) throw new Error("Employee not found");
 
       // Validate NIK uniqueness (if changed)
-      const newNik = formData.get('nik')?.toString();
+      const newNik = formData.get("nik")?.toString();
 
       if (newNik && newNik !== employee.nik) {
         const nikExists = await tx.karyawan.findFirst({
@@ -275,13 +278,13 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
         });
 
         if (nikExists) {
-          throw new Error('NIK sudah digunakan');
+          throw new Error("NIK sudah digunakan");
         }
       }
 
       // Handle photo
       let fotoPath = employee.foto;
-      const fotoFile = formData.get('foto');
+      const fotoFile = formData.get("foto");
 
       if (fotoFile instanceof File && fotoFile.size > 0) {
         const newPhoto = await saveEmployeePhoto(fotoFile);
@@ -295,33 +298,33 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
         },
         data: {
           nik: newNik ?? employee.nik,
-          nama: formData.get('nama')?.toString() ?? employee.nama,
+          nama: formData.get("nama")?.toString() ?? employee.nama,
           nama_alias:
-            formData.get('nama_alias')?.toString() ?? employee.nama_alias,
-          alamat: formData.get('alamat')?.toString() ?? employee.alamat,
-          no_ktp: formData.get('no_ktp')?.toString() ?? employee.no_ktp,
-          telp: formData.get('telp')?.toString() ?? employee.telp,
-          jabatan: formData.get('jabatan')?.toString() ?? employee.jabatan,
+            formData.get("nama_alias")?.toString() ?? employee.nama_alias,
+          alamat: formData.get("alamat")?.toString() ?? employee.alamat,
+          no_ktp: formData.get("no_ktp")?.toString() ?? employee.no_ktp,
+          telp: formData.get("telp")?.toString() ?? employee.telp,
+          jabatan: formData.get("jabatan")?.toString() ?? employee.jabatan,
           call_sign:
-            formData.get('call_sign')?.toString() ?? employee.call_sign,
+            formData.get("call_sign")?.toString() ?? employee.call_sign,
           status_karyawan:
-            formData.get('status_karyawan')?.toString() ??
+            formData.get("status_karyawan")?.toString() ??
             employee.status_karyawan,
           keterangan:
-            formData.get('keterangan')?.toString() ?? employee.keterangan,
+            formData.get("keterangan")?.toString() ?? employee.keterangan,
           divisi_id:
-            formData.get('divisi_id')?.toString() ?? employee.divisi_id,
+            formData.get("divisi_id")?.toString() ?? employee.divisi_id,
           department_id:
-            formData.get('department_id')?.toString() ?? employee.department_id,
+            formData.get("department_id")?.toString() ?? employee.department_id,
           tempat_lahir:
-            formData.get('tempat_lahir')?.toString() ?? employee.tempat_lahir,
-          tgl_lahir: parseDate(formData.get('tgl_lahir')) ?? employee.tgl_lahir,
-          tgl_masuk: parseDate(formData.get('tgl_masuk')) ?? employee.tgl_masuk,
+            formData.get("tempat_lahir")?.toString() ?? employee.tempat_lahir,
+          tgl_lahir: parseDate(formData.get("tgl_lahir")) ?? employee.tgl_lahir,
+          tgl_masuk: parseDate(formData.get("tgl_masuk")) ?? employee.tgl_masuk,
           foto: fotoPath,
         },
       });
 
-      revalidatePath('/employees');
+      revalidatePath("/employees");
       return updated;
     });
   });
@@ -341,19 +344,19 @@ export async function deleteEmployee(id_karyawan: string) {
       },
     });
 
-    if (!employee) throw new Error('Employee not found');
+    if (!employee) throw new Error("Employee not found");
 
     // 🛑 optional safety
     if (employee.userId) {
-      throw new Error('Employee is linked to a user account. Unlink first.');
+      throw new Error("Employee is linked to a user account. Unlink first.");
     }
 
     // Delete photo file if exists
-    if (employee.foto && employee.foto.startsWith('/uploads/')) {
+    if (employee.foto && employee.foto.startsWith("/uploads/")) {
       try {
-        await fs.unlink(path.join(process.cwd(), 'public', employee.foto));
+        await fs.unlink(path.join(process.cwd(), "public", employee.foto));
       } catch (err) {
-        console.error('Failed to delete photo:', err);
+        console.error("Failed to delete photo:", err);
       }
     }
 
@@ -363,7 +366,7 @@ export async function deleteEmployee(id_karyawan: string) {
       },
     });
 
-    revalidatePath('/employees');
+    revalidatePath("/employees");
   });
 }
 
@@ -385,7 +388,7 @@ export async function deleteEmployeeBulk(ids: string[]) {
     });
 
     if (linked > 0) {
-      throw new Error('Some employees are linked to user accounts');
+      throw new Error("Some employees are linked to user accounts");
     }
 
     // Get photos to delete
@@ -398,11 +401,11 @@ export async function deleteEmployeeBulk(ids: string[]) {
     });
 
     for (const emp of employeesToDelete) {
-      if (emp.foto && emp.foto.startsWith('/uploads/')) {
+      if (emp.foto && emp.foto.startsWith("/uploads/")) {
         try {
-          await fs.unlink(path.join(process.cwd(), 'public', emp.foto));
+          await fs.unlink(path.join(process.cwd(), "public", emp.foto));
         } catch (err) {
-          console.error('Failed to delete photo:', err);
+          console.error("Failed to delete photo:", err);
         }
       }
     }
@@ -414,7 +417,7 @@ export async function deleteEmployeeBulk(ids: string[]) {
       },
     });
 
-    revalidatePath('/employees');
+    revalidatePath("/employees");
   });
 }
 
@@ -433,7 +436,7 @@ export async function syncEmployeeUser(id_karyawan: string) {
     });
 
     if (!employee) {
-      throw new Error('Employee not found');
+      throw new Error("Employee not found");
     }
 
     /**
@@ -449,7 +452,7 @@ export async function syncEmployeeUser(id_karyawan: string) {
           email,
           password: `Emp@${employee.nik}`, // ⚠️ bisa diganti invite flow
           name: employee.nama,
-          role: 'user',
+          role: "user",
           data: {
             employeeId: employee.id_karyawan,
           },
@@ -464,7 +467,7 @@ export async function syncEmployeeUser(id_karyawan: string) {
       /**
        * 2️⃣ Add user ke organization
        */
-      let roleToAssign = 'member';
+      let roleToAssign = "member";
       if (employee.jabatan) {
         const roleExists = await prisma.organizationRole.findFirst({
           where: {
@@ -510,7 +513,7 @@ export async function syncEmployeeUser(id_karyawan: string) {
       headers: await headers(),
     });
 
-    revalidatePath('/employees');
+    revalidatePath("/employees");
 
     return {
       success: true,
@@ -522,8 +525,8 @@ export async function unlinkEmployeeUser(employeeId: string) {
   return withContext(async () => {
     const { organizationId, role } = await getActiveOrganizationWithRole();
 
-    if (!['admin', 'owner'].includes(role)) {
-      throw new Error('Forbidden');
+    if (!["admin", "owner"].includes(role)) {
+      throw new Error("Forbidden");
     }
 
     await prisma.karyawan.update({

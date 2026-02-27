@@ -1,8 +1,7 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { faker } from '@faker-js/faker';
-import { createId } from '@paralleldrive/cuid2';
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { faker } from "@faker-js/faker";
 
 export async function GET() {
   const sessionHeaders = await headers();
@@ -12,8 +11,8 @@ export async function GET() {
 
   if (!session) {
     return NextResponse.json(
-      { error: 'No user session found' },
-      { status: 401 }
+      { error: "No user session found" },
+      { status: 401 },
     );
   }
 
@@ -21,7 +20,7 @@ export async function GET() {
 
   for (let i = 0; i < 10; i++) {
     const name = faker.company.name();
-    const slug = faker.helpers.slugify(name.toLowerCase()) + '-' + i;
+    const slug = faker.helpers.slugify(name.toLowerCase()) + "-" + i;
 
     const org = await auth.api.createOrganization({
       body: {
@@ -39,7 +38,7 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    message: 'Seeded 10 organizations using Better Auth',
+    message: "Seeded 10 organizations using Better Auth",
     organizations: results,
   });
 }

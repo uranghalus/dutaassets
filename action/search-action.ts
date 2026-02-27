@@ -20,7 +20,6 @@ export async function globalSearch(query: string) {
     prisma.asset.findMany({
       where: {
         organization_id: organizationId,
-        deleted_at: null,
         OR: [
           { nama_asset: { contains: query } },
           { kode_asset: { contains: query } },
@@ -33,10 +32,7 @@ export async function globalSearch(query: string) {
     prisma.item.findMany({
       where: {
         organizationId,
-        OR: [
-          { name: { contains: query } },
-          { code: { contains: query } },
-        ],
+        OR: [{ name: { contains: query } }, { code: { contains: query } }],
       },
       take: 5,
       select: { id: true, name: true, code: true },
@@ -45,10 +41,7 @@ export async function globalSearch(query: string) {
       where: {
         organization_id: organizationId,
         deleted_at: null,
-        OR: [
-          { nama: { contains: query } },
-          { nik: { contains: query } },
-        ],
+        OR: [{ nama: { contains: query } }, { nik: { contains: query } }],
       },
       take: 5,
       select: { id_karyawan: true, nama: true, nik: true },

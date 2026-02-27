@@ -325,7 +325,7 @@ export default async function EmployeeDetailsPage({
                                   </td>
                                   <td className="p-4">{asset.nama_asset}</td>
                                   <td className="p-4">
-                                    {asset.kategori_asset}
+                                    {asset.assetCategory?.name ?? "-"}
                                   </td>
                                   <td className="p-4">{asset.kondisi}</td>
                                 </tr>

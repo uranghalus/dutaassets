@@ -66,12 +66,12 @@ export async function loginAction(formData: AuthPayload): Promise<ActionState> {
       status: "success",
       message: "Login berhasil",
     };
-  } catch (error) {
-    console.error("LOGIN ERROR:", error);
+  } catch (error: any) {
+    console.error("LOGIN ERROR FULL:", error);
 
     return {
       status: "error",
-      message: "Terjadi kesalahan saat login",
+      message: error?.message ?? "Unknown error",
     };
   }
 }

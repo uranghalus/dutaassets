@@ -45,22 +45,14 @@ export async function loginAction(formData: AuthPayload): Promise<ActionState> {
       };
     }
 
-    const result = await auth.api.signInEmail({
+    await auth.api.signInEmail({
       body: {
         email,
         password,
         rememberMe: rememberMe ?? false,
       },
       headers: await headers(),
-      returnStatus: true,
     });
-
-    if (result.status !== 200) {
-      return {
-        status: "error",
-        message: "Email atau password salah",
-      };
-    }
 
     return {
       status: "success",
@@ -69,9 +61,28 @@ export async function loginAction(formData: AuthPayload): Promise<ActionState> {
   } catch (error: any) {
     console.error("LOGIN ERROR FULL:", error);
 
+    // better-auth throws APIError with a message + status
+    const message: string =
+      error?.body?.message ?? error?.message ?? "Terjadi kesalahan";
+
+    // Map known better-auth error messages to user-friendly Indonesian messages
+    if (
+      message.toLowerCase().includes("invalid email or password") ||
+      message.toLowerCase().includes("invalid credentials")
+    ) {
+      return { status: "error", message: "Email atau password salah" };
+    }
+
+    if (message.toLowerCase().includes("email is not verified")) {
+      return {
+        status: "error",
+        message: "Email belum diverifikasi. Silakan cek inbox email Anda.",
+      };
+    }
+
     return {
       status: "error",
-      message: error?.message ?? "Unknown error",
+      message,
     };
   }
 }

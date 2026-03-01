@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function RequisitionApprovalPage() {
   return (
     <ApprovalDialogProvider>
-      <Main fixed>
+      <Main fluid>
         <div className="mb-2 flex items-center justify-between space-y-2">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">

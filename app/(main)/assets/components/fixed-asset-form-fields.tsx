@@ -1,9 +1,9 @@
 "use client";
 
-import { useForm, UseFormReturn } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { UseFormReturn } from "react-hook-form";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import { useEffect } from "react";
 
 import {
   FormControl,
@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 import { AssetForm, assetFormSchema } from "@/schema/asset-schema";
 import { useDepartmentsSimple } from "@/hooks/use-departments";
 import { useDivisionOptions } from "@/hooks/use-divisions";
-import { useEmployees } from "@/hooks/use-employee";
+import { useEmployeeOptions } from "@/hooks/use-employee";
 import { useAllAssetCategories } from "@/hooks/use-asset-category";
 import { useAllAssetLocations } from "@/hooks/use-asset-location";
 
@@ -43,11 +43,45 @@ interface FixedAssetFormFieldsProps {
 
 export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
   const { data: departments } = useDepartmentsSimple();
-  const { data: divisions } = useDivisionOptions();
-  const { data: employeesData } = useEmployees({ page: 0, pageSize: 100 });
+  const { data: allDivisions } = useDivisionOptions();
+  const { data: allEmployees } = useEmployeeOptions();
   const { data: categories } = useAllAssetCategories();
   const { data: locations } = useAllAssetLocations();
-  const employees = employeesData?.data || [];
+
+  const selectedDepartmentId = form.watch("department_id");
+  const selectedDivisiId = form.watch("divisi_id");
+
+  // Filter divisions based on selected department
+  const filteredDivisions = selectedDepartmentId
+    ? (allDivisions ?? []).filter(
+        (div: any) => div.department_id === selectedDepartmentId,
+      )
+    : [];
+
+  // Filter employees: by divisi if set, else by department
+  const filteredEmployees = (() => {
+    const list = allEmployees ?? [];
+    if (selectedDivisiId) {
+      return list.filter((emp: any) => emp.divisi_id === selectedDivisiId);
+    }
+    if (selectedDepartmentId) {
+      return list.filter(
+        (emp: any) => emp.department_id === selectedDepartmentId,
+      );
+    }
+    return [];
+  })();
+
+  // Reset divisi_id and karyawan_id when department changes
+  useEffect(() => {
+    form.setValue("divisi_id", null);
+    form.setValue("karyawan_id", null);
+  }, [selectedDepartmentId, form]);
+
+  // Reset karyawan_id when divisi changes
+  useEffect(() => {
+    form.setValue("karyawan_id", null);
+  }, [selectedDivisiId, form]);
 
   return (
     <div className="space-y-8">
@@ -290,19 +324,32 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
                 </FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value || undefined}
+                  value={field.value || ""}
+                  disabled={!selectedDepartmentId}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select Division" />
+                      <SelectValue
+                        placeholder={
+                          selectedDepartmentId
+                            ? "Select Division"
+                            : "Select a department first"
+                        }
+                      />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {divisions?.map((div: any) => (
-                      <SelectItem key={div.id_divisi} value={div.id_divisi}>
-                        {div.nama_divisi}
-                      </SelectItem>
-                    ))}
+                    {filteredDivisions.length === 0 ? (
+                      <div className="py-2 px-3 text-sm text-muted-foreground">
+                        No divisions in this department
+                      </div>
+                    ) : (
+                      filteredDivisions.map((div: any) => (
+                        <SelectItem key={div.id_divisi} value={div.id_divisi}>
+                          {div.nama_divisi}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -320,19 +367,40 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
                 </FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value || undefined}
+                  value={field.value || ""}
+                  disabled={!selectedDepartmentId}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select Employee" />
+                      <SelectValue
+                        placeholder={
+                          !selectedDepartmentId
+                            ? "Select a department first"
+                            : filteredEmployees.length === 0
+                              ? "No employees found"
+                              : "Select Employee"
+                        }
+                      />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp.id_karyawan} value={emp.id_karyawan}>
-                        {emp.nama}
-                      </SelectItem>
-                    ))}
+                    {filteredEmployees.length === 0 ? (
+                      <div className="py-2 px-3 text-sm text-muted-foreground">
+                        {selectedDivisiId
+                          ? "No employees in this division"
+                          : "No employees in this department"}
+                      </div>
+                    ) : (
+                      filteredEmployees.map((emp: any) => (
+                        <SelectItem
+                          key={emp.id_karyawan}
+                          value={emp.id_karyawan}
+                        >
+                          {emp.nama}
+                          {emp.jabatan ? ` — ${emp.jabatan}` : ""}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 <FormMessage />

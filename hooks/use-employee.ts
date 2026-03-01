@@ -6,8 +6,9 @@ import {
   deleteEmployeeBulk,
   syncEmployeeUser,
   unlinkEmployeeUser,
-} from '@/action/employees-action';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+  getEmployeeOptions,
+} from "@/action/employees-action";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 /* =======================
    GET (PAGINATION)
@@ -20,7 +21,7 @@ export function useEmployees({
   pageSize: number;
 }) {
   return useQuery({
-    queryKey: ['employees', page, pageSize],
+    queryKey: ["employees", page, pageSize],
     queryFn: () =>
       getEmployees({
         page,
@@ -40,7 +41,7 @@ export function useCreateEmployee() {
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['employees'],
+        queryKey: ["employees"],
       });
     },
   });
@@ -63,7 +64,7 @@ export function useUpdateEmployee() {
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['employees'],
+        queryKey: ["employees"],
       });
     },
   });
@@ -80,7 +81,7 @@ export function useDeleteEmployee() {
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['employees'],
+        queryKey: ["employees"],
       });
     },
   });
@@ -97,7 +98,7 @@ export function useDeleteEmployeeBulk() {
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['employees'],
+        queryKey: ["employees"],
       });
     },
   });
@@ -110,7 +111,7 @@ export function useSyncEmployeeUser() {
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['employees'],
+        queryKey: ["employees"],
       });
     },
   });
@@ -124,8 +125,19 @@ export function useUnlinkEmployeeUser() {
     onSuccess: () => {
       // 🔥 refresh data employee
       queryClient.invalidateQueries({
-        queryKey: ['employees'],
+        queryKey: ["employees"],
       });
     },
+  });
+}
+
+/* =======================
+   OPTIONS (DROPDOWN)
+======================= */
+export function useEmployeeOptions() {
+  return useQuery({
+    queryKey: ["employee-options"],
+    queryFn: () => getEmployeeOptions(),
+    staleTime: 1000 * 60 * 5,
   });
 }

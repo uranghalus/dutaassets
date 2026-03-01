@@ -221,6 +221,8 @@ export async function createEmployee(formData: FormData) {
         fotoPath = await saveEmployeePhoto(fotoFile);
       }
 
+      const jabatan = formData.get("jabatan")?.toString() ?? "";
+
       const employee = await tx.karyawan.create({
         data: {
           organization_id: organizationId,
@@ -232,7 +234,7 @@ export async function createEmployee(formData: FormData) {
           alamat: formData.get("alamat")?.toString() ?? "",
           no_ktp: formData.get("no_ktp")?.toString() ?? "",
           telp: formData.get("telp")?.toString() ?? "",
-          jabatan: formData.get("jabatan")?.toString() ?? "",
+          jabatan,
           call_sign: formData.get("call_sign")?.toString() ?? "",
           status_karyawan: formData.get("status_karyawan")?.toString() ?? "",
           keterangan: formData.get("keterangan")?.toString() ?? "",
@@ -242,6 +244,35 @@ export async function createEmployee(formData: FormData) {
           foto: fotoPath,
         },
       });
+
+      // Jika employee langsung di-link ke user, tambahkan sebagai member organisasi
+      // dengan role berdasarkan jabatan
+      const linkedUserId = formData.get("userId")?.toString();
+      if (linkedUserId) {
+        // Cek apakah jabatan ada di OrganizationRole
+        let roleToAssign = "member";
+        if (jabatan) {
+          const roleExists = await tx.organizationRole.findFirst({
+            where: { organizationId, role: jabatan },
+          });
+          if (roleExists) roleToAssign = jabatan;
+        }
+
+        await auth.api.addMember({
+          body: {
+            userId: linkedUserId,
+            organizationId,
+            role: roleToAssign as any,
+          },
+          headers: await headers(),
+        });
+
+        // Simpan userId ke karyawan
+        await tx.karyawan.update({
+          where: { id_karyawan: employee.id_karyawan },
+          data: { userId: linkedUserId },
+        });
+      }
 
       revalidatePath("/employees");
       return employee;
@@ -292,6 +323,9 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
         fotoPath = newPhoto;
       }
 
+      const newJabatan =
+        formData.get("jabatan")?.toString() ?? employee.jabatan;
+
       const updated = await tx.karyawan.update({
         where: {
           id_karyawan,
@@ -304,7 +338,7 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
           alamat: formData.get("alamat")?.toString() ?? employee.alamat,
           no_ktp: formData.get("no_ktp")?.toString() ?? employee.no_ktp,
           telp: formData.get("telp")?.toString() ?? employee.telp,
-          jabatan: formData.get("jabatan")?.toString() ?? employee.jabatan,
+          jabatan: newJabatan,
           call_sign:
             formData.get("call_sign")?.toString() ?? employee.call_sign,
           status_karyawan:
@@ -323,6 +357,26 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
           foto: fotoPath,
         },
       });
+
+      // Jika employee punya user dan jabatan berubah → update role di organisasi
+      if (employee.userId && newJabatan !== employee.jabatan) {
+        let roleToAssign = "member";
+        if (newJabatan) {
+          const roleExists = await tx.organizationRole.findFirst({
+            where: { organizationId, role: newJabatan },
+          });
+          if (roleExists) roleToAssign = newJabatan;
+        }
+
+        await auth.api.updateMemberRole({
+          body: {
+            memberId: employee.userId,
+            role: roleToAssign as any,
+            organizationId,
+          },
+          headers: await headers(),
+        });
+      }
 
       revalidatePath("/employees");
       return updated;
@@ -521,6 +575,28 @@ export async function syncEmployeeUser(id_karyawan: string) {
     };
   });
 }
+/* =======================
+   OPTIONS (DROPDOWN)
+======================= */
+export async function getEmployeeOptions() {
+  const { organizationId } = await getActiveOrganizationWithRole();
+
+  return prisma.karyawan.findMany({
+    where: {
+      organization_id: organizationId,
+      deleted_at: null,
+    },
+    select: {
+      id_karyawan: true,
+      nama: true,
+      jabatan: true,
+      divisi_id: true,
+      department_id: true,
+    },
+    orderBy: { nama: "asc" },
+  });
+}
+
 export async function unlinkEmployeeUser(employeeId: string) {
   return withContext(async () => {
     const { organizationId, role } = await getActiveOrganizationWithRole();

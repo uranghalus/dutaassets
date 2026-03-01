@@ -207,7 +207,7 @@ export async function createAsset(formData: FormData) {
       });
 
       revalidatePath("/assets");
-      return { success: true, data: asset };
+      return { success: true, data: serializePrisma(asset) };
     } catch (error: any) {
       console.error("Failed to create asset:", error);
       if (error.code === "P2002") {

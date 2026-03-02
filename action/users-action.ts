@@ -1,10 +1,10 @@
-'use server';
+"use server";
 
-import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { headers } from 'next/headers';
-import { revalidatePath } from 'next/cache';
-import { withContext } from '@/lib/action-utils';
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
+import { withContext } from "@/lib/action-utils";
 
 /* =======================
    TYPES
@@ -22,21 +22,21 @@ export async function getUsers({ page, pageSize, search }: UserArgs) {
   // 1. Fetch users from Better Auth Admin API
   const result = await auth.api.listUsers({
     query: {
-        limit: pageSize,
-        offset: (page - 1) * pageSize,
-        searchValue: search, // Corrected from search to searchValue
-        searchField: "name",
-        sortBy: "createdAt",
-        sortDirection: "desc"
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+      searchValue: search, // Corrected from search to searchValue
+      searchField: "name",
+      sortBy: "createdAt",
+      sortDirection: "desc",
     },
     headers: await headers(),
   });
-  
+
   const users = result.users;
 
   // 2. Fetch linked employees for these users
-  const userIds = users.map(u => u.id);
-  
+  const userIds = users.map((u) => u.id);
+
   const employees = await prisma.karyawan.findMany({
     where: {
       userId: { in: userIds },
@@ -49,10 +49,10 @@ export async function getUsers({ page, pageSize, search }: UserArgs) {
     },
   });
 
-  const employeeMap = new Map(employees.map(e => [e.userId, e]));
+  const employeeMap = new Map(employees.map((e) => [e.userId, e]));
 
   // 3. Merge data
-  const data = users.map(user => ({
+  const data = users.map((user) => ({
     ...user,
     employee: employeeMap.get(user.id) || null,
   }));
@@ -74,12 +74,14 @@ export async function getUsers({ page, pageSize, search }: UserArgs) {
 ======================= */
 export async function createUser(formData: FormData) {
   return withContext(async () => {
-    const username = formData.get('username')?.toString();
-    const role = formData.get('role')?.toString();
-    const employeeId = formData.get('employeeId')?.toString();
+    const username = formData.get("username")?.toString();
+    const role = formData.get("role")?.toString();
+    const employeeId = formData.get("employeeId")?.toString();
 
     if (!username || !role || !employeeId) {
-      throw new Error('Missing required fields: Username, Role, and Employee are required.');
+      throw new Error(
+        "Missing required fields: Username, Role, and Employee are required.",
+      );
     }
 
     // 1. Fetch Employee Data
@@ -88,7 +90,7 @@ export async function createUser(formData: FormData) {
     });
 
     if (!employee) {
-      throw new Error('Employee not found');
+      throw new Error("Employee not found");
     }
 
     // 2. Generate Unique Email
@@ -119,7 +121,7 @@ export async function createUser(formData: FormData) {
     });
 
     if (!newUser?.user) {
-      throw new Error('Failed to create user');
+      throw new Error("Failed to create user");
     }
 
     // 5. Post-creation updates (Verify email, set username, link employee)
@@ -127,7 +129,7 @@ export async function createUser(formData: FormData) {
       where: { id: newUser.user.id },
       data: {
         emailVerified: true,
-        username: finalUsername
+        username: finalUsername,
       },
     });
 
@@ -137,7 +139,30 @@ export async function createUser(formData: FormData) {
       data: { userId: newUser.user.id },
     });
 
-    revalidatePath('/users');
+    // 6. Add as Organization Member
+    if (employee.organization_id) {
+      let roleToAssign: any = "member";
+      if (employee.jabatan) {
+        const roleExists = await prisma.organizationRole.findFirst({
+          where: {
+            organizationId: employee.organization_id,
+            role: employee.jabatan,
+          },
+        });
+        if (roleExists) roleToAssign = employee.jabatan;
+      }
+
+      await auth.api.addMember({
+        body: {
+          userId: newUser.user.id,
+          organizationId: employee.organization_id,
+          role: roleToAssign,
+        },
+        headers: await headers(),
+      });
+    }
+
+    revalidatePath("/users");
     return newUser;
   });
 }
@@ -147,10 +172,10 @@ export async function createUser(formData: FormData) {
 ======================= */
 export async function updateUser(userId: string, formData: FormData) {
   return withContext(async () => {
-    const username = formData.get('username')?.toString();
-    const role = formData.get('role')?.toString();
-    const employeeId = formData.get('employeeId')?.toString();
-    const password = formData.get('password')?.toString();
+    const username = formData.get("username")?.toString();
+    const role = formData.get("role")?.toString();
+    const employeeId = formData.get("employeeId")?.toString();
+    const password = formData.get("password")?.toString();
 
     const updateData: any = {};
     if (role) updateData.role = role;
@@ -162,14 +187,16 @@ export async function updateUser(userId: string, formData: FormData) {
       // Generate email
       let email = `${username}@dutaverse.com`;
 
-      // Check uniqueness is tricky on update without current user context, 
+      // Check uniqueness is tricky on update without current user context,
       // but let's assume if it fails, it fails.
       // Or we can query current user.
-      const currentUser = await prisma.user.findUnique({ where: { id: userId } });
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+      });
       if (currentUser?.username !== username) {
         // check if email taken
         const existing = await prisma.user.findFirst({
-          where: { email, id: { not: userId } }
+          where: { email, id: { not: userId } },
         });
         if (existing) {
           throw new Error("Username already taken");
@@ -193,7 +220,7 @@ export async function updateUser(userId: string, formData: FormData) {
     if (finalUsername) {
       await prisma.user.update({
         where: { id: userId },
-        data: { username: finalUsername }
+        data: { username: finalUsername },
       });
     }
 
@@ -204,7 +231,7 @@ export async function updateUser(userId: string, formData: FormData) {
           userId,
           newPassword: password,
         },
-        headers: await headers()
+        headers: await headers(),
       });
     }
 
@@ -219,13 +246,13 @@ export async function updateUser(userId: string, formData: FormData) {
         if (currentLink) {
           await prisma.karyawan.update({
             where: { id_karyawan: currentLink.id_karyawan },
-            data: { userId: null }
+            data: { userId: null },
           });
         }
 
         // Fetch new employee
         const newEmployee = await prisma.karyawan.findUnique({
-          where: { id_karyawan: employeeId }
+          where: { id_karyawan: employeeId },
         });
 
         if (newEmployee) {
@@ -238,8 +265,49 @@ export async function updateUser(userId: string, formData: FormData) {
           // Sync Name to User
           await prisma.user.update({
             where: { id: userId },
-            data: { name: newEmployee.nama }
+            data: { name: newEmployee.nama },
           });
+
+          // 4. Sync Organization Member Role
+          if (newEmployee.organization_id) {
+            let roleToAssign: any = "member";
+            if (newEmployee.jabatan) {
+              const roleExists = await prisma.organizationRole.findFirst({
+                where: {
+                  organizationId: newEmployee.organization_id,
+                  role: newEmployee.jabatan,
+                },
+              });
+              if (roleExists) roleToAssign = newEmployee.jabatan;
+            }
+
+            const existingMember = await prisma.member.findFirst({
+              where: {
+                userId,
+                organizationId: newEmployee.organization_id,
+              },
+            });
+
+            if (existingMember) {
+              await auth.api.updateMemberRole({
+                body: {
+                  memberId: userId,
+                  organizationId: newEmployee.organization_id,
+                  role: roleToAssign,
+                },
+                headers: await headers(),
+              });
+            } else {
+              await auth.api.addMember({
+                body: {
+                  userId,
+                  organizationId: newEmployee.organization_id,
+                  role: roleToAssign,
+                },
+                headers: await headers(),
+              });
+            }
+          }
         }
       }
     } else {
@@ -247,12 +315,12 @@ export async function updateUser(userId: string, formData: FormData) {
       if (currentLink) {
         await prisma.karyawan.update({
           where: { id_karyawan: currentLink.id_karyawan },
-          data: { userId: null }
+          data: { userId: null },
         });
       }
     }
 
-    revalidatePath('/users');
+    revalidatePath("/users");
   });
 }
 
@@ -269,14 +337,18 @@ export async function deleteUser(userId: string) {
 
     // Prisma relation 'onDelete: SetNull' in schema handles the Karyawan userId cleanup automatically.
 
-    revalidatePath('/users');
+    revalidatePath("/users");
   });
 }
 
 /* =======================
    BAN / UNBAN
 ======================= */
-export async function toggleBanUser(userId: string, isBanned: boolean, reason?: string) {
+export async function toggleBanUser(
+  userId: string,
+  isBanned: boolean,
+  reason?: string,
+) {
   return withContext(async () => {
     if (isBanned) {
       await auth.api.banUser({
@@ -293,6 +365,6 @@ export async function toggleBanUser(userId: string, isBanned: boolean, reason?: 
       });
     }
 
-    revalidatePath('/users');
+    revalidatePath("/users");
   });
 }

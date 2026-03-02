@@ -59,10 +59,11 @@ export async function requireAssetPermission(
  */
 export function getDepartmentFilter(
   role: string,
-  departmentId: string,
+  departmentId: string | null,
 ): { department_id?: string } {
   const scope = resolveUserScope(role);
-  return scope === "global" ? {} : { department_id: departmentId };
+  if (scope === "global" || !departmentId) return {};
+  return { department_id: departmentId };
 }
 
 /**

@@ -178,6 +178,8 @@ export async function getActiveOrganizationWithRole() {
 
   const userId = session.user.id;
 
+  const activeOrgId = session.session?.activeOrganizationId;
+
   // 🔐 1. Ambil karyawan beserta departemen
   const employee = await prisma.karyawan.findUnique({
     where: { userId },
@@ -187,12 +189,12 @@ export async function getActiveOrganizationWithRole() {
     },
   });
 
-  if (!employee?.organization_id) {
+  if (!employee?.organization_id && !activeOrgId) {
     throw new Error("User is not bound to any organization");
   }
 
-  const organizationId = employee.organization_id;
-  const departmentId = employee.department_id;
+  const organizationId = activeOrgId || employee!.organization_id;
+  const departmentId = employee?.department_id ?? null;
 
   // 🔐 2. Pastikan organization valid
   const organization = await prisma.organization.findFirst({
@@ -235,6 +237,15 @@ export async function setActiveOrganizationAction(organizationId: string) {
     throw new Error("Unauthorized");
   }
 
+  // 🔐 Super admin global boleh switch ke org manapun tanpa cek membership
+  if ((session.user as { role?: string }).role === "super_admin") {
+    await auth.api.setActiveOrganization({
+      body: { organizationId },
+      headers: await headers(),
+    });
+    return { success: true };
+  }
+
   // 🔐 1. Pastikan user adalah member di organization tsb
   const member = await prisma.member.findFirst({
     where: {
@@ -251,11 +262,11 @@ export async function setActiveOrganizationAction(organizationId: string) {
     throw new Error("Forbidden: Not a member of this organization");
   }
 
-  // 🔐 2. Validasi role (ERP mode)
-  const allowedRoles = ["owner", "admin"];
-
-  if (!allowedRoles.includes(member.role)) {
-    throw new Error("Forbidden: Insufficient role to switch organization");
+  // 🔐 2. Hanya owner yang boleh switch org (bukan admin/member/dll)
+  if (member.role !== "owner") {
+    throw new Error(
+      "Forbidden: Hanya owner atau super admin yang dapat berpindah organisasi",
+    );
   }
 
   // ✅ 3. Set active organization

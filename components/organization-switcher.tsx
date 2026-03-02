@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDown } from "lucide-react";
+import { ChevronsUpDown, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,17 +16,38 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { authClient } from "@/lib/auth-client";
-import { useOrganizationListQuery } from "@/hooks/use-switcher";
+import {
+  useOrganizationListQuery,
+  useOrganizationActiveMutation,
+} from "@/hooks/use-switcher";
+import {
+  setActiveOrganizationAction,
+  getActiveOrganizationWithRole,
+} from "@/action/organization-action";
+import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 
 export function OrganizationSwitcher() {
   const { data: session } = authClient.useSession();
   const { data: activeOrganization, isPending } =
     authClient.useActiveOrganization();
 
-  // Optional: hanya untuk IT / Super Admin multi-org
-  const { data: organizations = [] } = useOrganizationListQuery();
+  // Fetch the role explicitly defined in the DB for the current user
+  const { data: orgMemberData, isLoading: isLoadingRole } = useQuery({
+    queryKey: ["active-org-role", activeOrganization?.id],
+    queryFn: async () => {
+      // getActiveOrganizationWithRole checks DB
+      const result = await getActiveOrganizationWithRole();
+      return result;
+    },
+    enabled: !!activeOrganization?.id,
+  });
 
-  if (isPending || !activeOrganization) {
+  const { data: organizations = [] } = useOrganizationListQuery();
+  const { mutate: setActive, isPending: isSwitching } =
+    useOrganizationActiveMutation();
+
+  if (isPending || isLoadingRole || !activeOrganization) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
@@ -42,21 +63,26 @@ export function OrganizationSwitcher() {
     );
   }
 
-  const role = session?.user?.role;
+  const globalRole = (session?.user as { role?: string } | undefined)?.role;
 
   // 🔐 ERP Rule:
-  // Hanya super_admin / owner global yang boleh switch
-  const canSwitch = role === "super_admin";
+  // - super_admin (global user role) → boleh switch ke org manapun
+  // - owner (org member role) → boleh switch
+  // - Selain itu → hanya bisa melihat org yg ditetapkan HRD (read-only)
+  const isGlobalSuperAdmin = globalRole === "super_admin";
+  const isOrgOwner = orgMemberData?.role === "owner";
 
+  const canSwitch = isGlobalSuperAdmin || isOrgOwner;
+
+  // ─── Read-only display for non-privileged users ───────────────────────────
   if (!canSwitch) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton size="lg">
+          <SidebarMenuButton size="lg" className="cursor-default">
             <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
               {activeOrganization.name.charAt(0)}
             </div>
-
             <div className="grid flex-1 text-start text-sm leading-tight">
               <span className="truncate font-semibold">
                 {activeOrganization.name}
@@ -71,6 +97,19 @@ export function OrganizationSwitcher() {
     );
   }
 
+  // ─── Privileged users: dropdown switcher ─────────────────────────────────
+  async function handleSwitch(organizationId: string) {
+    if (organizationId === activeOrganization?.id) return;
+    try {
+      await setActiveOrganizationAction(organizationId);
+      setActive({ organizationId });
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Gagal berpindah organisasi",
+      );
+    }
+  }
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -78,6 +117,7 @@ export function OrganizationSwitcher() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
+              disabled={isSwitching}
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
@@ -93,7 +133,11 @@ export function OrganizationSwitcher() {
                 </span>
               </div>
 
-              <ChevronsUpDown className="ml-auto size-4" />
+              {isSwitching ? (
+                <Loader2 className="ml-auto size-4 animate-spin" />
+              ) : (
+                <ChevronsUpDown className="ml-auto size-4" />
+              )}
             </SidebarMenuButton>
           </DropdownMenuTrigger>
 
@@ -110,11 +154,8 @@ export function OrganizationSwitcher() {
             {organizations.map((org) => (
               <DropdownMenuItem
                 key={org.id}
-                disabled={org.id === activeOrganization.id}
-                onClick={() => {
-                  // hanya super_admin yang boleh
-                  // nanti panggil server action setActiveOrganization()
-                }}
+                disabled={org.id === activeOrganization.id || isSwitching}
+                onClick={() => handleSwitch(org.id)}
                 className="gap-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-sm border text-xs font-medium">

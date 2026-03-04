@@ -2,146 +2,471 @@
 
 import { useColor } from "@/context/color-provider";
 import { useTheme } from "@/context/theme-provider";
+import { useFont } from "@/context/font-provider";
+import { useLayout } from "@/context/layout-provider";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Check } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
+import {
+  Check,
+  Sun,
+  Moon,
+  Monitor,
+  PanelLeft,
+  LayoutDashboard,
+  Columns2,
+  Type,
+  Palette,
+  Layout,
+  RotateCcw,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// ─── Color Options ────────────────────────────────────────────────────────────
 const colorOptions = [
   {
     name: "Zinc",
     value: "zinc",
-    class: "bg-zinc-900 border-zinc-900",
-    darkClass: "dark:bg-zinc-100 dark:border-zinc-100",
+    bg: "bg-zinc-900",
+    ring: "ring-zinc-900",
+    darkBg: "dark:bg-zinc-100",
   },
   {
     name: "Blue",
     value: "blue",
-    class: "bg-blue-600 border-blue-600",
-    darkClass: "dark:bg-blue-600 dark:border-blue-600",
+    bg: "bg-blue-600",
+    ring: "ring-blue-600",
+    darkBg: "dark:bg-blue-500",
   },
   {
     name: "Green",
     value: "green",
-    class: "bg-green-600 border-green-600",
-    darkClass: "dark:bg-green-600 dark:border-green-600",
+    bg: "bg-green-600",
+    ring: "ring-green-600",
+    darkBg: "dark:bg-green-500",
   },
   {
     name: "Red",
     value: "red",
-    class: "bg-red-600 border-red-600",
-    darkClass: "dark:bg-red-600 dark:border-red-600",
+    bg: "bg-red-600",
+    ring: "ring-red-600",
+    darkBg: "dark:bg-red-500",
   },
   {
     name: "Orange",
     value: "orange",
-    class: "bg-orange-500 border-orange-500",
-    darkClass: "dark:bg-orange-500 dark:border-orange-500",
+    bg: "bg-orange-500",
+    ring: "ring-orange-500",
+    darkBg: "dark:bg-orange-400",
   },
 ] as const;
 
+// ─── Font Options ─────────────────────────────────────────────────────────────
+const fontOptions = [
+  {
+    value: "inter",
+    label: "Inter",
+    sample: "The quick brown fox",
+    style: { fontFamily: "'Inter', sans-serif" },
+  },
+  {
+    value: "manrope",
+    label: "Manrope",
+    sample: "The quick brown fox",
+    style: { fontFamily: "'Manrope', sans-serif" },
+  },
+  {
+    value: "system",
+    label: "System Default",
+    sample: "The quick brown fox",
+    style: { fontFamily: "system-ui, sans-serif" },
+  },
+] as const;
+
+// ─── Section Header ───────────────────────────────────────────────────────────
+function SectionHeader({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div>
+        <p className="text-sm font-semibold leading-none">{title}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AppearancePage() {
-  const { theme, setTheme } = useTheme();
-  const { color, setColor } = useColor();
+  const { theme, setTheme, resetTheme } = useTheme();
+  const { color, setColor, resetColor } = useColor();
+  const { font, setFont, resetFont } = useFont();
+  const { variant, setVariant, collapsible, setCollapsible, resetLayout } =
+    useLayout();
+
+  const t = useTranslations("appearance");
+
+  // ─── Theme Options ────────────────────────────────────────────────────────────
+  const themeOptions = [
+    {
+      value: "light",
+      label: t("theme.light"),
+      icon: Sun,
+      preview: (
+        <div className="flex h-14 w-full items-center justify-center rounded-lg bg-white border border-zinc-200 shadow-sm gap-2 px-3">
+          <div className="h-2.5 w-2.5 rounded-full bg-zinc-300" />
+          <div className="flex-1 space-y-1">
+            <div className="h-2 w-3/4 rounded bg-zinc-200" />
+            <div className="h-2 w-1/2 rounded bg-zinc-100" />
+          </div>
+        </div>
+      ),
+    },
+    {
+      value: "dark",
+      label: t("theme.dark"),
+      icon: Moon,
+      preview: (
+        <div className="flex h-14 w-full items-center justify-center rounded-lg bg-zinc-950 border border-zinc-800 shadow-sm gap-2 px-3">
+          <div className="h-2.5 w-2.5 rounded-full bg-zinc-600" />
+          <div className="flex-1 space-y-1">
+            <div className="h-2 w-3/4 rounded bg-zinc-800" />
+            <div className="h-2 w-1/2 rounded bg-zinc-900" />
+          </div>
+        </div>
+      ),
+    },
+    {
+      value: "system",
+      label: t("theme.system"),
+      icon: Monitor,
+      preview: (
+        <div className="flex h-14 w-full overflow-hidden rounded-lg border border-zinc-200 shadow-sm">
+          <div className="flex-1 bg-white flex items-center justify-center border-r border-zinc-200 px-2 gap-1">
+            <div className="h-2 w-full rounded bg-zinc-200" />
+          </div>
+          <div className="flex-1 bg-zinc-950 flex items-center justify-center px-2 gap-1">
+            <div className="h-2 w-full rounded bg-zinc-800" />
+          </div>
+        </div>
+      ),
+    },
+  ] as const;
+
+  // ─── Layout Variant Options ───────────────────────────────────────────────────
+  const variantOptions = [
+    {
+      value: "sidebar",
+      label: t("sidebar.classic"),
+      icon: PanelLeft,
+      preview: (
+        <div className="flex h-14 w-full gap-1 rounded-lg border border-border overflow-hidden bg-muted/30 p-1.5">
+          <div className="w-8 rounded bg-muted" />
+          <div className="flex-1 rounded bg-background border border-border" />
+        </div>
+      ),
+    },
+    {
+      value: "inset",
+      label: t("sidebar.inset"),
+      icon: LayoutDashboard,
+      preview: (
+        <div className="flex h-14 w-full gap-1 rounded-lg border border-border overflow-hidden bg-muted/50 p-2">
+          <div className="w-7 rounded-sm bg-muted/80" />
+          <div className="flex-1 rounded-sm bg-background border border-border/50" />
+        </div>
+      ),
+    },
+    {
+      value: "floating",
+      label: t("sidebar.floating"),
+      icon: Columns2,
+      preview: (
+        <div className="relative flex h-14 w-full items-center rounded-lg border border-border overflow-hidden bg-background p-1.5 gap-1">
+          <div className="w-8 rounded bg-muted/60 border border-border/50 h-full shadow-sm" />
+          <div className="flex-1 rounded bg-muted/20 h-full" />
+        </div>
+      ),
+    },
+  ] as const;
+
+  // ─── Collapsible Options ──────────────────────────────────────────────────────
+  const collapsibleOptions = [
+    {
+      value: "icon",
+      label: t("sidebar.iconOnly"),
+      description: t("sidebar.iconOnlyDesc"),
+    },
+    {
+      value: "offcanvas",
+      label: t("sidebar.offcanvas"),
+      description: t("sidebar.offcanvasDesc"),
+    },
+    {
+      value: "none",
+      label: t("sidebar.alwaysOpen"),
+      description: t("sidebar.alwaysOpenDesc"),
+    },
+  ] as const;
+
+  const handleResetAll = () => {
+    resetTheme();
+    resetColor();
+    resetFont();
+    resetLayout();
+  };
 
   return (
-    <div className="space-y-6 flex-1 w-full max-w-2xl px-2">
-      <div>
-        <h3 className="text-lg font-medium">Appearance</h3>
-        <p className="text-sm text-muted-foreground">
-          Customize the appearance of the application. Automatically switches
-          between day and night themes.
-        </p>
-      </div>
-      <Separator />
-      <div className="space-y-8">
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium">Theme</h4>
-          <div className="grid grid-cols-3 gap-4">
-            <Button
-              variant="outline"
-              className={cn(
-                "h-auto flex flex-col items-center justify-center p-4 border-2 shadow-sm rounded-xl transition-all",
-                theme === "light"
-                  ? "border-primary bg-primary/5"
-                  : "hover:bg-accent/50",
-              )}
-              onClick={() => setTheme("light")}
-            >
-              <div className="flex h-12 w-full items-center justify-center rounded-md bg-zinc-100 border border-zinc-200 shadow-sm mb-3">
-                <div className="h-6 w-6 rounded-full bg-white shadow-sm border border-zinc-200"></div>
-              </div>
-              <span className="font-medium">Light</span>
-            </Button>
-            <Button
-              variant="outline"
-              className={cn(
-                "h-auto flex flex-col items-center justify-center p-4 border-2 shadow-sm rounded-xl transition-all",
-                theme === "dark"
-                  ? "border-primary bg-primary/5"
-                  : "hover:bg-accent/50",
-              )}
-              onClick={() => setTheme("dark")}
-            >
-              <div className="flex h-12 w-full items-center justify-center rounded-md bg-zinc-900 border border-zinc-800 shadow-sm mb-3">
-                <div className="h-6 w-6 rounded-full bg-zinc-800 shadow-sm border border-zinc-700"></div>
-              </div>
-              <span className="font-medium">Dark</span>
-            </Button>
-            <Button
-              variant="outline"
-              className={cn(
-                "h-auto flex flex-col items-center justify-center p-4 border-2 shadow-sm rounded-xl transition-all",
-                theme === "system"
-                  ? "border-primary bg-primary/5"
-                  : "hover:bg-accent/50",
-              )}
-              onClick={() => setTheme("system")}
-            >
-              <div className="flex h-12 w-full flex-row overflow-hidden rounded-md border border-zinc-200 shadow-sm mb-3">
-                <div className="flex-1 bg-zinc-100 flex items-center justify-center border-r border-zinc-200"></div>
-                <div className="flex-1 bg-zinc-900 flex items-center justify-center border-l-0"></div>
-              </div>
-              <span className="font-medium">System</span>
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium">Color Strategy</h4>
-          <p className="text-sm text-muted-foreground">
-            Select your primary color preferences.
+    <div className="flex flex-col gap-8 flex-1 w-full max-w-2xl px-2 pb-12">
+      {/* ── Page Header ─────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">{t("title")}</h3>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {t("description")}
           </p>
-          <div className="flex flex-wrap gap-4">
-            {colorOptions.map((opt) => {
-              const isActive = color === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => setColor(opt.value)}
-                  className={cn(
-                    "group flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary",
-                    isActive ? "border-primary" : "border-transparent",
-                  )}
-                  aria-label={`Select ${opt.name} color`}
-                >
-                  <div
-                    className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-full border transition-all",
-                      opt.class,
-                      opt.darkClass,
-                    )}
-                  >
-                    {isActive && (
-                      <Check className="h-5 w-5 text-white dark:text-zinc-900" />
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleResetAll}
+          className="gap-2 shrink-0"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          {t("resetAll")}
+        </Button>
       </div>
+
+      <Separator />
+
+      {/* ── Theme ───────────────────────────────────────────────────── */}
+      <section className="space-y-4">
+        <SectionHeader
+          icon={Sun}
+          title={t("theme.title")}
+          description={t("theme.description")}
+        />
+        <div className="grid grid-cols-3 gap-3">
+          {themeOptions.map((opt) => {
+            const isActive = theme === opt.value;
+            const Icon = opt.icon;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setTheme(opt.value)}
+                className={cn(
+                  "group flex flex-col gap-2 rounded-xl border-2 p-3 text-left transition-all hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  isActive
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-border/80",
+                )}
+              >
+                {opt.preview}
+                <div className="flex items-center justify-between px-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-sm font-medium">{opt.label}</span>
+                  </div>
+                  {isActive && (
+                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-primary">
+                      <Check className="h-2.5 w-2.5 text-primary-foreground" />
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <Separator />
+
+      {/* ── Color Accent ────────────────────────────────────────────── */}
+      <section className="space-y-4">
+        <SectionHeader
+          icon={Palette}
+          title={t("color.title")}
+          description={t("color.description")}
+        />
+        <div className="flex flex-wrap gap-3">
+          {colorOptions.map((opt) => {
+            const isActive = color === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setColor(opt.value)}
+                className={cn(
+                  "group flex flex-col items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg p-2 transition-all",
+                  isActive ? "bg-primary/5" : "hover:bg-accent/30",
+                )}
+                aria-label={t("color.select", { name: opt.name })}
+              >
+                <div
+                  className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-full transition-all ring-2 ring-offset-2 ring-offset-background",
+                    opt.bg,
+                    opt.darkBg,
+                    isActive ? opt.ring : "ring-transparent",
+                  )}
+                >
+                  {isActive && (
+                    <Check className="h-4 w-4 text-white dark:text-zinc-900" />
+                  )}
+                </div>
+                <span className="text-xs font-medium text-muted-foreground">
+                  {opt.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <Separator />
+
+      {/* ── Font ────────────────────────────────────────────────────── */}
+      <section className="space-y-4">
+        <SectionHeader
+          icon={Type}
+          title={t("font.title")}
+          description={t("font.description")}
+        />
+        <div className="flex flex-col gap-2">
+          {fontOptions.map((opt) => {
+            const isActive = font === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setFont(opt.value)}
+                className={cn(
+                  "flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  isActive
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-border/80",
+                )}
+              >
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-semibold">{opt.label}</span>
+                  <span
+                    className="text-base text-muted-foreground"
+                    style={opt.style}
+                  >
+                    {opt.sample}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {isActive && (
+                    <>
+                      <Badge
+                        variant="secondary"
+                        className="hidden sm:flex text-xs"
+                      >
+                        {t("font.active")}
+                      </Badge>
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                        <Check className="h-3 w-3 text-primary-foreground" />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <Separator />
+
+      {/* ── Sidebar Layout ──────────────────────────────────────────── */}
+      <section className="space-y-4">
+        <SectionHeader
+          icon={Layout}
+          title={t("sidebar.title")}
+          description={t("sidebar.description")}
+        />
+        <div className="grid grid-cols-3 gap-3">
+          {variantOptions.map((opt) => {
+            const isActive = variant === opt.value;
+            const Icon = opt.icon;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setVariant(opt.value)}
+                className={cn(
+                  "group flex flex-col gap-2 rounded-xl border-2 p-3 transition-all hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  isActive
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-border/80",
+                )}
+              >
+                {opt.preview}
+                <div className="flex items-center justify-between px-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-sm font-medium">{opt.label}</span>
+                  </div>
+                  {isActive && (
+                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-primary">
+                      <Check className="h-2.5 w-2.5 text-primary-foreground" />
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <Separator />
+
+      {/* ── Sidebar Collapse Behavior ───────────────────────────────── */}
+      <section className="space-y-4">
+        <SectionHeader
+          icon={PanelLeft}
+          title={t("sidebar.collapseTitle")}
+          description={t("sidebar.collapseDescription")}
+        />
+        <div className="flex flex-col gap-2">
+          {collapsibleOptions.map((opt) => {
+            const isActive = collapsible === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setCollapsible(opt.value)}
+                className={cn(
+                  "flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  isActive
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-border/80",
+                )}
+              >
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-semibold">{opt.label}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {opt.description}
+                  </span>
+                </div>
+                {isActive && (
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary shrink-0">
+                    <Check className="h-3 w-3 text-primary-foreground" />
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }

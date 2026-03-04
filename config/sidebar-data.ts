@@ -93,16 +93,16 @@ export const sidebarData: SidebarData = {
   navGroups: [
     // ---------- GENERAL ----------
     {
-      title: "General",
+      title: "groups.general",
       items: [
         {
-          title: "Dashboard",
+          title: "dashboard",
           url: "/dashboard",
           icon: LayoutDashboard,
           // Dashboard visible semua role
         },
         {
-          title: "Tambah Aset",
+          title: "assets",
           url: "/assets/create",
           icon: Package,
           // Hanya role yang bisa create aset (bukan finance_manager)
@@ -113,51 +113,51 @@ export const sidebarData: SidebarData = {
 
     // ---------- ASSET MANAGEMENT ----------
     {
-      title: "Asset Management",
+      title: "groups.assetManagement",
       // Seluruh group visible untuk semua role yang ada hubungannya dengan aset
       roles: ASSET_VIEWER_ROLES,
       items: [
         {
-          title: "Daftar Aset",
+          title: "assetList",
           url: "/assets",
           icon: Boxes,
           // Semua role bisa lihat daftar aset
         },
         {
-          title: "Kategori Aset",
+          title: "assetCategories",
           url: "/assets/categories",
           icon: Tags,
           // Hanya admin/owner/staff_asset yang manage kategori
           roles: GLOBAL_ASSET_ROLES,
         },
         {
-          title: "Lokasi Aset",
+          title: "assetLocations",
           url: "/asset-locations",
           icon: MapPin,
           // Hanya admin/owner/staff_asset yang manage lokasi
           roles: GLOBAL_ASSET_ROLES,
         },
         {
-          title: "Peminjaman Aset",
+          title: "assetLoans",
           url: "/asset-loans",
           icon: Handshake,
           // Semua yang bisa interact dengan aset
           roles: ASSET_VIEWER_ROLES,
         },
         {
-          title: "Maintenance Aset",
+          title: "maintenance",
           url: "/assets/maintenances",
           icon: Wrench,
           roles: ASSET_VIEWER_ROLES,
         },
         {
-          title: "Mutasi Aset",
+          title: "assetTransfers",
           url: "/asset-transfers",
           icon: Move,
           roles: ASSET_VIEWER_ROLES,
         },
         {
-          title: "Riwayat Aset",
+          title: "assetHistory",
           url: "/asset-history",
           icon: History,
           roles: ASSET_VIEWER_ROLES,
@@ -167,56 +167,56 @@ export const sidebarData: SidebarData = {
 
     // ---------- INVENTORY CONTROL ----------
     {
-      title: "Inventory Control",
+      title: "groups.inventoryControl",
       // Inventory hanya untuk admin, owner, dan staff_administrasi
       roles: ["owner", "admin", "staff_administrasi", "staff_asset"],
       items: [
         {
-          title: "Master Item",
+          title: "inventory.masterItem",
           url: "/inventory/items",
           icon: Package,
         },
         {
-          title: "Kategori Item",
+          title: "inventory.itemCategories",
           url: "/inventory/categories",
           icon: Tags,
         },
         {
-          title: "Gudang",
+          title: "inventory.warehouses",
           url: "/inventory/warehouses",
           icon: Warehouse,
         },
         {
-          title: "Requisition",
+          title: "inventory.requisition",
           icon: ClipboardList,
           items: [
             {
-              title: "Permintaan Barang",
+              title: "inventory.reqItems",
               url: "/inventory/requisitions",
             },
             {
-              title: "Persetujuan Permintaan",
+              title: "inventory.reqApproval",
               url: "/inventory/requisition/approval",
             },
           ],
         },
         {
-          title: "Penerimaan Barang",
+          title: "inventory.receipts",
           url: "/inventory/receipts",
           icon: Truck,
         },
         {
-          title: "Penyesuaian Stok",
+          title: "inventory.adjustments",
           url: "/inventory/adjustments",
           icon: ArrowDownUp,
         },
         {
-          title: "Mutasi Stok",
+          title: "inventory.transfers",
           url: "/inventory/transfers",
           icon: Move,
         },
         {
-          title: "Stok Barang",
+          title: "inventory.stocks",
           url: "/inventory/stocks",
           icon: Boxes,
         },
@@ -225,18 +225,18 @@ export const sidebarData: SidebarData = {
 
     // ---------- AUDIT & LAPORAN ----------
     {
-      title: "Audit & Laporan",
+      title: "groups.auditReports",
       roles: [...GLOBAL_ASSET_ROLES, "manager", "supervisor"],
       items: [
         {
-          title: "Log Audit",
+          title: "auditLogs",
           url: "/audit-logs",
           icon: ShieldCheck,
           // Hanya admin/owner
           roles: ADMIN_ROLES,
         },
         {
-          title: "Laporan",
+          title: "reports",
           url: "/reports",
           icon: FileText,
           // Manager ke atas bisa lihat laporan
@@ -247,55 +247,55 @@ export const sidebarData: SidebarData = {
 
     // ---------- ORGANISASI & SDM ----------
     {
-      title: "Organisasi & SDM",
+      title: "groups.orgHr",
       // Hanya admin/owner yang manage org & SDM
       roles: ADMIN_ROLES,
       items: [
         {
-          title: "Unit Bisnis",
+          title: "organizations",
           url: "/organizations",
           icon: Building2,
         },
         {
-          title: "Pengguna",
+          title: "users",
           url: "/users",
           icon: UserCog,
         },
         {
-          title: "Karyawan",
+          title: "employees",
           url: "/employees",
           icon: Briefcase,
         },
         {
-          title: "Department",
+          title: "departments",
           url: "/departments",
           icon: Layers,
         },
         {
-          title: "Divisi",
+          title: "divisions",
           url: "/divisions",
           icon: Building,
         },
         {
-          title: "Teams",
+          title: "teams.title",
           icon: Users,
           items: [
             {
-              title: "Team List",
+              title: "teams.list",
               url: "/teams",
             },
             {
-              title: "Team Members",
+              title: "teams.members",
               url: "/teams/members",
             },
             {
-              title: "Permissions",
+              title: "teams.permissions",
               url: "/teams/permissions",
             },
           ],
         },
         {
-          title: "Role & Permission",
+          title: "roles",
           url: "/roles",
           icon: Key,
         },
@@ -304,21 +304,21 @@ export const sidebarData: SidebarData = {
 
     // ---------- SETTINGS ----------
     {
-      title: "Settings",
+      title: "settings",
       // Settings visible untuk semua role
       items: [
         {
-          title: "Profil Saya",
+          title: "profile",
           url: "/settings/profile",
           icon: UserCircle,
         },
         {
-          title: "Preferensi",
+          title: "preferences",
           url: "/settings/preferences",
           icon: Sliders,
         },
         {
-          title: "Import / Export",
+          title: "importExport",
           url: "/settings/import-export",
           icon: Upload,
           // Hanya role yang punya izin import/export

@@ -1,0 +1,163 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "reset": "Reset",
+    "loading": "Loading...",
+    "search": "Search...",
+    "noData": "No data",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "open": "Open",
+    "yes": "Yes",
+    "no": "No",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "assets": "Add Asset",
+    "assetList": "Asset List",
+    "assetCategories": "Asset Categories",
+    "assetLocations": "Asset Locations",
+    "assetLoans": "Asset Loans",
+    "maintenance": "Asset Maintenance",
+    "assetTransfers": "Asset Transfers",
+    "assetHistory": "Asset History",
+    "auditLogs": "Audit Logs",
+    "reports": "Reports",
+    "organizations": "Business Units",
+    "users": "Users",
+    "employees": "Employees",
+    "departments": "Departments",
+    "divisions": "Divisions",
+    "roles": "Roles & Permissions",
+    "profile": "My Profile",
+    "preferences": "Preferences",
+    "importExport": "Import / Export",
+    "settings": "Settings",
+    "inventory": {
+      "masterItem": "Master Item",
+      "itemCategories": "Item Categories",
+      "warehouses": "Warehouses",
+      "requisition": "Requisition",
+      "reqItems": "Requisition Items",
+      "reqApproval": "Requisition Approval",
+      "receipts": "Goods Receipt",
+      "adjustments": "Stock Adjustments",
+      "transfers": "Stock Transfers",
+      "stocks": "Item Stocks"
+    },
+    "teams": {
+      "title": "Teams",
+      "list": "Team List",
+      "members": "Team Members",
+      "permissions": "Permissions"
+    },
+    "groups": {
+      "general": "General",
+      "assetManagement": "Asset Management",
+      "inventoryControl": "Inventory Control",
+      "auditReports": "Audit & Reports",
+      "orgHr": "Organization & HR"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your account settings and email preferences.",
+    "profile": "Profile",
+    "account": "Account",
+    "preferences": "Preferences",
+    "appearance": "Appearance"
+  },
+  "preferences": {
+    "title": "Preferences",
+    "description": "Configure your language, time format, and notification settings.",
+    "reset": "Reset",
+    "language": {
+      "title": "Language & Region",
+      "description": "Choose your display language and date/time format.",
+      "interface": "Interface Language",
+      "dateFormat": "Date Format",
+      "timeFormat": "Time Format"
+    },
+    "notifications": {
+      "inApp": {
+        "title": "In-App Notifications",
+        "description": "Choose the activities you want to monitor in real-time.",
+        "assetUpdate": "Asset Status Updates",
+        "assetUpdateDesc": "Notifications when assets are updated, received, or deleted.",
+        "maintenance": "Maintenance Schedule",
+        "maintenanceDesc": "Reminders when an asset is approaching its maintenance schedule.",
+        "loan": "Asset Loans",
+        "loanDesc": "Notifications for loan requests, approvals, and returns.",
+        "transfer": "Asset Transfers",
+        "transferDesc": "Notifications for asset movement between divisions or locations.",
+        "system": "System Information",
+        "systemDesc": "System update announcements and important information.",
+        "recommended": "Recommended"
+      },
+      "email": {
+        "title": "Email Notifications",
+        "description": "Manage summaries and reports sent to your email.",
+        "summary": "Daily Summary",
+        "summaryDesc": "Email summary of asset activity every business day.",
+        "alert": "Critical Alerts",
+        "alertDesc": "Immediate email when an asset is lost, damaged, or overdue.",
+        "important": "Important",
+        "report": "Monthly Report",
+        "reportDesc": "Send asset recap report at the beginning of each month."
+      },
+      "push": {
+        "title": "Push Notifications",
+        "description": "Enable browser notifications for live updates.",
+        "browser": "Browser Push Notifications",
+        "browserDesc": "Allow the application to send notifications to your browser.",
+        "hint": "Enable to receive real-time notifications even when the page is not open."
+      }
+    }
+  },
+  "appearance": {
+    "title": "Appearance & Preferences",
+    "description": "Customize the look and feel of the application.",
+    "resetAll": "Reset All",
+    "theme": {
+      "title": "Theme",
+      "description": "Choose between light, dark, or follow your system preference.",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "color": {
+      "title": "Accent Color",
+      "description": "Select the primary color used across buttons, links, and accents.",
+      "select": "Select {name} color"
+    },
+    "font": {
+      "title": "Font Family",
+      "description": "Choose the typeface used throughout the interface.",
+      "active": "Active"
+    },
+    "sidebar": {
+      "title": "Sidebar Layout",
+      "description": "Choose the sidebar display style for the navigation.",
+      "classic": "Sidebar",
+      "inset": "Inset",
+      "floating": "Floating",
+      "collapseTitle": "Sidebar Collapse",
+      "collapseDescription": "Define how the sidebar behaves when collapsed.",
+      "iconOnly": "Icon Only",
+      "iconOnlyDesc": "Collapse to icon width",
+      "offcanvas": "Off-canvas",
+      "offcanvasDesc": "Slide off-screen",
+      "alwaysOpen": "Always Open",
+      "alwaysOpenDesc": "Sidebar stays open"
+    }
+  }
+}

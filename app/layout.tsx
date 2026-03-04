@@ -7,6 +7,9 @@ import { QueryProvider } from "@/context/query-provider";
 import ToastProvider from "@/context/toast-providers";
 import { ThemeProvider } from "@/context/theme-provider";
 import { ColorProvider } from "@/context/color-provider";
+import { PreferencesProvider } from "@/context/preferences-provider";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,32 +24,39 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: {
     default: "DutaAssets",
-    template: "DutaAssets - %s", // <-- template judul dinamis
+    template: "DutaAssets - %s",
   },
   description: "Aplikasi manajemen verifikasi data",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <QueryProvider>
-          <ThemeProvider>
-            <ColorProvider>
-              <FontProvider>
-                <DirectionProvider>
-                  <ToastProvider>{children}</ToastProvider>
-                </DirectionProvider>
-              </FontProvider>
-            </ColorProvider>
-          </ThemeProvider>
-        </QueryProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <QueryProvider>
+            <ThemeProvider>
+              <ColorProvider>
+                <FontProvider>
+                  <PreferencesProvider>
+                    <DirectionProvider>
+                      <ToastProvider>{children}</ToastProvider>
+                    </DirectionProvider>
+                  </PreferencesProvider>
+                </FontProvider>
+              </ColorProvider>
+            </ThemeProvider>
+          </QueryProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -1,0 +1,163 @@
+{
+  "common": {
+    "save": "Simpan",
+    "cancel": "Batal",
+    "reset": "Reset",
+    "loading": "Memuat...",
+    "search": "Cari...",
+    "noData": "Tidak ada data",
+    "confirm": "Konfirmasi",
+    "delete": "Hapus",
+    "edit": "Edit",
+    "add": "Tambah",
+    "back": "Kembali",
+    "next": "Berikutnya",
+    "previous": "Sebelumnya",
+    "close": "Tutup",
+    "open": "Buka",
+    "yes": "Ya",
+    "no": "Tidak",
+    "active": "Aktif",
+    "inactive": "Tidak Aktif"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "assets": "Tambah Aset",
+    "assetList": "Daftar Aset",
+    "assetCategories": "Kategori Aset",
+    "assetLocations": "Lokasi Aset",
+    "assetLoans": "Peminjaman Aset",
+    "maintenance": "Maintenance Aset",
+    "assetTransfers": "Mutasi Aset",
+    "assetHistory": "Riwayat Aset",
+    "auditLogs": "Log Audit",
+    "reports": "Laporan",
+    "organizations": "Unit Bisnis",
+    "users": "Pengguna",
+    "employees": "Karyawan",
+    "departments": "Department",
+    "divisions": "Divisi",
+    "roles": "Role & Permission",
+    "profile": "Profil Saya",
+    "preferences": "Preferensi",
+    "importExport": "Import / Export",
+    "settings": "Settings",
+    "inventory": {
+      "masterItem": "Master Item",
+      "itemCategories": "Kategori Item",
+      "warehouses": "Gudang",
+      "requisition": "Requisition",
+      "reqItems": "Permintaan Barang",
+      "reqApproval": "Persetujuan Permintaan",
+      "receipts": "Penerimaan Barang",
+      "adjustments": "Penyesuaian Stok",
+      "transfers": "Mutasi Stok",
+      "stocks": "Stok Barang"
+    },
+    "teams": {
+      "title": "Teams",
+      "list": "Team List",
+      "members": "Team Members",
+      "permissions": "Permissions"
+    },
+    "groups": {
+      "general": "General",
+      "assetManagement": "Asset Management",
+      "inventoryControl": "Inventory Control",
+      "auditReports": "Audit & Laporan",
+      "orgHr": "Organisasi & SDM"
+    }
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "description": "Kelola pengaturan akun dan preferensi email Anda.",
+    "profile": "Profil",
+    "account": "Akun",
+    "preferences": "Preferensi",
+    "appearance": "Tampilan"
+  },
+  "preferences": {
+    "title": "Preferensi",
+    "description": "Atur bahasa, format waktu, dan pengaturan notifikasi Anda.",
+    "reset": "Reset",
+    "language": {
+      "title": "Bahasa & Regional",
+      "description": "Pilih bahasa tampilan dan format tanggal/waktu.",
+      "interface": "Bahasa Antarmuka",
+      "dateFormat": "Format Tanggal",
+      "timeFormat": "Format Waktu"
+    },
+    "notifications": {
+      "inApp": {
+        "title": "Notifikasi In-App",
+        "description": "Pilih aktivitas yang ingin Anda pantau secara real-time.",
+        "assetUpdate": "Update Status Aset",
+        "assetUpdateDesc": "Notifikasi saat aset diperbarui, diterima, atau dihapus.",
+        "maintenance": "Jadwal Maintenance",
+        "maintenanceDesc": "Pengingat saat aset mendekati jadwal perawatan.",
+        "loan": "Peminjaman Aset",
+        "loanDesc": "Notifikasi permintaan, persetujuan, dan pengembalian aset.",
+        "transfer": "Mutasi / Transfer Aset",
+        "transferDesc": "Notifikasi perpindahan aset antar divisi atau lokasi.",
+        "system": "Informasi Sistem",
+        "systemDesc": "Pengumuman pembaruan sistem dan informasi penting.",
+        "recommended": "Disarankan"
+      },
+      "email": {
+        "title": "Notifikasi Email",
+        "description": "Kelola ringkasan dan laporan yang dikirim ke email Anda.",
+        "summary": "Ringkasan Harian",
+        "summaryDesc": "Email ringkasan aktivitas aset setiap hari kerja.",
+        "alert": "Alert Kritis",
+        "alertDesc": "Email segera saat ada aset hilang, rusak, atau overdue.",
+        "important": "Penting",
+        "report": "Laporan Bulanan",
+        "reportDesc": "Kirim laporan rekap aset setiap awal bulan."
+      },
+      "push": {
+        "title": "Notifikasi Push",
+        "description": "Aktifkan notifikasi browser untuk update langsung.",
+        "browser": "Browser Push Notification",
+        "browserDesc": "Izinkan aplikasi mengirim notifikasi ke browser Anda.",
+        "hint": "Aktifkan untuk mendapat notifikasi real-time meski halaman tidak terbuka."
+      }
+    }
+  },
+  "appearance": {
+    "title": "Tampilan & Preferensi",
+    "description": "Sesuaikan tampilan antarmuka aplikasi.",
+    "resetAll": "Reset Semua",
+    "theme": {
+      "title": "Tema",
+      "description": "Pilih antara mode terang, gelap, atau ikuti preferensi sistem.",
+      "light": "Terang",
+      "dark": "Gelap",
+      "system": "Sistem"
+    },
+    "color": {
+      "title": "Warna Aksen",
+      "description": "Pilih warna utama yang digunakan pada tombol, tautan, dan aksen.",
+      "select": "Pilih warna {name}"
+    },
+    "font": {
+      "title": "Font",
+      "description": "Pilih jenis huruf yang digunakan di seluruh antarmuka.",
+      "active": "Aktif"
+    },
+    "sidebar": {
+      "title": "Tata Letak Sidebar",
+      "description": "Pilih gaya tampilan sidebar navigasi.",
+      "classic": "Klasik",
+      "inset": "Inset",
+      "floating": "Mengambang",
+      "collapseTitle": "Collapse Sidebar",
+      "collapseDescription": "Tentukan perilaku sidebar saat diciutkan.",
+      "iconOnly": "Ikon Saja",
+      "iconOnlyDesc": "Ciutkan ke lebar ikon",
+      "offcanvas": "Off-canvas",
+      "offcanvasDesc": "Geser keluar layar",
+      "alwaysOpen": "Selalu Terbuka",
+      "alwaysOpenDesc": "Sidebar tetap terbuka"
+    }
+  }
+}

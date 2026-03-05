@@ -96,6 +96,19 @@ export function NotificationCenter() {
             </div>
           )}
         </ScrollArea>
+        <div className="p-2 border-t text-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-xs text-primary font-medium hover:text-primary/80"
+            onClick={() => {
+              // Close popover logic handled automatically by Shadcn when clicking a routed link or button, but we can just route
+              router.push("/notifications");
+            }}
+          >
+            View all notifications
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );

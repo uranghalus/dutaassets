@@ -3,7 +3,10 @@
  * Designed to be lightweight and handle basic data structures.
  */
 
-export function jsonToCsv(data: any[], headers: { label: string; key: string }[]): string {
+export function jsonToCsv(
+  data: any[],
+  headers: { label: string; key: string }[],
+): string {
   if (!data || data.length === 0) return "";
 
   const headerRow = headers.map((h) => `"${h.label}"`).join(",");
@@ -25,14 +28,16 @@ export function csvToJson(csv: string): any[] {
   const lines = csv.split(/\r?\n/).filter((line) => line.trim() !== "");
   if (lines.length < 2) return [];
 
-  const headers = lines[0].split(",").map((h) => h.replace(/^"|"$/g, "").trim());
+  const headers = lines[0]
+    .split(",")
+    .map((h) => h.replace(/^"|"$/g, "").trim());
   const data = lines.slice(1).map((line) => {
     // Basic CSV split, doesn't handle nested commas in quotes perfectly but good for simple cases
     // For production, we'd use a regex or a library
-    const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map((v) => 
-      v.replace(/^"|"$/g, "").replace(/""/g, '"').trim()
-    );
-    
+    const values = line
+      .split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
+      .map((v) => v.replace(/^"|"$/g, "").replace(/""/g, '"').trim());
+
     const obj: any = {};
     headers.forEach((h, i) => {
       obj[h] = values[i] || "";
@@ -58,4 +63,14 @@ export function downloadCsv(csvContent: string, fileName: string) {
     link.click();
     document.body.removeChild(link);
   }
+}
+
+/**
+ * Generate an empty CSV template with only the header row.
+ * Users download this to understand the expected column format.
+ */
+export function generateTemplateCsv(
+  headers: { label: string; key: string }[],
+): string {
+  return headers.map((h) => `"${h.label}"`).join(",");
 }

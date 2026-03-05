@@ -74,7 +74,8 @@
     "profile": "Profile",
     "account": "Account",
     "preferences": "Preferences",
-    "appearance": "Appearance"
+    "appearance": "Appearance",
+    "importExport": "Import / Export"
   },
   "preferences": {
     "title": "Preferences",

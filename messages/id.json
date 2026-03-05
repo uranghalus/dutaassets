@@ -74,7 +74,8 @@
     "profile": "Profil",
     "account": "Akun",
     "preferences": "Preferensi",
-    "appearance": "Tampilan"
+    "appearance": "Tampilan",
+    "importExport": "Import / Export"
   },
   "preferences": {
     "title": "Preferensi",

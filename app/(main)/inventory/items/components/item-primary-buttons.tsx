@@ -36,6 +36,7 @@ export default function ItemPrimaryButtons() {
         title="Import Items"
         description="Upload a CSV file to batch create master items."
         onImport={importItems as any}
+        templateHeaders={itemHeaders}
       />
       <Button onClick={() => setOpen("add")} className="space-x-1">
         <span>Add Item</span> <Plus size={18} />

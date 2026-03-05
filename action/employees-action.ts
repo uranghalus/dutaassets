@@ -616,3 +616,165 @@ export async function unlinkEmployeeUser(employeeId: string) {
     });
   });
 }
+
+/* =======================
+   EXPORT
+======================= */
+export async function getEmployeesForExport({
+  search = "",
+}: { search?: string } = {}) {
+  const { organizationId } = await getActiveOrganizationWithRole();
+
+  const data = await prisma.karyawan.findMany({
+    where: {
+      organization_id: organizationId,
+      ...(search
+        ? {
+            OR: [
+              { nama: { contains: search } },
+              { nik: { contains: search } },
+              { jabatan: { contains: search } },
+            ],
+          }
+        : {}),
+    },
+    include: {
+      divisi_fk: {
+        include: { department: true },
+      },
+      department: true,
+    },
+    orderBy: { nama: "asc" },
+  });
+
+  return data.map((emp) => ({
+    nik: emp.nik,
+    nama: emp.nama,
+    nama_alias: emp.nama_alias ?? "",
+    jabatan: emp.jabatan ?? "",
+    status_karyawan: emp.status_karyawan ?? "",
+    telp: emp.telp ?? "",
+    tempat_lahir: emp.tempat_lahir ?? "",
+    tgl_lahir: emp.tgl_lahir ? emp.tgl_lahir.toISOString().split("T")[0] : "",
+    tgl_masuk: emp.tgl_masuk ? emp.tgl_masuk.toISOString().split("T")[0] : "",
+    department: emp.department?.nama_department ?? "",
+    divisi: emp.divisi_fk?.nama_divisi ?? "",
+    alamat: emp.alamat ?? "",
+    no_ktp: emp.no_ktp ?? "",
+    call_sign: emp.call_sign ?? "",
+    keterangan: emp.keterangan ?? "",
+  }));
+}
+
+/* =======================
+   IMPORT
+======================= */
+export async function importEmployees(
+  rows: any[],
+): Promise<{
+  success: boolean;
+  count?: number;
+  error?: string;
+  details?: string[];
+}> {
+  return withContext(async () => {
+    const { organizationId } = await getActiveOrganizationWithRole();
+
+    const errors: string[] = [];
+    const toCreate: any[] = [];
+
+    // Pre-fetch all divisions & departments for lookup by name
+    const [allDivisions, allDepartments] = await Promise.all([
+      prisma.divisi.findMany({
+        where: { organization_id: organizationId },
+        select: { id_divisi: true, nama_divisi: true },
+      }),
+      prisma.department.findMany({
+        where: { organization_id: organizationId },
+        select: { id_department: true, nama_department: true },
+      }),
+    ]);
+
+    const divisiMap = new Map(
+      allDivisions.map((d) => [
+        d.nama_divisi.toLowerCase().trim(),
+        d.id_divisi,
+      ]),
+    );
+    const deptMap = new Map(
+      allDepartments.map((d) => [
+        d.nama_department.toLowerCase().trim(),
+        d.id_department,
+      ]),
+    );
+
+    rows.forEach((row, i) => {
+      const rowNum = i + 1;
+      const rowErrors: string[] = [];
+
+      const nik = row["NIK"]?.toString().trim();
+      const nama = row["Nama"]?.toString().trim();
+      const divisiName = row["Divisi"]?.toString().trim();
+      const deptName = row["Department"]?.toString().trim();
+
+      if (!nik) rowErrors.push("NIK wajib diisi");
+      if (!nama) rowErrors.push("Nama wajib diisi");
+      if (!divisiName) rowErrors.push("Divisi wajib diisi");
+      if (!deptName) rowErrors.push("Department wajib diisi");
+
+      const divisiId = divisiName
+        ? divisiMap.get(divisiName.toLowerCase())
+        : undefined;
+      const deptId = deptName ? deptMap.get(deptName.toLowerCase()) : undefined;
+
+      if (divisiName && !divisiId)
+        rowErrors.push(`Divisi "${divisiName}" tidak ditemukan`);
+      if (deptName && !deptId)
+        rowErrors.push(`Department "${deptName}" tidak ditemukan`);
+
+      if (rowErrors.length > 0) {
+        errors.push(`Row ${rowNum}: ${rowErrors.join(", ")}`);
+        return;
+      }
+
+      const tglLahir = row["Tgl Lahir"]?.toString().trim();
+      const tglMasuk = row["Tgl Masuk"]?.toString().trim();
+
+      toCreate.push({
+        organization_id: organizationId,
+        nik,
+        nama,
+        nama_alias: row["Nama Alias"]?.toString().trim() ?? "",
+        jabatan: row["Jabatan"]?.toString().trim() ?? "",
+        status_karyawan: row["Status Karyawan"]?.toString().trim() ?? "",
+        telp: row["Telepon"]?.toString().trim() ?? "",
+        tempat_lahir: row["Tempat Lahir"]?.toString().trim() ?? null,
+        tgl_lahir: tglLahir ? new Date(tglLahir) : null,
+        tgl_masuk: tglMasuk ? new Date(tglMasuk) : null,
+        alamat: row["Alamat"]?.toString().trim() ?? "",
+        no_ktp: row["No KTP"]?.toString().trim() ?? "",
+        call_sign: row["Call Sign"]?.toString().trim() ?? "",
+        keterangan: row["Keterangan"]?.toString().trim() ?? "",
+        divisi_id: divisiId,
+        department_id: deptId,
+      });
+    });
+
+    if (errors.length > 0) {
+      return { success: false, error: "Validasi gagal", details: errors };
+    }
+
+    await prisma.karyawan.createMany({
+      data: toCreate,
+      skipDuplicates: true,
+    });
+
+    revalidatePath("/employees");
+    return { success: true, count: toCreate.length };
+  }) as Promise<{
+    success: boolean;
+    count?: number;
+    error?: string;
+    details?: string[];
+  }>;
+}

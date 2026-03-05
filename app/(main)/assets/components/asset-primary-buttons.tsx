@@ -42,6 +42,7 @@ export function AssetPrimaryButtons() {
         title="Import Assets"
         description="Upload a CSV file to batch create fixed assets."
         onImport={importAssets as any}
+        templateHeaders={assetHeaders}
       />
       <Button onClick={() => setOpen("add")} className="space-x-1">
         <span>New Asset</span>

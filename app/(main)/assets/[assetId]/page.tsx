@@ -1,4 +1,5 @@
 import { getAssetById } from "@/action/asset-action";
+import { getAssetDepreciationSchedule } from "@/action/depreciation-action";
 import { Main } from "@/components/main";
 import { AssetDialogProvider } from "../components/asset-dialog-provider";
 import { AssetDialog } from "../components/asset-dialog";
@@ -30,6 +31,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AssetDetailsActions } from "./asset-details-actions";
 import { AssetActivityLogTable } from "../components/asset-activity-log-table";
+import { QRCodeDisplay } from "../components/qr-code-display";
+import { AssetDepreciationTab } from "../components/asset-depreciation-tab";
 
 export default async function AssetDetailsPage({
   params,
@@ -37,7 +40,11 @@ export default async function AssetDetailsPage({
   params: Promise<{ assetId: string }>;
 }) {
   const { assetId } = await params;
-  const asset = await getAssetById(assetId);
+
+  const [asset, depreciationSchedule] = await Promise.all([
+    getAssetById(assetId),
+    getAssetDepreciationSchedule(assetId),
+  ]);
 
   if (!asset) {
     notFound();
@@ -142,6 +149,12 @@ export default async function AssetDetailsPage({
                     </div>
                   </div>
                 </div>
+                {/* QR Code section */}
+                <QRCodeDisplay
+                  value={`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/assets/${asset.id_barang}`}
+                  assetName={asset.nama_asset}
+                  assetCode={asset.kode_asset}
+                />
               </CardContent>
             </Card>
 
@@ -152,6 +165,7 @@ export default async function AssetDetailsPage({
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="specs">Specifications</TabsTrigger>
                   <TabsTrigger value="procurement">Procurement</TabsTrigger>
+                  <TabsTrigger value="depreciation">Depreciation</TabsTrigger>
                   <TabsTrigger value="history">History</TabsTrigger>
                 </TabsList>
 
@@ -338,6 +352,14 @@ export default async function AssetDetailsPage({
                 {/* HISTORY TAB */}
                 <TabsContent value="history" className="space-y-6 mt-4">
                   <AssetActivityLogTable assetId={assetId} />
+                </TabsContent>
+
+                {/* DEPRECIATION TAB */}
+                <TabsContent value="depreciation" className="space-y-6 mt-4">
+                  <AssetDepreciationTab
+                    asset={asset as any}
+                    initialSchedule={depreciationSchedule}
+                  />
                 </TabsContent>
               </Tabs>
             </div>

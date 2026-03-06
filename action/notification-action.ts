@@ -6,7 +6,11 @@ import { getActiveOrganizationWithRole } from "./organization-action";
 
 export type AppNotification = {
   id: string;
-  type: "REQUISITION_PENDING" | "TRANSFER_PENDING";
+  type:
+    | "REQUISITION_PENDING"
+    | "TRANSFER_PENDING"
+    | "DISPOSAL_PENDING"
+    | "MAINTENANCE_DUE";
   title: string;
   message: string;
   date: Date;
@@ -91,6 +95,68 @@ export async function getPendingNotifications() {
     }));
 
     notifications.push(...transferNotifs);
+    console.log("AVAILABLE PRISMA MODELS:", Object.keys(prisma));
+    const pendingDisposals = await prisma.assetDisposal.findMany({
+      where: {
+        organizationId,
+        status: "PENDING_APPROVAL",
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        asset: {
+          select: { nama_asset: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    });
+
+    const disposalNotifs: AppNotification[] = pendingDisposals.map((d) => ({
+      id: d.id,
+      type: "DISPOSAL_PENDING",
+      title: "Pending Disposal",
+      message: `Disposal requested for asset "${d.asset?.nama_asset ?? "Unknown"}" needs approval.`,
+      date: d.createdAt,
+      url: "/assets/disposals",
+    }));
+
+    notifications.push(...disposalNotifs);
+
+    const today = new Date();
+    const threeDaysFromNow = new Date();
+    threeDaysFromNow.setDate(today.getDate() + 3);
+
+    const dueSchedules = await prisma.assetMaintenanceSchedule.findMany({
+      where: {
+        organizationId,
+        isActive: true,
+        nextDueDate: {
+          lte: threeDaysFromNow,
+        },
+      },
+      select: {
+        id: true,
+        nextDueDate: true,
+        title: true,
+        asset: {
+          select: { nama_asset: true },
+        },
+      },
+      orderBy: { nextDueDate: "asc" },
+      take: 5,
+    });
+
+    const maintenanceNotifs: AppNotification[] = dueSchedules.map((s) => ({
+      id: s.id,
+      type: "MAINTENANCE_DUE",
+      title: "Maintenance Due",
+      message: `Asset "${s.asset?.nama_asset ?? "Unknown"}" is due for maintenance: ${s.title}.`,
+      date: s.nextDueDate,
+      url: "/assets/schedules",
+    }));
+
+    notifications.push(...maintenanceNotifs);
   }
 
   // Sort combined notifications by date descending

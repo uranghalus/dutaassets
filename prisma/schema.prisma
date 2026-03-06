@@ -8,27 +8,29 @@ datasource db {
 }
 
 model User {
-  id              String        @id
-  name            String        @db.Text
-  email           String        @unique
-  emailVerified   Boolean       @default(false)
-  image           String?       @db.Text
-  username        String?       @db.Text
-  displayUsername String?       @db.Text
-  role            String?       @db.Text
-  banned          Boolean       @default(false)
-  banReason       String?       @db.Text
-  banExpires      DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  auditLogs       AuditLog[]
-  karyawan        Karyawan?
-  accounts        Account[]
-  activityLogs    ActivityLog[]
-  invitations     Invitation[]
-  members         Member[]
-  sessions        Session[]
-  teamMembers     TeamMember[]
+  id               String            @id
+  name             String            @db.Text
+  email            String            @unique
+  emailVerified    Boolean           @default(false)
+  image            String?           @db.Text
+  username         String?           @db.Text
+  displayUsername  String?           @db.Text
+  role             String?           @db.Text
+  banned           Boolean           @default(false)
+  banReason        String?           @db.Text
+  banExpires       DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  auditLogs        AuditLog[]
+  karyawan         Karyawan?
+  accounts         Account[]
+  activityLogs     ActivityLog[]
+  invitations      Invitation[]
+  members          Member[]
+  sessions         Session[]
+  teamMembers      TeamMember[]
+  approvalRequests ApprovalRequest[]
+  approvalLogs     ApprovalLog[]
 
   @@map("user")
 }
@@ -183,36 +185,37 @@ model Divisi {
 }
 
 model Karyawan {
-  id_karyawan     String          @id @default(cuid())
-  organization_id String
-  divisi_id       String
-  nik             String          @db.Char(50)
-  nama            String          @db.Text
-  nama_alias      String
-  alamat          String          @db.LongText
-  no_ktp          String          @db.Char(16)
-  telp            String          @db.Text
-  jabatan         String          @db.Text
-  call_sign       String          @db.Char(150)
-  status_karyawan String          @db.Char(50)
-  keterangan      String          @db.Char(150)
-  tempat_lahir    String?         @db.Text
-  tgl_lahir       DateTime?
-  tgl_masuk       DateTime?
-  foto            String?         @db.Text
-  userId          String?         @unique(map: "karyawan_userId_unique_custom_v9")
-  department_id   String
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  deleted_at      DateTime?
-  department      Department      @relation(fields: [department_id], references: [id_department])
-  divisi_fk       Divisi          @relation(fields: [divisi_id], references: [id_divisi])
-  user            User?           @relation(fields: [userId], references: [id])
-  assets          Asset[]
-  assetLoans      AssetLoan[]
-  transfersFrom   AssetTransfer[] @relation("TransferFromEmp")
-  transfersTo     AssetTransfer[] @relation("TransferToEmp")
-  requisitions    Requisition[]
+  id_karyawan               String                     @id @default(cuid())
+  organization_id           String
+  divisi_id                 String
+  nik                       String                     @db.Char(50)
+  nama                      String                     @db.Text
+  nama_alias                String
+  alamat                    String                     @db.LongText
+  no_ktp                    String                     @db.Char(16)
+  telp                      String                     @db.Text
+  jabatan                   String                     @db.Text
+  call_sign                 String                     @db.Char(150)
+  status_karyawan           String                     @db.Char(50)
+  keterangan                String                     @db.Char(150)
+  tempat_lahir              String?                    @db.Text
+  tgl_lahir                 DateTime?
+  tgl_masuk                 DateTime?
+  foto                      String?                    @db.Text
+  userId                    String?                    @unique(map: "karyawan_userId_unique_custom_v9")
+  department_id             String
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  deleted_at                DateTime?
+  department                Department                 @relation(fields: [department_id], references: [id_department])
+  divisi_fk                 Divisi                     @relation(fields: [divisi_id], references: [id_divisi])
+  user                      User?                      @relation(fields: [userId], references: [id])
+  assets                    Asset[]
+  assetLoans                AssetLoan[]
+  transfersFrom             AssetTransfer[]            @relation("TransferFromEmp")
+  transfersTo               AssetTransfer[]            @relation("TransferToEmp")
+  requisitions              Requisition[]
+  assetMaintenanceSchedules AssetMaintenanceSchedule[]
 
   @@unique([organization_id, nik], map: "karyawan_org_nik_unique_custom_v9")
   @@unique([organization_id, no_ktp], map: "karyawan_org_no_ktp_unique_custom_v9")
@@ -236,37 +239,46 @@ model AssetCategory {
 }
 
 model Asset {
-  id_barang          String              @id @default(uuid())
-  organization_id    String
-  department_id      String
-  divisi_id          String?
-  karyawan_id        String?
-  kode_asset         String              @db.Char(50)
-  nama_asset         String              @db.Text
-  categoryId         String?
-  deskripsi          String?             @db.Text
-  brand              String?             @db.Char(100)
-  model              String?             @db.Char(100)
-  serial_number      String?             @db.Char(100)
-  tgl_pembelian      DateTime?
-  harga              Decimal?            @db.Decimal(15, 2)
-  vendor             String?             @db.Char(100)
-  kondisi            String?             @db.Char(50)
-  lokasi             String?             @db.Char(200)
-  locationId         String?
-  garansi_exp        DateTime?
-  status             AssetStatus         @default(AVAILABLE)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  assetCategory      AssetCategory?      @relation(fields: [categoryId], references: [id])
-  department_fk      Department          @relation(fields: [department_id], references: [id_department])
-  divisi_fk          Divisi?             @relation(fields: [divisi_id], references: [id_divisi])
-  karyawan_fk        Karyawan?           @relation(fields: [karyawan_id], references: [id_karyawan])
-  assetLocation      AssetLocation?      @relation(fields: [locationId], references: [id])
-  assetDepreciations AssetDepreciation[]
-  assetLoans         AssetLoan[]
-  assetMaintenances  AssetMaintenance[]
-  assetTransfers     AssetTransfer[]
+  id_barang       String    @id @default(uuid())
+  organization_id String
+  department_id   String
+  divisi_id       String?
+  karyawan_id     String?
+  kode_asset      String    @db.Char(50)
+  nama_asset      String    @db.Text
+  categoryId      String?
+  deskripsi       String?   @db.Text
+  brand           String?   @db.Char(100)
+  model           String?   @db.Char(100)
+  serial_number   String?   @db.Char(100)
+  tgl_pembelian   DateTime?
+  harga           Decimal?  @db.Decimal(15, 2)
+  vendor          String?   @db.Char(100)
+  kondisi         String?   @db.Char(50)
+  lokasi          String?   @db.Char(200)
+  locationId      String?
+  garansi_exp     DateTime?
+
+  // EAM Fields
+  barcode         String?  @db.Char(100)
+  purchaseValue   Decimal? @db.Decimal(15, 2)
+  salvageValue    Decimal? @db.Decimal(15, 2) // Residue value after useful life
+  usefulLifeYears Int? // Estimated useful life in years
+
+  status                    AssetStatus                @default(AVAILABLE)
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  assetCategory             AssetCategory?             @relation(fields: [categoryId], references: [id])
+  department_fk             Department                 @relation(fields: [department_id], references: [id_department])
+  divisi_fk                 Divisi?                    @relation(fields: [divisi_id], references: [id_divisi])
+  karyawan_fk               Karyawan?                  @relation(fields: [karyawan_id], references: [id_karyawan])
+  assetLocation             AssetLocation?             @relation(fields: [locationId], references: [id])
+  assetDepreciations        AssetDepreciation[]
+  assetLoans                AssetLoan[]
+  assetMaintenances         AssetMaintenance[]
+  assetTransfers            AssetTransfer[]
+  assetDisposals            AssetDisposal[]
+  assetMaintenanceSchedules AssetMaintenanceSchedule[]
 
   @@unique([organization_id, kode_asset], map: "asset_org_kode_unique")
   @@index([categoryId], map: "asset_categoryId_fkey")
@@ -278,14 +290,20 @@ model Asset {
 }
 
 model AssetDepreciation {
-  id        String   @id @default(uuid())
-  asset_id  String
-  period    DateTime
-  amount    Decimal  @db.Decimal(15, 2)
-  createdAt DateTime @default(now())
-  asset     Asset    @relation(fields: [asset_id], references: [id_barang], onDelete: Cascade)
+  id              String   @id @default(uuid())
+  organizationId  String   @default("")
+  assetId         String
+  periodDate      DateTime
+  depreciationAmt Decimal  @db.Decimal(15, 2)
+  accumulatedDep  Decimal  @db.Decimal(15, 2)
+  netBookValue    Decimal  @db.Decimal(15, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  @@unique([asset_id, period])
+  asset Asset @relation(fields: [assetId], references: [id_barang], onDelete: Cascade)
+
+  @@unique([assetId, periodDate])
+  @@index([organizationId])
   @@map("asset_depreciation")
 }
 
@@ -685,6 +703,67 @@ model AuditLog {
   @@index([userId])
 }
 
+model AssetDisposal {
+  id               String   @id @default(uuid())
+  organizationId   String
+  assetId          String
+  disposalMethod   String // e.g., SOLD, SCRAPPED, DONATED
+  disposalDate     DateTime
+  disposalValue    Decimal? @db.Decimal(15, 2)
+  reason           String?  @db.Text
+  status           String   @default("PENDING_APPROVAL") // PENDING_APPROVAL, APPROVED, REJECTED, COMPLETED
+  approvedByUserId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  asset Asset @relation(fields: [assetId], references: [id_barang], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([assetId])
+  @@map("asset_disposal")
+}
+
+model AssetMaintenanceSchedule {
+  id                   String    @id @default(uuid())
+  organizationId       String
+  assetId              String
+  title                String    @db.Text
+  description          String?   @db.Text
+  frequencyDays        Int // e.g., 30 for monthly, 365 for yearly
+  lastMaintenanceDate  DateTime?
+  nextDueDate          DateTime
+  assignedToEmployeeId String?
+  isActive             Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  asset      Asset     @relation(fields: [assetId], references: [id_barang], onDelete: Cascade)
+  assignedTo Karyawan? @relation(fields: [assignedToEmployeeId], references: [id_karyawan])
+
+  @@index([organizationId])
+  @@index([assetId])
+  @@index([assignedToEmployeeId])
+  @@map("asset_maintenance_schedule")
+}
+
+model AppNotification {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String? // If null, it can be broadcast to roles
+  targetRole     String? // role or jabatan target
+  title          String   @db.Text
+  message        String   @db.Text
+  type           String   @db.Text // INFO, WARNING, SUCCESS, ERROR
+  entityType     String?  @db.Text // ASSET_MAINTENANCE, ASSET_DISPOSAL, REQUISITION, etc.
+  entityId       String?  @db.Text
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("app_notification")
+}
+
 enum AssetStatus {
   AVAILABLE
   LOANED
@@ -726,4 +805,70 @@ enum LedgerType {
   OUT
   ADJUSTMENT
   TRANSFER
+}
+
+model ApprovalTemplate {
+  id             String                 @id @default(uuid())
+  organizationId String
+  name           String                 @db.Text
+  entityType     String                 @db.Text // e.g. REQUISITION, ASSET_DISPOSAL, ASSET_LOAN
+  isActive       Boolean                @default(true)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  steps          ApprovalTemplateStep[]
+
+  @@index([organizationId])
+  @@index([entityType(length: 191)])
+  @@map("approval_template")
+}
+
+model ApprovalTemplateStep {
+  id            String           @id @default(uuid())
+  templateId    String
+  stepNumber    Int
+  targetRole    String?          @db.Text // Approver role constraint (e.g. manager)
+  targetJabatan String?          @db.Text // e.g. 'General Manager'
+  dynamicTarget String?          @db.Text // e.g. 'USER_MANAGER', 'DEPARTMENT_HEAD'
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  template      ApprovalTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+  @@map("approval_template_step")
+}
+
+model ApprovalRequest {
+  id             String        @id @default(uuid())
+  organizationId String
+  entityId       String        @db.Text // The ID of the item being approved
+  entityType     String        @db.Text // REQUISITION, ASSET_DISPOSAL, etc
+  requesterId    String // User who initiated the request
+  status         String        @default("PENDING") // PENDING, APPROVED, REJECTED
+  currentStepNum Int           @default(1)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  logs           ApprovalLog[]
+
+  requester User @relation(fields: [requesterId], references: [id])
+
+  @@index([organizationId])
+  @@index([entityId(length: 191)])
+  @@index([requesterId])
+  @@map("approval_request")
+}
+
+model ApprovalLog {
+  id                String          @id @default(uuid())
+  approvalRequestId String
+  stepNumber        Int
+  approverId        String // User who actually approved/rejected
+  action            String          @db.Text // APPROVE, REJECT
+  comments          String?         @db.Text
+  createdAt         DateTime        @default(now())
+  request           ApprovalRequest @relation(fields: [approvalRequestId], references: [id], onDelete: Cascade)
+  approver          User            @relation(fields: [approverId], references: [id])
+
+  @@index([approvalRequestId])
+  @@index([approverId])
+  @@map("approval_log")
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, ArchiveX } from "lucide-react";
 import { useAssetDialog } from "../components/asset-dialog-provider";
 import { Asset, Department, Divisi, Karyawan } from "@/generated/prisma/client";
 
@@ -26,6 +26,18 @@ export function AssetDetailsActions({ asset }: { asset: AssetWithRelations }) {
       >
         <Edit className="mr-2 h-4 w-4" />
         Edit Asset
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() => {
+          setCurrentAsset(asset);
+          setOpen("dispose");
+        }}
+        disabled={asset.status === "DISPOSED"}
+      >
+        <ArchiveX className="mr-2 h-4 w-4" />
+        Retire
       </Button>
       <Button
         variant="destructive"

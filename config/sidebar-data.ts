@@ -24,6 +24,9 @@ import {
   Truck,
   Warehouse,
   ArrowDownUp,
+  ArchiveX,
+  Clock,
+  CheckSquare,
 } from "lucide-react";
 
 import { SidebarData } from "@/types";
@@ -138,6 +141,12 @@ export const sidebarData: SidebarData = {
           roles: GLOBAL_ASSET_ROLES,
         },
         {
+          title: "approvals",
+          url: "/approvals",
+          icon: CheckSquare,
+          roles: GLOBAL_ASSET_ROLES,
+        },
+        {
           title: "assetLoans",
           url: "/asset-loans",
           icon: Handshake,
@@ -151,9 +160,21 @@ export const sidebarData: SidebarData = {
           roles: ASSET_VIEWER_ROLES,
         },
         {
+          title: "assetSchedules",
+          url: "/assets/schedules",
+          icon: Clock,
+          roles: ASSET_VIEWER_ROLES,
+        },
+        {
           title: "assetTransfers",
           url: "/asset-transfers",
           icon: Move,
+          roles: ASSET_VIEWER_ROLES,
+        },
+        {
+          title: "assetDisposals",
+          url: "/assets/disposals",
+          icon: ArchiveX,
           roles: ASSET_VIEWER_ROLES,
         },
         {

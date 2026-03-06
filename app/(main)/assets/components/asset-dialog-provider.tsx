@@ -10,9 +10,16 @@ type AssetWithRelations = Asset & {
 };
 
 type AssetDialogContextType = {
-  open: "add" | "edit" | "delete" | "view" | "multi-delete" | null;
+  open: "add" | "edit" | "delete" | "view" | "multi-delete" | "dispose" | null;
   setOpen: (
-    open: "add" | "edit" | "delete" | "view" | "multi-delete" | null,
+    open:
+      | "add"
+      | "edit"
+      | "delete"
+      | "view"
+      | "multi-delete"
+      | "dispose"
+      | null,
   ) => void;
   currentAsset: AssetWithRelations | null;
   setCurrentAsset: (asset: AssetWithRelations | null) => void;
@@ -28,7 +35,7 @@ export function AssetDialogProvider({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState<
-    "add" | "edit" | "delete" | "view" | "multi-delete" | null
+    "add" | "edit" | "delete" | "view" | "multi-delete" | "dispose" | null
   >(null);
   const [currentAsset, setCurrentAsset] = useState<AssetWithRelations | null>(
     null,

@@ -7,6 +7,7 @@ import { ImportButton } from "@/components/import-export/import-button";
 import { ExportButton } from "@/components/import-export/export-button";
 import { importAssets, getAssetsForExport } from "@/action/asset-action";
 import { useSearchParams } from "next/navigation";
+import { QrScannerModal } from "./qr-scanner-modal";
 
 export function AssetPrimaryButtons() {
   const { setOpen } = useAssetDialog();
@@ -44,6 +45,7 @@ export function AssetPrimaryButtons() {
         onImport={importAssets as any}
         templateHeaders={assetHeaders}
       />
+      <QrScannerModal />
       <Button onClick={() => setOpen("add")} className="space-x-1">
         <span>New Asset</span>
         <Plus className="h-4 w-4" />

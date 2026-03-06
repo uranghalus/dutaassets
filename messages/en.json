@@ -29,6 +29,8 @@
     "assetLoans": "Asset Loans",
     "maintenance": "Asset Maintenance",
     "assetTransfers": "Asset Transfers",
+    "assetSchedules": "Maintenance Schedules",
+    "assetDisposals": "Asset Disposals",
     "assetHistory": "Asset History",
     "auditLogs": "Audit Logs",
     "reports": "Reports",

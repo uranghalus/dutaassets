@@ -165,6 +165,46 @@ export const employeesColumns: ColumnDef<EmployeeWithDivisi>[] = [
   },
 
   /* =====================
+     * ATASAN (MANAGER)
+     ===================== */
+  {
+    accessorKey: "manager_id",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Atasan" />
+    ),
+    cell: ({ row }) => (
+      <div className="ps-2 text-muted-foreground whitespace-nowrap">
+        {(row.original as any).manager?.nama ?? "-"}
+      </div>
+    ),
+    size: 150,
+  },
+
+  /* =====================
+     * TANGGAL KELUAR
+     ===================== */
+  {
+    accessorKey: "tanggal_keluar",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Tgl Keluar" />
+    ),
+    cell: ({ row }) => {
+      const tgl = (row.original as any).tanggal_keluar;
+      if (!tgl) return <div className="ps-2 text-muted-foreground">-</div>;
+
+      const formatted = new Date(tgl).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+      return (
+        <div className="ps-2 text-destructive font-medium">{formatted}</div>
+      );
+    },
+    size: 120,
+  },
+
+  /* =====================
      * STATUS
      ===================== */
   {

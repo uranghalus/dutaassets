@@ -113,13 +113,15 @@ export default async function MaintenanceSchedulesPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <form
-                          action={completeMaintenanceSchedule.bind(
-                            null,
-                            schedule.id,
-                            0,
-                            "System",
-                            "Completed",
-                          )}
+                          action={
+                            completeMaintenanceSchedule.bind(
+                              null,
+                              schedule.id,
+                              0,
+                              "System",
+                              "Completed",
+                            ) as any
+                          }
                         >
                           <Button
                             title="Mark as Completed"
@@ -132,11 +134,13 @@ export default async function MaintenanceSchedulesPage() {
                           </Button>
                         </form>
                         <form
-                          action={toggleMaintenanceScheduleActive.bind(
-                            null,
-                            schedule.id,
-                            false,
-                          )}
+                          action={
+                            toggleMaintenanceScheduleActive.bind(
+                              null,
+                              schedule.id,
+                              false,
+                            ) as any
+                          }
                         >
                           <Button
                             title="Disable Schedule"

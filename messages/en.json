@@ -45,16 +45,17 @@
     "importExport": "Import / Export",
     "settings": "Settings",
     "inventory": {
-      "masterItem": "Master Item",
+      "masterItem": "Item Master",
       "itemCategories": "Item Categories",
       "warehouses": "Warehouses",
-      "requisition": "Requisition",
-      "reqItems": "Requisition Items",
-      "reqApproval": "Requisition Approval",
       "receipts": "Goods Receipt",
+      "issuances": "Stock Issuances",
       "adjustments": "Stock Adjustments",
       "transfers": "Stock Transfers",
-      "stocks": "Item Stocks"
+      "stocks": "Current Stock",
+      "requisition": "Requisition",
+      "reqItems": "Requisition Items",
+      "reqApproval": "Requisition Approval"
     },
     "teams": {
       "title": "Teams",
@@ -77,7 +78,8 @@
     "account": "Account",
     "preferences": "Preferences",
     "appearance": "Appearance",
-    "importExport": "Import / Export"
+    "importExport": "Import / Export",
+    "workflows": "Approval Workflows"
   },
   "preferences": {
     "title": "Preferences",

@@ -158,10 +158,17 @@ async function handleWorkflowCompletion(
 ) {
   // We apply the final state to the specific entity
   if (entityType === "ASSET_DISPOSAL") {
-    await prisma.assetDisposal.update({
+    const disposal = await (prisma as any).assetDisposal.update({
       where: { id: entityId },
       data: { status: finalStatus === "APPROVED" ? "APPROVED" : "REJECTED" },
     });
+
+    if (finalStatus === "APPROVED") {
+      await (prisma as any).asset.update({
+        where: { id_barang: disposal.assetId },
+        data: { status: "DISPOSED" },
+      });
+    }
   } else if (entityType === "REQUISITION") {
     await prisma.requisition.update({
       where: { id: entityId },

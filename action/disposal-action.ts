@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getActiveOrganizationWithRole } from "./organization-action";
 import { revalidatePath } from "next/cache";
+import { initiateApproval } from "./workflow-action";
 
 export async function createDisposalRequest(data: {
   assetId: string;
@@ -24,6 +25,9 @@ export async function createDisposalRequest(data: {
       status: "PENDING_APPROVAL",
     },
   });
+
+  // Start generic workflow
+  await initiateApproval("ASSET_DISPOSAL", disposal.id);
 
   revalidatePath(`/assets/${data.assetId}`);
   revalidatePath("/assets/disposals");
@@ -50,54 +54,4 @@ export async function getPendingDisposals() {
     },
     orderBy: { createdAt: "desc" },
   });
-}
-
-export async function approveDisposal(id: string) {
-  const { organizationId, userId, role } =
-    await getActiveOrganizationWithRole();
-
-  if (!["owner", "admin", "manager"].includes(role)) {
-    throw new Error("Unauthorized to approve disposals");
-  }
-
-  const disposal = await prisma.assetDisposal.update({
-    where: { id, organizationId },
-    data: {
-      status: "APPROVED",
-      approvedByUserId: userId,
-    },
-  });
-
-  // Also update the asset status to DISPOSED
-  await prisma.asset.update({
-    where: { id_barang: disposal.assetId },
-    data: { status: "DISPOSED" },
-  });
-
-  revalidatePath("/assets/disposals");
-  revalidatePath(`/assets/${disposal.assetId}`);
-
-  return disposal;
-}
-
-export async function rejectDisposal(id: string) {
-  const { organizationId, userId, role } =
-    await getActiveOrganizationWithRole();
-
-  if (!["owner", "admin", "manager"].includes(role)) {
-    throw new Error("Unauthorized to reject disposals");
-  }
-
-  const disposal = await prisma.assetDisposal.update({
-    where: { id, organizationId },
-    data: {
-      status: "REJECTED",
-      approvedByUserId: userId, // capturing who rejected it
-    },
-  });
-
-  revalidatePath("/assets/disposals");
-  revalidatePath(`/assets/${disposal.assetId}`);
-
-  return disposal;
 }

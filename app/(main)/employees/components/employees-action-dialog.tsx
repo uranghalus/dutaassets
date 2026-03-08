@@ -45,7 +45,11 @@ import {
 
 import { Karyawan, Department } from "@/generated/prisma/client";
 import { EmployeeForm, employeeFormSchema } from "@/schema/employee-schema";
-import { useCreateEmployee, useUpdateEmployee } from "@/hooks/use-employee";
+import {
+  useCreateEmployee,
+  useUpdateEmployee,
+  useEmployeeOptions,
+} from "@/hooks/use-employee";
 import { useDivisionOptions } from "@/hooks/use-divisions";
 import { useDepartmentOptions } from "@/hooks/use-departments";
 import { useOrgRoleOptions } from "@/hooks/use-organization-role";
@@ -111,6 +115,10 @@ export function EmployeeActionDialog({
       tgl_masuk: currentRow?.tgl_masuk
         ? new Date(currentRow.tgl_masuk)
         : undefined,
+      tanggal_keluar: (currentRow as any)?.tanggal_keluar
+        ? new Date((currentRow as any).tanggal_keluar)
+        : undefined,
+      manager_id: (currentRow as any)?.manager_id ?? "",
       foto: currentRow?.foto ?? "",
       isEdit,
     },
@@ -126,9 +134,12 @@ export function EmployeeActionDialog({
   const { data: departments = [], isLoading: isLoadingDept } =
     useDepartmentOptions();
   const { data: roles = [], isLoading: isLoadingRoles } = useOrgRoleOptions();
+  const { data: employeesList = [], isLoading: isLoadingEmployees } =
+    useEmployeeOptions();
 
   const [openDiv, setOpenDiv] = useState(false);
   const [openDept, setOpenDept] = useState(false);
+  const [openManager, setOpenManager] = useState(false);
 
   const selectedDeptId = form.watch("department_id");
 
@@ -158,6 +169,10 @@ export function EmployeeActionDialog({
         tgl_masuk: currentRow?.tgl_masuk
           ? new Date(currentRow.tgl_masuk)
           : undefined,
+        tanggal_keluar: (currentRow as any)?.tanggal_keluar
+          ? new Date((currentRow as any).tanggal_keluar)
+          : undefined,
+        manager_id: (currentRow as any)?.manager_id ?? "",
         foto: currentRow?.foto ?? "",
         isEdit,
       });
@@ -227,9 +242,7 @@ export function EmployeeActionDialog({
     >
       <DialogContent className="sm:max-w-xl max-h-[90vh] p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6">
-          <DialogTitle>
-            {isEdit ? "Edit Karyawan" : "Add Karyawan"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? "Edit Karyawan" : "Add Karyawan"}</DialogTitle>
           <DialogDescription>
             {isEdit ? "Update employee data." : "Create a new employee."}
           </DialogDescription>
@@ -261,9 +274,9 @@ export function EmployeeActionDialog({
                         >
                           {field.value
                             ? departments.find(
-                              (dept: DepartmentOption) =>
-                                dept.id_department === field.value,
-                            )?.nama_department
+                                (dept: DepartmentOption) =>
+                                  dept.id_department === field.value,
+                              )?.nama_department
                             : "Select department..."}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -325,15 +338,16 @@ export function EmployeeActionDialog({
                         >
                           {field.value
                             ? (() => {
-                              const div = divisions.find(
-                                (d: DivisionOption) =>
-                                  d.id_divisi === field.value,
-                              );
-                              return div
-                                ? `${div.nama_divisi} (${div.department?.nama_department ?? "-"
-                                })`
-                                : "Pilih divisi";
-                            })()
+                                const div = divisions.find(
+                                  (d: DivisionOption) =>
+                                    d.id_divisi === field.value,
+                                );
+                                return div
+                                  ? `${div.nama_divisi} (${
+                                      div.department?.nama_department ?? "-"
+                                    })`
+                                  : "Pilih divisi";
+                              })()
                             : "Pilih divisi"}
                           <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
                         </Button>
@@ -359,13 +373,93 @@ export function EmployeeActionDialog({
                                     ({div.department?.nama_department ?? "-"})
                                   </span>
                                   <Check
-                                    className={`ml-auto h-4 w-4 ${field.value === div.id_divisi
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                      }`}
+                                    className={`ml-auto h-4 w-4 ${
+                                      field.value === div.id_divisi
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    }`}
                                   />
                                 </CommandItem>
                               ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* =========================
+                ATASAN LANGSUNG (MANAGER)
+              ========================= */}
+              <FormField
+                control={form.control}
+                name="manager_id"
+                render={({ field }) => (
+                  <FormItem className="col-span-2 flex flex-col">
+                    <FormLabel>Atasan Langsung (Direct Manager)</FormLabel>
+
+                    <Popover open={openManager} onOpenChange={setOpenManager}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          disabled={isLoadingEmployees}
+                          className="justify-between"
+                        >
+                          {field.value
+                            ? (() => {
+                                const mgr = employeesList.find(
+                                  (e: any) => e.id_karyawan === field.value,
+                                );
+                                return mgr
+                                  ? `${mgr.nama} (${mgr.jabatan ?? "-"})`
+                                  : "Pilih Atasan";
+                              })()
+                            : "Pilih Atasan (Opsional)"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+
+                      <PopoverContent className="p-0">
+                        <Command>
+                          <CommandInput placeholder="Search atasan..." />
+                          <CommandList>
+                            <CommandEmpty>
+                              Karyawan tidak ditemukan.
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {employeesList
+                                .filter(
+                                  (e: any) =>
+                                    e.id_karyawan !== currentRow?.id_karyawan,
+                                ) // prevent self-assignment
+                                .map((emp: any) => (
+                                  <CommandItem
+                                    key={emp.id_karyawan}
+                                    value={emp.nama}
+                                    onSelect={() => {
+                                      field.onChange(emp.id_karyawan);
+                                      setOpenManager(false);
+                                    }}
+                                  >
+                                    {emp.nama}{" "}
+                                    <span className="text-muted-foreground text-xs ml-2">
+                                      ({emp.jabatan ?? "-"})
+                                    </span>
+                                    <Check
+                                      className={cn(
+                                        "ml-auto h-4 w-4",
+                                        field.value === emp.id_karyawan
+                                          ? "opacity-100"
+                                          : "opacity-0",
+                                      )}
+                                    />
+                                  </CommandItem>
+                                ))}
                             </CommandGroup>
                           </CommandList>
                         </Command>
@@ -608,7 +702,9 @@ export function EmployeeActionDialog({
                         <Command>
                           <CommandInput placeholder="Cari jabatan/role..." />
                           <CommandList>
-                            <CommandEmpty>Jabatan tidak ditemukan.</CommandEmpty>
+                            <CommandEmpty>
+                              Jabatan tidak ditemukan.
+                            </CommandEmpty>
 
                             <CommandGroup>
                               {roles.map((item: any) => (
@@ -622,10 +718,11 @@ export function EmployeeActionDialog({
                                 >
                                   {item.role}
                                   <Check
-                                    className={`ml-auto h-4 w-4 ${field.value === item.role
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                      }`}
+                                    className={`ml-auto h-4 w-4 ${
+                                      field.value === item.role
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    }`}
                                   />
                                 </CommandItem>
                               ))}
@@ -640,7 +737,7 @@ export function EmployeeActionDialog({
               />
 
               {/* =========================
-                TGL MASUK
+                TGL MASUK & KELUAR
             ========================= */}
               <FormField
                 control={form.control}
@@ -662,6 +759,45 @@ export function EmployeeActionDialog({
                               format(field.value, "PPP")
                             ) : (
                               <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="tanggal_keluar"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Tanggal Keluar (Resign)</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground",
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Kosong (Masih Aktif)</span>
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
@@ -738,10 +874,11 @@ export function EmployeeActionDialog({
                                 >
                                   {status}
                                   <Check
-                                    className={`ml-auto h-4 w-4 ${field.value === status
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                      }`}
+                                    className={`ml-auto h-4 w-4 ${
+                                      field.value === status
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    }`}
                                   />
                                 </CommandItem>
                               ))}

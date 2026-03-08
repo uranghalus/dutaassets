@@ -1,9 +1,5 @@
 import { Main } from "@/components/main";
-import {
-  getPendingDisposals,
-  approveDisposal,
-  rejectDisposal,
-} from "@/action/disposal-action";
+import { getPendingDisposals } from "@/action/disposal-action";
 import {
   Table,
   TableBody,
@@ -15,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Check, X } from "lucide-react";
 
 export const metadata = {
   title: "Pending Asset Disposals",
@@ -44,7 +39,7 @@ export default async function PendingDisposalsPage() {
               <TableHead>Date</TableHead>
               <TableHead>Reason</TableHead>
               <TableHead>Return Value</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -86,28 +81,12 @@ export default async function PendingDisposalsPage() {
                       : "-"}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <form action={approveDisposal.bind(null, disposal.id)}>
-                        <Button
-                          type="submit"
-                          size="sm"
-                          variant="outline"
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                      </form>
-                      <form action={rejectDisposal.bind(null, disposal.id)}>
-                        <Button
-                          type="submit"
-                          size="sm"
-                          variant="outline"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </form>
-                    </div>
+                    <Badge
+                      variant="outline"
+                      className="bg-yellow-50 text-yellow-700 hover:bg-yellow-50"
+                    >
+                      Pending Approval
+                    </Badge>
                   </TableCell>
                 </TableRow>
               ))

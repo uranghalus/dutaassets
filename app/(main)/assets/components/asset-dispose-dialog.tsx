@@ -47,8 +47,7 @@ export function AssetDisposeDialog() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof disposalSchema>>({
-    // @ts-expect-error: zod coerce type mismatch with RHF
-    resolver: zodResolver(disposalSchema),
+    resolver: zodResolver(disposalSchema) as any,
     defaultValues: {
       disposalMethod: "SOLD",
       disposalDate: format(new Date(), "yyyy-MM-dd"),

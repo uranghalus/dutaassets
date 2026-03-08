@@ -52,6 +52,8 @@ export async function getEmployees({ page, pageSize }: EmployeeArgs) {
         tempat_lahir: true,
         tgl_lahir: true,
         tgl_masuk: true,
+        tanggal_keluar: true,
+        manager_id: true,
         foto: true,
         userId: true, // 🔗 untuk sync user
         divisi_fk: {
@@ -60,6 +62,12 @@ export async function getEmployees({ page, pageSize }: EmployeeArgs) {
           },
         },
         department: true,
+        manager: {
+          select: {
+            nama: true,
+            jabatan: true,
+          },
+        },
         createdAt: true,
       },
     }),
@@ -238,11 +246,12 @@ export async function createEmployee(formData: FormData) {
           call_sign: formData.get("call_sign")?.toString() ?? "",
           status_karyawan: formData.get("status_karyawan")?.toString() ?? "",
           keterangan: formData.get("keterangan")?.toString() ?? "",
-          tempat_lahir: formData.get("tempat_lahir")?.toString() ?? null,
           tgl_lahir: parseDate(formData.get("tgl_lahir")),
           tgl_masuk: parseDate(formData.get("tgl_masuk")),
+          tanggal_keluar: parseDate(formData.get("tanggal_keluar")),
+          manager_id: formData.get("manager_id")?.toString() || null,
           foto: fotoPath,
-        },
+        } as any,
       });
 
       // Jika employee langsung di-link ke user, tambahkan sebagai member organisasi
@@ -353,9 +362,16 @@ export async function updateEmployee(id_karyawan: string, formData: FormData) {
           tempat_lahir:
             formData.get("tempat_lahir")?.toString() ?? employee.tempat_lahir,
           tgl_lahir: parseDate(formData.get("tgl_lahir")) ?? employee.tgl_lahir,
-          tgl_masuk: parseDate(formData.get("tgl_masuk")) ?? employee.tgl_masuk,
+          tgl_masuk:
+            parseDate(formData.get("tgl_masuk")) ?? (employee as any).tgl_masuk,
+          tanggal_keluar:
+            parseDate(formData.get("tanggal_keluar")) ??
+            (employee as any).tanggal_keluar,
+          manager_id:
+            formData.get("manager_id")?.toString() ??
+            (employee as any).manager_id,
           foto: fotoPath,
-        },
+        } as any,
       });
 
       // Jika employee punya user dan jabatan berubah → update role di organisasi
@@ -669,9 +685,7 @@ export async function getEmployeesForExport({
 /* =======================
    IMPORT
 ======================= */
-export async function importEmployees(
-  rows: any[],
-): Promise<{
+export async function importEmployees(rows: any[]): Promise<{
   success: boolean;
   count?: number;
   error?: string;

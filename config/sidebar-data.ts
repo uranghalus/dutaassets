@@ -227,6 +227,11 @@ export const sidebarData: SidebarData = {
           icon: Truck,
         },
         {
+          title: "inventory.issuances",
+          url: "/inventory/issuances",
+          icon: ArrowDownUp,
+        },
+        {
           title: "inventory.adjustments",
           url: "/inventory/adjustments",
           icon: ArrowDownUp,

@@ -1,12 +1,12 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const employeeFormSchema = z.object({
   /** =========================
    *  CORE
    *  ========================= */
-  nik: z.string().min(1, 'NIK is required'),
+  nik: z.string().min(1, "NIK is required"),
 
-  nama: z.string().min(1, 'Nama is required'),
+  nama: z.string().min(1, "Nama is required"),
 
   /** =========================
    *  OPTIONAL IDENTITY
@@ -15,15 +15,15 @@ export const employeeFormSchema = z.object({
 
   alamat: z.string().optional(),
 
-  no_ktp: z.string().length(16, 'No KTP must be 16 digits'),
+  no_ktp: z.string().length(16, "No KTP must be 16 digits"),
 
   telp: z.string().optional(),
 
   /** =========================
    *  RELATION
    *  ========================= */
-  divisi_id: z.string().min(1, 'Divisi is required'),
-  department_id: z.string().min(1, 'Department is required'),
+  divisi_id: z.string().min(1, "Divisi is required"),
+  department_id: z.string().min(1, "Department is required"),
 
   /** =========================
    *  JOB INFO
@@ -47,6 +47,8 @@ export const employeeFormSchema = z.object({
    *  EMPLOYMENT DETAILS
    *  ========================= */
   tgl_masuk: z.date().optional(),
+  tanggal_keluar: z.date().optional(),
+  manager_id: z.string().optional(),
 
   /** =========================
    *  INTERNAL

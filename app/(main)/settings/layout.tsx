@@ -1,6 +1,13 @@
 import { Main } from "@/components/main";
 import { Separator } from "@/components/ui/separator";
-import { UserCog, Wrench, Sliders, Palette, FileInput } from "lucide-react";
+import {
+  UserCog,
+  Wrench,
+  Sliders,
+  Palette,
+  FileInput,
+  Workflow,
+} from "lucide-react";
 import React, { ReactNode } from "react";
 import { SidebarNav } from "./components/sidebarnav";
 import { useTranslations } from "next-intl";
@@ -37,6 +44,11 @@ export default function SettingLayout({ children }: Props) {
       title: t("importExport"),
       href: "/settings/import-export",
       icon: <FileInput size={18} />,
+    },
+    {
+      title: t("workflows"),
+      href: "/settings/workflows",
+      icon: <Workflow size={18} />,
     },
   ];
 

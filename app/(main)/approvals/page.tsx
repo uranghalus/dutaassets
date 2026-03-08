@@ -59,7 +59,7 @@ export default async function ApprovalsPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {pendingRequests.map((req) => (
+          {pendingRequests.map((req: any) => (
             <Card key={req.id} className="relative overflow-hidden group">
               <div
                 className={`absolute top-0 left-0 w-1 h-full \${getBadgeColor(req.entityType).split(" ")[0]}`}

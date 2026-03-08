@@ -201,6 +201,8 @@ model Karyawan {
   tempat_lahir              String?                    @db.Text
   tgl_lahir                 DateTime?
   tgl_masuk                 DateTime?
+  tanggal_keluar            DateTime?
+  manager_id                String?
   foto                      String?                    @db.Text
   userId                    String?                    @unique(map: "karyawan_userId_unique_custom_v9")
   department_id             String
@@ -210,6 +212,8 @@ model Karyawan {
   department                Department                 @relation(fields: [department_id], references: [id_department])
   divisi_fk                 Divisi                     @relation(fields: [divisi_id], references: [id_divisi])
   user                      User?                      @relation(fields: [userId], references: [id])
+  manager                   Karyawan?                  @relation("EmployeeManager", fields: [manager_id], references: [id_karyawan])
+  subordinates              Karyawan[]                 @relation("EmployeeManager")
   assets                    Asset[]
   assetLoans                AssetLoan[]
   transfersFrom             AssetTransfer[]            @relation("TransferFromEmp")
@@ -426,6 +430,7 @@ model Item {
   stockLedgers         StockLedger[]
   stockReceiptItems    StockReceiptItem[]
   stockTransferItems   StockTransferItem[]
+  stockIssuanceItems   StockIssuanceItem[]
 
   @@unique([organizationId, code], map: "item_org_code_unique")
   @@index([categoryId], map: "item_categoryId_fkey")
@@ -443,9 +448,10 @@ model Warehouse {
   stocks           Stock[]
   stockAdjustments StockAdjustment[]
   stockLedgers     StockLedger[]
-  receipts         StockReceipt[]
-  transfersFrom    StockTransfer[]   @relation("FromWarehouse")
-  transfersTo      StockTransfer[]   @relation("ToWarehouse")
+  stockReceipts    StockReceipt[]
+  fromTransfers    StockTransfer[]   @relation("FromWarehouse")
+  toTransfers      StockTransfer[]   @relation("ToWarehouse")
+  stockIssuances   StockIssuance[]
 
   @@map("warehouse")
 }
@@ -536,6 +542,7 @@ model Requisition {
   requester       Karyawan          @relation(fields: [requesterId], references: [id_karyawan])
   warehouse       Warehouse?        @relation(fields: [warehouseId], references: [id])
   items           RequisitionItem[]
+  stockIssuances  StockIssuance[]
 
   @@index([requesterId], map: "requisition_requesterId_fkey")
   @@index([warehouseId], map: "requisition_warehouseId_fkey")
@@ -615,6 +622,41 @@ model StockReceiptItem {
   @@index([itemId], map: "stock_receipt_item_itemId_fkey")
   @@index([stockReceiptId], map: "stock_receipt_item_stockReceiptId_fkey")
   @@map("stock_receipt_item")
+}
+
+model StockIssuance {
+  id              String   @id @default(uuid())
+  organizationId  String
+  warehouseId     String
+  requisitionId   String?
+  issuedTo        String?  @db.Text
+  referenceNumber String?  @db.Text
+  issuedAt        DateTime @default(now())
+  remarks         String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  warehouse   Warehouse           @relation(fields: [warehouseId], references: [id])
+  requisition Requisition?        @relation(fields: [requisitionId], references: [id])
+  items       StockIssuanceItem[]
+
+  @@index([warehouseId])
+  @@index([requisitionId])
+  @@map("stock_issuance")
+}
+
+model StockIssuanceItem {
+  id              String @id @default(uuid())
+  stockIssuanceId String
+  itemId          String
+  quantity        Int
+
+  item          Item          @relation(fields: [itemId], references: [id])
+  stockIssuance StockIssuance @relation(fields: [stockIssuanceId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@index([stockIssuanceId])
+  @@map("stock_issuance_item")
 }
 
 model ActivityLog {

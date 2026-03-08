@@ -46,16 +46,17 @@
     "importExport": "Import / Export",
     "settings": "Settings",
     "inventory": {
-      "masterItem": "Master Item",
-      "itemCategories": "Kategori Item",
+      "masterItem": "Master Barang",
+      "itemCategories": "Kategori Barang",
       "warehouses": "Gudang",
-      "requisition": "Requisition",
-      "reqItems": "Permintaan Barang",
-      "reqApproval": "Persetujuan Permintaan",
       "receipts": "Penerimaan Barang",
+      "issuances": "Barang Keluar",
       "adjustments": "Penyesuaian Stok",
       "transfers": "Mutasi Stok",
-      "stocks": "Stok Barang"
+      "stocks": "Stok Gudang",
+      "requisition": "Permintaan",
+      "reqItems": "Daftar Permintaan",
+      "reqApproval": "Persetujuan Permintaan"
     },
     "teams": {
       "title": "Teams",
@@ -78,7 +79,8 @@
     "account": "Akun",
     "preferences": "Preferensi",
     "appearance": "Tampilan",
-    "importExport": "Import / Export"
+    "importExport": "Import / Export",
+    "workflows": "Workflows Approval"
   },
   "preferences": {
     "title": "Preferensi",

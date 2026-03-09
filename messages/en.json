@@ -57,6 +57,10 @@
       "reqItems": "Requisition Items",
       "reqApproval": "Requisition Approval"
     },
+    "safety": {
+      "equipment": "Safety Equipment",
+      "inspections": "Safety Inspections"
+    },
     "teams": {
       "title": "Teams",
       "list": "Team List",
@@ -67,6 +71,7 @@
       "general": "General",
       "assetManagement": "Asset Management",
       "inventoryControl": "Inventory Control",
+      "safety": "Safety & Health",
       "auditReports": "Audit & Reports",
       "orgHr": "Organization & HR"
     }

@@ -8,29 +8,30 @@ datasource db {
 }
 
 model User {
-  id               String            @id
-  name             String            @db.Text
-  email            String            @unique
-  emailVerified    Boolean           @default(false)
-  image            String?           @db.Text
-  username         String?           @db.Text
-  displayUsername  String?           @db.Text
-  role             String?           @db.Text
-  banned           Boolean           @default(false)
-  banReason        String?           @db.Text
-  banExpires       DateTime?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  auditLogs        AuditLog[]
-  karyawan         Karyawan?
-  accounts         Account[]
-  activityLogs     ActivityLog[]
-  invitations      Invitation[]
-  members          Member[]
-  sessions         Session[]
-  teamMembers      TeamMember[]
-  approvalRequests ApprovalRequest[]
-  approvalLogs     ApprovalLog[]
+  id                String             @id
+  name              String             @db.Text
+  email             String             @unique
+  emailVerified     Boolean            @default(false)
+  image             String?            @db.Text
+  username          String?            @db.Text
+  displayUsername   String?            @db.Text
+  role              String?            @db.Text
+  banned            Boolean            @default(false)
+  banReason         String?            @db.Text
+  banExpires        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  auditLogs         AuditLog[]
+  karyawan          Karyawan?
+  accounts          Account[]
+  activityLogs      ActivityLog[]
+  invitations       Invitation[]
+  members           Member[]
+  sessions          Session[]
+  teamMembers       TeamMember[]
+  approvalRequests  ApprovalRequest[]
+  approvalLogs      ApprovalLog[]
+  safetyInspections SafetyInspection[]
 
   @@map("user")
 }
@@ -101,6 +102,8 @@ model Organization {
   organizationRoles OrganizationRole[]
   stockLedgers      StockLedger[]
   teams             Team[]
+  safetyInspections SafetyInspection[]
+  safetyEquipments  SafetyEquipment[]
 
   @@index([deleted_at], map: "organization_deleted_at_idx_custom")
   @@map("organization")
@@ -283,6 +286,8 @@ model Asset {
   assetTransfers            AssetTransfer[]
   assetDisposals            AssetDisposal[]
   assetMaintenanceSchedules AssetMaintenanceSchedule[]
+
+  safetyEquipment SafetyEquipment?
 
   @@unique([organization_id, kode_asset], map: "asset_org_kode_unique")
   @@index([categoryId], map: "asset_categoryId_fkey")
@@ -913,4 +918,103 @@ model ApprovalLog {
   @@index([approvalRequestId])
   @@index([approverId])
   @@map("approval_log")
+}
+
+enum SafetyEquipmentType {
+  APAR
+  HYDRANT
+}
+
+enum Shift {
+  PAGI
+  SIANG
+  MALAM
+  MIDDLE
+}
+
+model SafetyEquipment {
+  id             String @id @default(uuid())
+  organizationId String
+  assetId        String @unique
+
+  type SafetyEquipmentType
+
+  // APAR
+  aparType String? @db.Text
+  sizeKg   Float?
+
+  // Hydrant
+  hydrantType String? @db.Text
+  hydrantSize String? @db.Text
+
+  qrCode String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  asset        Asset        @relation(fields: [assetId], references: [id_barang], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  inspections SafetyInspection[]
+
+  @@index([organizationId])
+  @@index([type])
+  @@map("safety_equipment")
+}
+
+model SafetyInspection {
+  id String @id @default(uuid())
+
+  organizationId  String
+  equipmentId     String
+  inspectorUserId String?
+
+  shift Shift @default(PAGI)
+
+  inspectionDate DateTime @default(now())
+
+  notes String? @db.Text
+  photo String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  equipment    SafetyEquipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  inspector    User?           @relation(fields: [inspectorUserId], references: [id])
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  items  SafetyInspectionItem[]
+  photos SafetyInspectionPhoto[]
+
+  @@index([organizationId])
+  @@index([equipmentId])
+  @@map("safety_inspection")
+}
+
+model SafetyInspectionItem {
+  id           String @id @default(uuid())
+  inspectionId String
+
+  itemName String
+  status   String
+  note     String? @db.Text
+
+  inspection SafetyInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+
+  @@index([inspectionId])
+  @@map("safety_inspection_item")
+}
+
+model SafetyInspectionPhoto {
+  id           String @id @default(uuid())
+  inspectionId String
+
+  path String @db.Text
+
+  inspection SafetyInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([inspectionId])
+  @@map("safety_inspection_photo")
 }

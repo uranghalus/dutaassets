@@ -58,6 +58,10 @@
       "reqItems": "Daftar Permintaan",
       "reqApproval": "Persetujuan Permintaan"
     },
+    "safety": {
+      "equipment": "Safety Equipment",
+      "inspections": "Safety Inspections"
+    },
     "teams": {
       "title": "Teams",
       "list": "Team List",
@@ -68,6 +72,7 @@
       "general": "General",
       "assetManagement": "Asset Management",
       "inventoryControl": "Inventory Control",
+      "safety": "K3 / Safety",
       "auditReports": "Audit & Laporan",
       "orgHr": "Organisasi & SDM"
     }

@@ -27,6 +27,8 @@ import {
   ArchiveX,
   Clock,
   CheckSquare,
+  ShieldAlert,
+  ClipboardCheck,
 } from "lucide-react";
 
 import { SidebarData } from "@/types";
@@ -245,6 +247,24 @@ export const sidebarData: SidebarData = {
           title: "inventory.stocks",
           url: "/inventory/stocks",
           icon: Boxes,
+        },
+      ],
+    },
+
+    // ---------- K3 / SAFETY ----------
+    {
+      title: "groups.safety",
+      roles: [...GLOBAL_ASSET_ROLES, "supervisor"],
+      items: [
+        {
+          title: "safety.equipment",
+          url: "/safety/equipment",
+          icon: ShieldAlert,
+        },
+        {
+          title: "safety.inspections",
+          url: "/safety/inspections",
+          icon: ClipboardCheck,
         },
       ],
     },

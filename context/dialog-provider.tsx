@@ -17,7 +17,8 @@ export type DialogType =
   | "members"
   | "sync-user"
   | "unsync-user"
-  | "view";
+  | "view"
+  | "view-qr";
 
 type DialogContextType<T> = {
   open: DialogType | null;

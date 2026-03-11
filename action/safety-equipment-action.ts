@@ -42,7 +42,7 @@ export async function getSafetyEquipments({
     prisma.safetyEquipment.findMany({
       where: { organizationId },
       include: {
-        asset: true,
+        asset: { include: { item: { include: { category: true } } } },
         inspections: {
           select: { id: true },
         },
@@ -80,7 +80,7 @@ export async function getSafetyEquipmentsForSelect() {
   const data = await prisma.safetyEquipment.findMany({
     where: { organizationId },
     include: {
-      asset: { select: { nama_asset: true, kode_asset: true } },
+      asset: { select: { item: { select: { name: true, code: true } } } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -168,7 +168,7 @@ export async function createSafetyEquipment(formData: FormData) {
         throw new Error("Asset not found");
       }
 
-      const generatedQrCode = asset.kode_asset;
+      const generatedQrCode = asset.item?.code;
 
       await prisma.safetyEquipment.create({
         data: {
@@ -253,7 +253,7 @@ export async function updateSafetyEquipment(id: string, formData: FormData) {
         throw new Error("Asset not found");
       }
 
-      const generatedQrCode = asset.kode_asset;
+      const generatedQrCode = asset.item?.code;
 
       await prisma.safetyEquipment.update({
         where: { id },

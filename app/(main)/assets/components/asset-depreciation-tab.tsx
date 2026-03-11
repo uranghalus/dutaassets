@@ -56,7 +56,7 @@ export function AssetDepreciationTab({
     });
   };
 
-  const hasMissingValues = !asset.purchaseValue || !asset.usefulLifeYears;
+  const hasMissingValues = !asset.item?.purchaseValue || !asset.usefulLifeYears;
 
   const formatCurrency = (amount: number | string) =>
     new Intl.NumberFormat("id-ID", {
@@ -161,8 +161,8 @@ export function AssetDepreciationTab({
               Purchase Value
             </span>
             <span className="text-xl font-bold">
-              {asset.purchaseValue
-                ? formatCurrency(Number(asset.purchaseValue))
+              {asset.item?.purchaseValue
+                ? formatCurrency(Number(asset.item?.purchaseValue))
                 : "-"}
             </span>
           </CardContent>

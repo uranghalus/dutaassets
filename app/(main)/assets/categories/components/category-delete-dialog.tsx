@@ -12,13 +12,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useDialog } from "@/context/dialog-provider";
 import { useDeleteAssetCategory } from "@/hooks/use-asset-category";
-import { AssetCategory } from "@/generated/prisma/client";
+import { Category } from "@/generated/prisma/client";
 import { toast } from "sonner";
 
 export function CategoryDeleteDialog() {
   const { open, setOpen, currentRow } = useDialog();
   const deleteMutation = useDeleteAssetCategory();
-  const category = currentRow as AssetCategory;
+  const category = currentRow as Category;
 
   const handleDelete = () => {
     deleteMutation.mutate(category.id, {

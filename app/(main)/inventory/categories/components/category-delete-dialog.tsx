@@ -12,13 +12,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useDialog } from "@/context/dialog-provider";
 import { useDeleteItemCategory } from "@/hooks/use-item-category";
-import { ItemCategory } from "@/generated/prisma/client";
+import { Category } from "@/generated/prisma/client";
 import { toast } from "sonner";
 
 export function CategoryDeleteDialog() {
   const { open, setOpen, currentRow } = useDialog();
   const deleteMutation = useDeleteItemCategory();
-  const category = currentRow as ItemCategory;
+  const category = currentRow as Category;
 
   const handleDelete = () => {
     deleteMutation.mutate(category.id, {

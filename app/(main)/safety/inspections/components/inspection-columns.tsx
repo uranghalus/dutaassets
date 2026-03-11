@@ -31,15 +31,15 @@ export const inspectionColumns: ColumnDef<SafetyInspectionWithRelations>[] = [
   },
   {
     id: "asset_name",
-    accessorFn: (row) => row.equipment?.asset?.nama_asset,
+    accessorFn: (row) => row.equipment?.asset?.item?.name,
     header: "Equipment",
     cell: ({ row }) => (
       <div>
         <div className="font-medium">
-          {row.original.equipment?.asset?.nama_asset || "-"}
+          {row.original.equipment?.asset?.item?.name || "-"}
         </div>
         <div className="text-xs text-muted-foreground font-mono">
-          {row.original.equipment?.asset?.kode_asset || ""}
+          {row.original.equipment?.asset?.item?.code || ""}
         </div>
       </div>
     ),

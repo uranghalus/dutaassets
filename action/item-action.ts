@@ -53,7 +53,7 @@ export async function getItems({
         name: 'asc',
       },
       include: {
-        itemCategory: true,
+        category: true,
       },
     }),
 
@@ -236,7 +236,7 @@ export async function getItemsForExport({
   const data = await prisma.item.findMany({
     where,
     include: {
-      itemCategory: true,
+      category: true,
     },
     orderBy: {
       name: 'asc',

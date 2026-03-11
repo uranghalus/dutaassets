@@ -32,7 +32,7 @@ export async function getAssetCategories({
   const take = safePageSize;
 
   const [data, total] = await Promise.all([
-    prisma.assetCategory.findMany({
+    prisma.category.findMany({
       where: {
         organizationId: organizationId,
       },
@@ -48,7 +48,7 @@ export async function getAssetCategories({
       },
     }),
 
-    prisma.assetCategory.count({
+    prisma.category.count({
       where: {
         organizationId: organizationId,
       },
@@ -74,7 +74,7 @@ export async function getAllAssetCategories() {
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  const categories = await prisma.assetCategory.findMany({
+  const categories = await prisma.category.findMany({
     where: {
       organizationId: organizationId,
     },
@@ -96,7 +96,7 @@ export async function getAssetCategory(id: string) {
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  const category = await prisma.assetCategory.findFirst({
+  const category = await prisma.category.findFirst({
     where: {
       id,
       organizationId: organizationId,
@@ -125,7 +125,7 @@ export async function createAssetCategory(formData: FormData) {
 
     const description = formData.get('description')?.toString();
 
-    const category = await prisma.assetCategory.create({
+    const category = await prisma.category.create({
       data: {
         name,
         description,
@@ -149,7 +149,7 @@ export async function updateAssetCategory(id: string, formData: FormData) {
     const organizationId = session.session.activeOrganizationId;
     if (!organizationId) throw new Error('No active organization');
 
-    const category = await prisma.assetCategory.findFirst({
+    const category = await prisma.category.findFirst({
       where: {
         id,
         organizationId: organizationId,
@@ -158,7 +158,7 @@ export async function updateAssetCategory(id: string, formData: FormData) {
 
     if (!category) throw new Error('Category not found');
 
-    const updated = await prisma.assetCategory.update({
+    const updated = await prisma.category.update({
       where: {
         id,
       },
@@ -185,7 +185,7 @@ export async function deleteAssetCategory(id: string) {
     const organizationId = session.session.activeOrganizationId;
     if (!organizationId) throw new Error('No active organization');
 
-    const category = await prisma.assetCategory.findFirst({
+    const category = await prisma.category.findFirst({
       where: {
         id,
         organizationId: organizationId,
@@ -194,7 +194,7 @@ export async function deleteAssetCategory(id: string) {
 
     if (!category) throw new Error('Category not found');
 
-    await prisma.assetCategory.delete({
+    await prisma.category.delete({
       where: {
         id,
       },
@@ -217,7 +217,7 @@ export async function deleteAssetCategoryBulk(ids: string[]) {
 
     if (!ids || ids.length === 0) return;
 
-    await prisma.assetCategory.deleteMany({
+    await prisma.category.deleteMany({
       where: {
         id: { in: ids },
         organizationId: organizationId,
@@ -228,7 +228,7 @@ export async function deleteAssetCategoryBulk(ids: string[]) {
   });
 }
 export async function getAsCategories() {
-  return prisma.assetCategory.findMany({
+  return prisma.category.findMany({
     orderBy: { name: 'asc' },
   });
 }

@@ -62,9 +62,9 @@ export function MaintenanceTable() {
       header: "Asset",
       cell: ({ row }) => (
         <div>
-          <div className="font-medium">{row.original.asset?.nama_asset}</div>
+          <div className="font-medium">{row.original.asset?.item?.name}</div>
           <div className="text-xs text-muted-foreground">
-            {row.original.asset?.kode_asset}
+            {row.original.asset?.item?.code}
           </div>
         </div>
       ),

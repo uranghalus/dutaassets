@@ -89,7 +89,7 @@ export async function getPendingNotifications() {
       id: t.id,
       type: "TRANSFER_PENDING",
       title: "Pending Transfer",
-      message: `Transfer requested for asset "${t.asset?.nama_asset ?? "Unknown"}" needs approval.`,
+      message: `Transfer requested for asset "${t.asset?.item?.name ?? "Unknown"}" needs approval.`,
       date: t.createdAt,
       url: "/asset-transfers",
     }));
@@ -116,7 +116,7 @@ export async function getPendingNotifications() {
       id: d.id,
       type: "DISPOSAL_PENDING",
       title: "Pending Disposal",
-      message: `Disposal requested for asset "${d.asset?.nama_asset ?? "Unknown"}" needs approval.`,
+      message: `Disposal requested for asset "${d.asset?.item?.name ?? "Unknown"}" needs approval.`,
       date: d.createdAt,
       url: "/assets/disposals",
     }));
@@ -151,7 +151,7 @@ export async function getPendingNotifications() {
       id: s.id,
       type: "MAINTENANCE_DUE",
       title: "Maintenance Due",
-      message: `Asset "${s.asset?.nama_asset ?? "Unknown"}" is due for maintenance: ${s.title}.`,
+      message: `Asset "${s.asset?.item?.name ?? "Unknown"}" is due for maintenance: ${s.title}.`,
       date: s.nextDueDate,
       url: "/assets/schedules",
     }));

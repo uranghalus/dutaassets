@@ -49,7 +49,7 @@ export function LoanReturnDialog() {
           <div className="space-y-2">
             <Label htmlFor="asset-info">Asset</Label>
             <div id="asset-info" className="text-sm font-medium">
-              {currentLoan?.asset.kode_asset} - {currentLoan?.asset.nama_asset}
+              {currentLoan?.asset.item?.code} - {currentLoan?.asset.item?.name}
             </div>
           </div>
           <div className="space-y-2">

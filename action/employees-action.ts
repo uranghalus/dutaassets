@@ -112,7 +112,7 @@ export async function getEmployeeById(id: string) {
           status: "IN_USE",
         },
         include: {
-          assetCategory: true,
+          item: { include: { category: true } },
         },
       },
       assetLoans: {
@@ -120,7 +120,7 @@ export async function getEmployeeById(id: string) {
           organizationId: organizationId,
         },
         include: {
-          asset: true,
+          asset: { include: { item: { include: { category: true } } } },
         },
         orderBy: {
           loanDate: "desc",

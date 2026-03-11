@@ -54,10 +54,10 @@ export default async function PendingDisposalsPage() {
                 <TableRow key={disposal.id}>
                   <TableCell>
                     <div className="font-medium">
-                      {disposal.asset.nama_asset}
+                      {disposal.asset.item?.name}
                     </div>
                     <div className="text-sm text-muted-foreground font-mono">
-                      {disposal.asset.kode_asset}
+                      {disposal.asset.item?.code}
                     </div>
                   </TableCell>
                   <TableCell>

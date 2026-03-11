@@ -49,7 +49,7 @@ export async function getAssetLoans({
     prisma.assetLoan.findMany({
       where,
       include: {
-        asset: true,
+        asset: { include: { item: { include: { category: true } } } },
         employee: true,
       },
       skip,

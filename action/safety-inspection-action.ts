@@ -57,7 +57,7 @@ export async function getSafetyInspections({
       include: {
         equipment: {
           include: {
-            asset: { select: { nama_asset: true, kode_asset: true } },
+            asset: { select: { item: { select: { name: true, code: true } } } },
           },
         },
         inspector: { select: { id: true, name: true } },

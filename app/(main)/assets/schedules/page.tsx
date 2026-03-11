@@ -68,10 +68,10 @@ export default async function MaintenanceSchedulesPage() {
                   <TableRow key={schedule.id}>
                     <TableCell>
                       <div className="font-medium">
-                        {schedule.asset.nama_asset}
+                        {schedule.asset.item?.name}
                       </div>
                       <div className="text-sm text-muted-foreground font-mono">
-                        {schedule.asset.kode_asset}
+                        {schedule.asset.item?.code}
                       </div>
                     </TableCell>
                     <TableCell

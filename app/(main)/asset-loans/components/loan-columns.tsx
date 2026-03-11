@@ -21,11 +21,11 @@ type LoanWithRelations = AssetLoan & {
 
 export const loanColumns: ColumnDef<LoanWithRelations>[] = [
   {
-    accessorKey: "asset.kode_asset",
+    accessorKey: "asset.item?.code",
     header: "Asset Code",
   },
   {
-    accessorKey: "asset.nama_asset",
+    accessorKey: "asset.item?.name",
     header: "Asset Name",
   },
   {

@@ -58,18 +58,18 @@ type SafetyEquipmentWithRelations = SafetyEquipment & {
 export const equipmentColumns: ColumnDef<SafetyEquipmentWithRelations>[] = [
   {
     id: "asset_name",
-    accessorFn: (row) => row.asset?.nama_asset,
+    accessorFn: (row) => row.asset?.item?.name,
     header: "Asset Name",
     cell: ({ row }) => (
-      <div className="font-medium">{row.original.asset?.nama_asset || "-"}</div>
+      <div className="font-medium">{row.original.asset?.item?.name || "-"}</div>
     ),
   },
   {
-    accessorKey: "asset.kode_asset",
+    accessorKey: "asset.item?.code",
     header: "Asset Code",
     cell: ({ row }) => (
       <div className="font-mono text-sm text-muted-foreground">
-        {row.original.asset?.kode_asset || "-"}
+        {row.original.asset?.item?.code || "-"}
       </div>
     ),
   },
@@ -120,7 +120,7 @@ export const equipmentColumns: ColumnDef<SafetyEquipmentWithRelations>[] = [
     cell: ({ row }) => (
       <QrCodeCell
         qrCode={row.original.qrCode}
-        assetName={row.original.asset?.nama_asset || "Unknown Asset"}
+        assetName={row.original.asset?.item?.name || "Unknown Asset"}
       />
     ),
   },

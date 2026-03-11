@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDialog } from "@/context/dialog-provider";
-import { ItemCategory } from "@/generated/prisma/client";
+import { Category } from "@/generated/prisma/client";
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>;
@@ -22,7 +22,7 @@ interface DataTableRowActionsProps<TData> {
 export function CategoryRowActions<TData>({
   row,
 }: DataTableRowActionsProps<TData>) {
-  const category = row.original as ItemCategory;
+  const category = row.original as Category;
   const { setOpen, setCurrentRow } = useDialog();
 
   return (

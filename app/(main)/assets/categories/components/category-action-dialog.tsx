@@ -32,12 +32,12 @@ import {
   useCreateAssetCategory,
   useUpdateAssetCategory,
 } from "@/hooks/use-asset-category";
-import { AssetCategory } from "@/generated/prisma/client";
+import { Category } from "@/generated/prisma/client";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  currentRow?: AssetCategory;
+  currentRow?: Category;
 };
 
 export function CategoryActionDialog({

@@ -63,13 +63,13 @@ export default async function AssetDetailsPage({
               </Link>
               <div>
                 <h2 className="text-2xl font-bold tracking-tight">
-                  {asset.nama_asset}
+                  {asset.item?.name}
                 </h2>
                 <p className="text-muted-foreground flex items-center gap-2">
-                  <span className="font-mono text-sm">{asset.kode_asset}</span>
+                  <span className="font-mono text-sm">{asset.item?.code}</span>
                   <span>•</span>
                   <span className="text-sm">
-                    {asset.assetCategory?.name || "No Category"}
+                    {asset.item?.category?.name || "No Category"}
                   </span>
                 </p>
               </div>
@@ -103,9 +103,9 @@ export default async function AssetDetailsPage({
                   >
                     {asset.status.replace(/_/g, " ")}
                   </Badge>
-                  <h3 className="font-semibold text-lg">{asset.nama_asset}</h3>
+                  <h3 className="font-semibold text-lg">{asset.item?.name}</h3>
                   <p className="text-sm text-muted-foreground font-mono">
-                    {asset.kode_asset}
+                    {asset.item?.code}
                   </p>
                 </div>
               </CardHeader>
@@ -152,8 +152,8 @@ export default async function AssetDetailsPage({
                 {/* QR Code section */}
                 <QRCodeDisplay
                   value={`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/assets/${asset.id_barang}`}
-                  assetName={asset.nama_asset}
-                  assetCode={asset.kode_asset}
+                  assetName={asset.item?.name}
+                  assetCode={asset.item?.code}
                 />
               </CardContent>
             </Card>
@@ -183,14 +183,14 @@ export default async function AssetDetailsPage({
                         <h4 className="text-sm font-medium text-muted-foreground">
                           Asset Name
                         </h4>
-                        <p className="text-base">{asset.nama_asset}</p>
+                        <p className="text-base">{asset.item?.name}</p>
                       </div>
                       <div className="space-y-1">
                         <h4 className="text-sm font-medium text-muted-foreground">
                           Asset Code
                         </h4>
                         <p className="text-base font-mono">
-                          {asset.kode_asset}
+                          {asset.item?.code}
                         </p>
                       </div>
                       <div className="space-y-1">
@@ -198,7 +198,7 @@ export default async function AssetDetailsPage({
                           Category
                         </h4>
                         <p className="text-base">
-                          {asset.assetCategory?.name || "-"}
+                          {asset.item?.category?.name || "-"}
                         </p>
                       </div>
                       <div className="space-y-1">
@@ -212,7 +212,7 @@ export default async function AssetDetailsPage({
                           Description
                         </h4>
                         <p className="text-base whitespace-pre-wrap">
-                          {asset.deskripsi || "No description provided."}
+                          {asset.item?.description || "No description provided."}
                         </p>
                       </div>
                     </CardContent>
@@ -276,13 +276,13 @@ export default async function AssetDetailsPage({
                         <h4 className="text-sm font-medium text-muted-foreground">
                           Brand
                         </h4>
-                        <p className="text-base">{asset.brand || "-"}</p>
+                        <p className="text-base">{asset.item?.brand || "-"}</p>
                       </div>
                       <div className="space-y-1">
                         <h4 className="text-sm font-medium text-muted-foreground">
                           Model
                         </h4>
-                        <p className="text-base">{asset.model || "-"}</p>
+                        <p className="text-base">{asset.item?.model || "-"}</p>
                       </div>
                       <div className="space-y-1">
                         <h4 className="text-sm font-medium text-muted-foreground">
@@ -321,11 +321,11 @@ export default async function AssetDetailsPage({
                           Purchase Price
                         </h4>
                         <p className="text-base">
-                          {asset.harga
+                          {asset.item?.purchaseValue
                             ? new Intl.NumberFormat("id-ID", {
                                 style: "currency",
                                 currency: "IDR",
-                              }).format(Number(asset.harga))
+                              }).format(Number(asset.item?.purchaseValue))
                             : "-"}
                         </p>
                       </div>
@@ -333,7 +333,7 @@ export default async function AssetDetailsPage({
                         <h4 className="text-sm font-medium text-muted-foreground">
                           Vendor
                         </h4>
-                        <p className="text-base">{asset.vendor || "-"}</p>
+                        <p className="text-base">{asset.item?.vendorName || "-"}</p>
                       </div>
                       <div className="space-y-1">
                         <h4 className="text-sm font-medium text-muted-foreground">

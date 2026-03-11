@@ -19,7 +19,7 @@ import {
   Department,
   Divisi,
   Karyawan,
-  AssetCategory,
+  Category,
   AssetLocation,
 } from "@/generated/prisma/client";
 import Link from "next/link";
@@ -28,7 +28,7 @@ type AssetWithRelations = Asset & {
   department_fk: Department;
   divisi_fk?: Divisi | null;
   karyawan_fk?: Karyawan | null;
-  assetCategory?: AssetCategory | null;
+  assetCategory?: Category | null;
   assetLocation?: AssetLocation | null;
 };
 
@@ -119,7 +119,7 @@ export const assetColumns: ColumnDef<AssetWithRelations>[] = [
         href={`/assets/${row.original.id_barang}`}
         className="font-medium hover:underline text-primary"
       >
-        {row.original.nama_asset}
+        {row.original.item?.name}
       </Link>
     ),
   },

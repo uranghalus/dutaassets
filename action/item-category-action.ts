@@ -29,7 +29,7 @@ export async function getItemCategories({ page, pageSize }: ItemCategoryArgs) {
   const take = safePageSize;
 
   const [data, total] = await Promise.all([
-    prisma.itemCategory.findMany({
+    prisma.category.findMany({
       where: {
         organizationId: organizationId,
       },
@@ -45,7 +45,7 @@ export async function getItemCategories({ page, pageSize }: ItemCategoryArgs) {
       },
     }),
 
-    prisma.itemCategory.count({
+    prisma.category.count({
       where: {
         organizationId: organizationId,
       },
@@ -71,7 +71,7 @@ export async function getAllItemCategories() {
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  const categories = await prisma.itemCategory.findMany({
+  const categories = await prisma.category.findMany({
     where: {
       organizationId: organizationId,
     },
@@ -93,7 +93,7 @@ export async function getItemCategory(id: string) {
   const organizationId = session.session.activeOrganizationId;
   if (!organizationId) throw new Error('No active organization');
 
-  const category = await prisma.itemCategory.findFirst({
+  const category = await prisma.category.findFirst({
     where: {
       id,
       organizationId: organizationId,
@@ -122,7 +122,7 @@ export async function createItemCategory(formData: FormData) {
 
     const description = formData.get('description')?.toString();
 
-    const category = await prisma.itemCategory.create({
+    const category = await prisma.category.create({
       data: {
         name,
         description,
@@ -149,7 +149,7 @@ export async function updateItemCategory(
     const organizationId = session.session.activeOrganizationId;
     if (!organizationId) throw new Error('No active organization');
 
-    const category = await prisma.itemCategory.findFirst({
+    const category = await prisma.category.findFirst({
       where: {
         id,
         organizationId: organizationId,
@@ -158,7 +158,7 @@ export async function updateItemCategory(
 
     if (!category) throw new Error('Category not found');
 
-    const updated = await prisma.itemCategory.update({
+    const updated = await prisma.category.update({
       where: {
         id,
       },
@@ -184,7 +184,7 @@ export async function deleteItemCategory(id: string) {
     const organizationId = session.session.activeOrganizationId;
     if (!organizationId) throw new Error('No active organization');
 
-    const category = await prisma.itemCategory.findFirst({
+    const category = await prisma.category.findFirst({
       where: {
         id,
         organizationId: organizationId,
@@ -193,7 +193,7 @@ export async function deleteItemCategory(id: string) {
 
     if (!category) throw new Error('Category not found');
 
-    await prisma.itemCategory.delete({
+    await prisma.category.delete({
       where: {
         id,
       },
@@ -216,7 +216,7 @@ export async function deleteItemCategoryBulk(ids: string[]) {
 
     if (!ids || ids.length === 0) return;
 
-    await prisma.itemCategory.deleteMany({
+    await prisma.category.deleteMany({
       where: {
         id: { in: ids },
         organizationId: organizationId,

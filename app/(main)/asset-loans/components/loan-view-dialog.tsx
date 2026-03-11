@@ -32,13 +32,13 @@ export function LoanViewDialog() {
               <div className="space-y-1">
                 <Label className="text-muted-foreground">Asset Code</Label>
                 <div className="font-medium">
-                  {currentLoan.asset.kode_asset}
+                  {currentLoan.asset.item?.code}
                 </div>
               </div>
               <div className="space-y-1">
                 <Label className="text-muted-foreground">Asset Name</Label>
                 <div className="font-medium">
-                  {currentLoan.asset.nama_asset}
+                  {currentLoan.asset.item?.name}
                 </div>
               </div>
             </div>

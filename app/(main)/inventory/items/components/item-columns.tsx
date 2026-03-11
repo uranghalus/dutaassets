@@ -5,10 +5,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
 import { ItemRowActions } from "./item-row-action";
-import { Item, ItemCategory } from "@/generated/prisma/client";
+import { Item, Category } from "@/generated/prisma/client";
 
 export const itemColumns: ColumnDef<
-  Item & { itemCategory?: ItemCategory | null }
+  Item & { itemCategory?: Category | null }
 >[] = [
   /* =====================
      * SELECT

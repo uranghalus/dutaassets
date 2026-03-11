@@ -32,12 +32,12 @@ import {
   useCreateItemCategory,
   useUpdateItemCategory,
 } from "@/hooks/use-item-category";
-import { ItemCategory } from "@/generated/prisma/client";
+import { Category } from "@/generated/prisma/client";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  currentRow?: ItemCategory;
+  currentRow?: Category;
 };
 
 export function CategoryActionDialog({

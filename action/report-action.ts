@@ -21,7 +21,7 @@ export async function getAssetReportData() {
   });
 
   const totalValue = assets.reduce(
-    (sum, asset) => sum + Number(asset.harga || 0),
+    (sum, asset) => sum + Number(asset.item?.purchaseValue || 0),
     0,
   );
   const totalCount = assets.length;
@@ -38,7 +38,7 @@ export async function getAssetReportData() {
 
   // Group by Category
   const categoryDistribution = assets.reduce((acc: any, asset) => {
-    const catName = asset.assetCategory?.name || "Uncategorized";
+    const catName = asset.item?.category?.name || "Uncategorized";
     acc[catName] = (acc[catName] || 0) + 1;
     return acc;
   }, {});
@@ -162,7 +162,7 @@ export async function getLowStockReportData() {
           warehouse: true,
         },
       },
-      itemCategory: true,
+      category: true,
     },
   });
 

@@ -16,7 +16,7 @@ export async function calculateDepreciation(assetId: string) {
   }
 
   if (
-    !asset.purchaseValue ||
+    !asset.item?.purchaseValue ||
     !asset.usefulLifeYears ||
     asset.usefulLifeYears <= 0
   ) {
@@ -25,7 +25,7 @@ export async function calculateDepreciation(assetId: string) {
     );
   }
 
-  const purchaseValue = Number(asset.purchaseValue);
+  const purchaseValue = Number(asset.item?.purchaseValue);
   const salvageValue = Number(asset.salvageValue) || 0;
   const usefulLife = asset.usefulLifeYears;
 

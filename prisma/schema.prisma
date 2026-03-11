@@ -231,36 +231,15 @@ model Karyawan {
   @@index([divisi_id], map: "Karyawan_divisi_id_fkey")
 }
 
-model AssetCategory {
-  id             String          @id @default(uuid())
-  organizationId String
-  name           String          @db.Text
-  description    String?         @db.Text
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  assets         Asset[]
-  assetTransfers AssetTransfer[]
-
-  @@unique([organizationId, name(length: 191)], map: "asset_category_org_name_unique")
-  @@map("asset_category")
-}
-
 model Asset {
   id_barang       String    @id @default(uuid())
   organization_id String
   department_id   String
   divisi_id       String?
   karyawan_id     String?
-  kode_asset      String    @db.Char(50)
-  nama_asset      String    @db.Text
-  categoryId      String?
-  deskripsi       String?   @db.Text
-  brand           String?   @db.Char(100)
-  model           String?   @db.Char(100)
+  itemId          String
   serial_number   String?   @db.Char(100)
   tgl_pembelian   DateTime?
-  harga           Decimal?  @db.Decimal(15, 2)
-  vendor          String?   @db.Char(100)
   kondisi         String?   @db.Char(50)
   lokasi          String?   @db.Char(200)
   locationId      String?
@@ -268,14 +247,14 @@ model Asset {
 
   // EAM Fields
   barcode         String?  @db.Char(100)
-  purchaseValue   Decimal? @db.Decimal(15, 2)
   salvageValue    Decimal? @db.Decimal(15, 2) // Residue value after useful life
   usefulLifeYears Int? // Estimated useful life in years
 
-  status                    AssetStatus                @default(AVAILABLE)
-  createdAt                 DateTime                   @default(now())
-  updatedAt                 DateTime                   @updatedAt
-  assetCategory             AssetCategory?             @relation(fields: [categoryId], references: [id])
+  status    AssetStatus @default(AVAILABLE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  item                      Item                       @relation(fields: [itemId], references: [id])
   department_fk             Department                 @relation(fields: [department_id], references: [id_department])
   divisi_fk                 Divisi?                    @relation(fields: [divisi_id], references: [id_divisi])
   karyawan_fk               Karyawan?                  @relation(fields: [karyawan_id], references: [id_karyawan])
@@ -289,8 +268,7 @@ model Asset {
 
   safetyEquipment SafetyEquipment?
 
-  @@unique([organization_id, kode_asset], map: "asset_org_kode_unique")
-  @@index([categoryId], map: "asset_categoryId_fkey")
+  @@index([itemId], map: "asset_itemId_fkey")
   @@index([department_id], map: "asset_department_id_fkey")
   @@index([divisi_id], map: "asset_divisi_id_fkey")
   @@index([karyawan_id], map: "asset_karyawan_id_fkey")
@@ -386,7 +364,7 @@ model AssetTransfer {
   updatedAt      DateTime       @updatedAt
   categoryId     String?
   asset          Asset          @relation(fields: [assetId], references: [id_barang])
-  assetCategory  AssetCategory? @relation(fields: [categoryId], references: [id])
+  category       Category?      @relation(fields: [categoryId], references: [id])
   fromEmployee   Karyawan?      @relation("TransferFromEmp", fields: [fromEmployeeId], references: [id_karyawan])
   fromLocation   AssetLocation? @relation("TransferFrom", fields: [fromLocationId], references: [id])
   toEmployee     Karyawan?      @relation("TransferToEmp", fields: [toEmployeeId], references: [id_karyawan])
@@ -402,33 +380,49 @@ model AssetTransfer {
   @@map("asset_transfer")
 }
 
-model ItemCategory {
-  id             String   @id @default(uuid())
-  organizationId String
-  name           String   @db.Text
-  description    String?  @db.Text
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  items          Item[]
+enum ItemType {
+  ASSET
+  CONSUMABLE
+}
 
-  @@unique([organizationId, name(length: 191)], map: "item_category_org_name_unique")
-  @@map("item_category")
+model Category {
+  id             String          @id @default(uuid())
+  organizationId String
+  name           String          @db.Text
+  description    String?         @db.Text
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  items          Item[]
+  assetTransfers AssetTransfer[]
+
+  @@unique([organizationId, name(length: 191)], map: "category_org_name_unique")
+  @@map("category")
 }
 
 model Item {
-  id                   String                @id @default(uuid())
-  organizationId       String
-  code                 String                @db.Char(50)
-  name                 String                @db.Text
-  category             String?
-  unit                 String                @db.Char(20)
-  minStock             Int                   @default(0)
-  description          String?               @db.Text
-  image                String?               @db.Text
-  categoryId           String?
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  itemCategory         ItemCategory?         @relation(fields: [categoryId], references: [id])
+  id             String   @id @default(uuid())
+  organizationId String
+  code           String   @db.Char(50)
+  name           String   @db.Text
+  type           ItemType @default(CONSUMABLE)
+  unit           String   @db.Char(20)
+  minStock       Int      @default(0)
+  description    String?  @db.Text
+  image          String?  @db.Text
+  categoryId     String?
+
+  // Asset-specific fields in Catalog
+  brand         String?  @db.Char(100)
+  model         String?  @db.Char(100)
+  vendorName    String?  @db.Char(100)
+  purchaseValue Decimal? @db.Decimal(15, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category Category? @relation(fields: [categoryId], references: [id])
+  assets   Asset[]
+
   requisitionItems     RequisitionItem[]
   stocks               Stock[]
   stockAdjustmentItems StockAdjustmentItem[]

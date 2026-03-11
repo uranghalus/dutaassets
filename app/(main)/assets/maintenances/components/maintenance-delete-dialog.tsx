@@ -41,7 +41,7 @@ export function MaintenanceDeleteDialog() {
             This action cannot be undone. This will permanently delete the
             maintenance record for{" "}
             <span className="font-semibold">
-              {currentRow?.asset?.nama_asset}
+              {currentRow?.asset?.item?.name}
             </span>
             .
           </AlertDialogDescription>

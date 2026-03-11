@@ -45,7 +45,7 @@ export async function getPaginatedStockList({
       take: safePageSize,
       orderBy: { name: 'asc' },
       include: {
-        itemCategory: true,
+        category: true,
         stocks: {
           where: warehouseId ? { warehouseId } : undefined,
           include: {
@@ -106,7 +106,7 @@ export async function getStocksForExport({ search, warehouseId }: { search?: str
     where,
     orderBy: { name: 'asc' },
     include: {
-      itemCategory: true,
+      category: true,
       stocks: {
         where: warehouseId ? { warehouseId } : undefined,
         include: {

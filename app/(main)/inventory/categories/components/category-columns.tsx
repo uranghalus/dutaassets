@@ -5,11 +5,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
 
-import { ItemCategory } from "@/generated/prisma/client";
+import { Category } from "@/generated/prisma/client";
 import { CategoryRowActions } from "./category-row-action";
 
 // Extended type to include count
-type ItemCategoryWithCount = ItemCategory & {
+type ItemCategoryWithCount = Category & {
   _count?: {
     items: number;
   };

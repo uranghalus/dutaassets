@@ -126,7 +126,7 @@ export function InspectionActionDialog({ open, onOpenChange }: Props) {
                       <SelectContent>
                         {allEquipments.map((eq: any) => (
                           <SelectItem key={eq.id} value={eq.id}>
-                            {eq.asset?.nama_asset} ({eq.type})
+                            {eq.asset?.item?.name} ({eq.type})
                           </SelectItem>
                         ))}
                       </SelectContent>

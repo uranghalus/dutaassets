@@ -321,11 +321,11 @@ export default async function EmployeeDetailsPage({
                                   className="border-b last:border-0 hover:bg-muted/50"
                                 >
                                   <td className="p-4 font-mono">
-                                    {asset.kode_asset}
+                                    {asset.item?.code}
                                   </td>
-                                  <td className="p-4">{asset.nama_asset}</td>
+                                  <td className="p-4">{asset.item?.name}</td>
                                   <td className="p-4">
-                                    {asset.assetCategory?.name ?? "-"}
+                                    {asset.item?.category?.name ?? "-"}
                                   </td>
                                   <td className="p-4">{asset.kondisi}</td>
                                 </tr>
@@ -381,10 +381,10 @@ export default async function EmployeeDetailsPage({
                                   <td className="p-4">
                                     <div className="flex flex-col">
                                       <span className="font-medium">
-                                        {loan.asset.nama_asset}
+                                        {loan.asset.item?.name}
                                       </span>
                                       <span className="text-xs text-muted-foreground font-mono">
-                                        {loan.asset.kode_asset}
+                                        {loan.asset.item?.code}
                                       </span>
                                     </div>
                                   </td>

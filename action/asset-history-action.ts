@@ -63,7 +63,7 @@ export async function getAssetHistory({
     if (assetIds.length > 0) {
       const assetsForLogs = await prisma.asset.findMany({
         where: { id_barang: { in: assetIds } },
-        select: { id_barang: true, nama_asset: true, kode_asset: true }
+        select: { id_barang: true, item: { select: { name: true, code: true } } }
       });
       assetsForLogs.forEach(a => assetMap.set(a.id_barang, a));
     }
@@ -72,7 +72,7 @@ export async function getAssetHistory({
     const transfers = await prisma.assetTransfer.findMany({
       where: commonWhere,
       include: {
-        asset: true,
+        asset: { include: { item: { include: { category: true } } } },
         fromLocation: true,
         toLocation: true,
         fromEmployee: true,
@@ -86,7 +86,7 @@ export async function getAssetHistory({
     const loans = await prisma.assetLoan.findMany({
       where: commonWhere,
       include: {
-        asset: true,
+        asset: { include: { item: { include: { category: true } } } },
         employee: true,
       },
       orderBy: { createdAt: "desc" },
@@ -96,7 +96,7 @@ export async function getAssetHistory({
     // 4. Fetch from AssetMaintenance
     const maintenances = await prisma.assetMaintenance.findMany({
       where: commonWhere,
-      include: { asset: true },
+      include: { asset: { include: { item: { include: { category: true } } } } },
       orderBy: { createdAt: "desc" },
       take: 200,
     });
@@ -112,8 +112,8 @@ export async function getAssetHistory({
           date: l.createdAt,
           details: {
             ...((l.details as any) || {}),
-            assetName: asset?.nama_asset || "System",
-            assetCode: asset?.kode_asset || "",
+            assetName: asset?.item?.name || "System",
+            assetCode: asset?.item?.code || "",
           },
           user: l.user ? { name: l.user.name, email: l.user.email } : undefined,
         };
@@ -124,8 +124,8 @@ export async function getAssetHistory({
         action: `MOVEMENT_${t.status}`,
         date: t.transferDate,
         details: {
-          assetName: t.asset.nama_asset,
-          assetCode: t.asset.kode_asset,
+          assetName: t.asset.item?.name,
+          assetCode: t.asset.item?.code,
           from: t.fromLocation?.name || t.fromEmployee?.nama || "Unknown",
           to: t.toLocation?.name || t.toEmployee?.nama || "Unknown",
           remarks: t.remarks,
@@ -137,8 +137,8 @@ export async function getAssetHistory({
         action: `LOAN_${l.status}`,
         date: l.loanDate,
         details: {
-          assetName: l.asset.nama_asset,
-          assetCode: l.asset.kode_asset,
+          assetName: l.asset.item?.name,
+          assetCode: l.asset.item?.code,
           employee: l.employee.nama,
           notes: l.notes,
         },
@@ -149,8 +149,8 @@ export async function getAssetHistory({
         action: `MAINTENANCE_${m.status}`,
         date: m.maintenanceDate,
         details: {
-          assetName: m.asset.nama_asset,
-          assetCode: m.asset.kode_asset,
+          assetName: m.asset.item?.name,
+          assetCode: m.asset.item?.code,
           type: m.type,
           cost: m.cost.toString(),
           description: m.description,

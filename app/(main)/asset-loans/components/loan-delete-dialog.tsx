@@ -43,7 +43,7 @@ export function LoanDeleteDialog() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">Asset:</span>
               <span className="font-medium">
-                {currentLoan.asset.nama_asset}
+                {currentLoan.asset.item?.name}
               </span>
             </div>
             <div className="flex justify-between">

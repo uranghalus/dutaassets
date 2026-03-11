@@ -67,7 +67,7 @@ export async function getPaginatedAssetTransfers({
       take: safePageSize,
       orderBy: { createdAt: "desc" },
       include: {
-        asset: true,
+        asset: { include: { item: { include: { category: true } } } },
         fromLocation: true,
         toLocation: true,
         fromEmployee: true,

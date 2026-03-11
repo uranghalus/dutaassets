@@ -3,7 +3,7 @@
 import { useDialog } from "@/context/dialog-provider";
 import { CategoryActionDialog } from "./category-action-dialog";
 import { CategoryDeleteDialog } from "./category-delete-dialog";
-import { AssetCategory } from "@/generated/prisma/client";
+import { Category } from "@/generated/prisma/client";
 
 export default function CategoryDialogs() {
   const { currentRow, open, setCurrentRow, setOpen } = useDialog();
@@ -21,9 +21,9 @@ export default function CategoryDialogs() {
         <>
           {/* EDIT */}
           <CategoryActionDialog
-            key={`category-edit-${(currentRow as AssetCategory).id}`}
+            key={`category-edit-${(currentRow as Category).id}`}
             open={open === "edit"}
-            currentRow={currentRow as AssetCategory}
+            currentRow={currentRow as Category}
             onOpenChange={() => {
               setOpen("edit");
               setCurrentRow(undefined);
@@ -32,7 +32,7 @@ export default function CategoryDialogs() {
 
           {/* DELETE */}
           <CategoryDeleteDialog
-            key={`category-delete-${(currentRow as AssetCategory).id}`}
+            key={`category-delete-${(currentRow as Category).id}`}
           />
         </>
       )}

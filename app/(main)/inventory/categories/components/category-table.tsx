@@ -10,7 +10,7 @@ import { useDataTable } from "@/hooks/use-data-table";
 import { categoryColumns } from "./category-columns";
 import { useItemCategories } from "@/hooks/use-item-category";
 
-import { ItemCategory } from "@/generated/prisma/client";
+import { Category } from "@/generated/prisma/client";
 import { CategoryBulkActions } from "./category-bulk-actions";
 
 export function CategoryTable() {
@@ -25,7 +25,7 @@ export function CategoryTable() {
   });
 
   const { table } = useDataTable({
-    data: (data?.data ?? []) as ItemCategory[],
+    data: (data?.data ?? []) as Category[],
     columns: categoryColumns,
     columnResizeMode: "onEnd",
 

@@ -118,7 +118,7 @@ export function TransferActionDialog() {
                           key={asset.id_barang}
                           value={asset.id_barang}
                         >
-                          {asset.kode_asset} - {asset.nama_asset}
+                          {asset.item?.code} - {asset.item?.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

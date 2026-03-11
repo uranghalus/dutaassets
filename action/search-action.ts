@@ -27,7 +27,7 @@ export async function globalSearch(query: string) {
         ],
       },
       take: 5,
-      select: { id_barang: true, nama_asset: true, kode_asset: true },
+      select: { id_barang: true, item: { select: { name: true, code: true } } },
     }),
     prisma.item.findMany({
       where: {

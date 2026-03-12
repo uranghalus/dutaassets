@@ -12,12 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { useLoanDialog } from "./loan-dialog-provider";
-
-type LoanWithRelations = AssetLoan & {
-  asset: Asset;
-  employee: Karyawan;
-};
+import { LoanWithRelations, useLoanDialog } from "./loan-dialog-provider";
 
 export const loanColumns: ColumnDef<LoanWithRelations>[] = [
   {

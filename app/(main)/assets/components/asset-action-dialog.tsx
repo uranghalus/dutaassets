@@ -31,21 +31,18 @@ export function AssetActionDialog() {
   const form = useForm<AssetForm>({
     resolver: zodResolver(assetFormSchema) as any,
     defaultValues: {
-      kode_asset: "",
-      nama_asset: "",
+      assetName: "",
       categoryId: "",
+      brand: "",
+      model: "",
       department_id: "",
       status: "AVAILABLE",
-      harga: 0,
       divisi_id: null,
       karyawan_id: null,
       kondisi: "GOOD",
-      brand: null,
-      model: null,
       serial_number: null,
       lokasi: null,
       deskripsi: null,
-      vendor: null,
       tgl_pembelian: null,
       garansi_exp: null,
     } as DefaultValues<AssetForm>,
@@ -55,36 +52,32 @@ export function AssetActionDialog() {
     if (open) {
       if (isEdit && currentAsset) {
         form.reset({
-          kode_asset: currentAsset.kode_asset,
-          nama_asset: currentAsset.nama_asset,
-          categoryId: currentAsset.categoryId ?? "",
+          assetName: currentAsset.item?.name ?? "",
+          categoryId: currentAsset.item?.categoryId ?? "",
+          brand: currentAsset.item?.brand ?? "",
+          model: currentAsset.item?.model ?? "",
           department_id: currentAsset.department_id,
           divisi_id: currentAsset.divisi_id,
           karyawan_id: currentAsset.karyawan_id,
           status: currentAsset.status as any,
           kondisi: currentAsset.kondisi as any,
-          brand: currentAsset.brand,
-          model: currentAsset.model,
           serial_number: currentAsset.serial_number,
           lokasi: currentAsset.lokasi,
-          deskripsi: currentAsset.deskripsi,
-          vendor: currentAsset.vendor,
           tgl_pembelian: currentAsset.tgl_pembelian
             ? new Date(currentAsset.tgl_pembelian)
             : null,
           garansi_exp: currentAsset.garansi_exp
             ? new Date(currentAsset.garansi_exp)
             : null,
-          harga: currentAsset.harga ? Number(currentAsset.harga) : 0,
         });
       } else {
         form.reset({
-          kode_asset: "",
-          nama_asset: "",
+          assetName: "",
           categoryId: "",
+          brand: "",
+          model: "",
           department_id: "",
           status: "AVAILABLE",
-          harga: 0,
           kondisi: "GOOD",
         });
       }
@@ -146,19 +139,11 @@ export function AssetActionDialog() {
         </div>
 
         <DialogFooter className="px-8 py-6 border-t bg-muted/40">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setOpen(null)}
-          >
+          <Button type="button" variant="outline" onClick={() => setOpen(null)}>
             Cancel
           </Button>
           <Button type="submit" form="asset-form" disabled={isLoading}>
-            {isLoading
-              ? "Saving..."
-              : isEdit
-                ? "Update Asset"
-                : "Create Asset"}
+            {isLoading ? "Saving..." : isEdit ? "Update Asset" : "Create Asset"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -20,9 +20,10 @@ import { CalendarRange, Calculator, Save } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Asset } from "@/generated/prisma/client";
+import { AssetWithRelations } from "./asset-dialog-provider";
 
 interface AssetDepreciationTabProps {
-  asset: Asset;
+  asset: AssetWithRelations;
   initialSchedule: any[];
 }
 

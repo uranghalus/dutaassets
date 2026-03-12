@@ -50,8 +50,7 @@ export async function getAssetMaintenances({
       include: {
         asset: {
           select: {
-            nama_asset: true,
-            kode_asset: true,
+            item: { select: { name: true, code: true } },
           },
         },
       },

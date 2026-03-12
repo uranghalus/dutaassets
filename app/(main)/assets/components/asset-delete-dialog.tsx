@@ -31,8 +31,8 @@ export function AssetDeleteDialog() {
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete the asset{" "}
-            <span className="font-semibold">{currentAsset?.nama_asset}</span> (
-            {currentAsset?.kode_asset}) and remove its data from our servers.
+            <span className="font-semibold">{currentAsset?.item?.name}</span> (
+            {currentAsset?.item?.code}) and remove its data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

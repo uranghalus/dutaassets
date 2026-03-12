@@ -69,7 +69,7 @@ export async function getPaginatedStockList({
       code: item.code,
       name: item.name,
       unit: item.unit,
-      category: item.itemCategory?.name ?? '-',
+      category: item.category?.name ?? '-',
       totalStock,
       stocks: item.stocks.map(s => ({
         warehouseName: s.warehouse.name,
@@ -122,7 +122,7 @@ export async function getStocksForExport({ search, warehouseId }: { search?: str
       code: item.code,
       name: item.name,
       unit: item.unit,
-      category: item.itemCategory?.name ?? '-',
+      category: item.category?.name ?? '-',
       totalStock,
       warehouseDetails: item.stocks.map(s => `${s.warehouse.name}: ${s.quantity}`).join(' | '),
     };

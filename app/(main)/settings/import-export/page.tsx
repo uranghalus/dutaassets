@@ -66,7 +66,7 @@ const itemHeaders = [
   { label: "Item Code", key: "code" },
   { label: "Item Name", key: "name" },
   { label: "Unit", key: "unit" },
-  { label: "Category", key: "itemCategory.name" },
+  { label: "Category", key: "category.name" },
   { label: "Min Stock", key: "minStock" },
   { label: "Description", key: "description" },
 ];

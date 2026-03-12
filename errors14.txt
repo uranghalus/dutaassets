@@ -1,0 +1,6 @@
+app/(main)/asset-loans/components/loan-table.tsx(32,5): error TS2322: Type 'ColumnDef<LoanWithRelations>[]' is not assignable to type 'ColumnDef<LoanWithRelations, any>[]'.
+  Type 'ColumnDef<LoanWithRelations>' is not assignable to type 'ColumnDef<LoanWithRelations, any>'.
+    Type 'ColumnDefBase<LoanWithRelations, unknown> & StringHeaderIdentifier' is not assignable to type 'ColumnDef<LoanWithRelations, any>'.
+      Type 'ColumnDefBase<LoanWithRelations, unknown> & StringHeaderIdentifier' is not assignable to type 'AccessorFnColumnDefBase<LoanWithRelations, any> & IdIdentifier<LoanWithRelations, any>'.
+        Property 'accessorFn' is missing in type 'ColumnDefBase<LoanWithRelations, unknown> & StringHeaderIdentifier' but required in type 'AccessorFnColumnDefBase<LoanWithRelations, any>'.
+app/(main)/assets/components/asset-depreciation-tab.tsx(23,10): error TS2459: Module '"./asset-columns"' declares 'AssetWithRelations' locally, but it is not exported.

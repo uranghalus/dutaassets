@@ -91,7 +91,7 @@ export function AssetDisposeDialog() {
           <DialogTitle>Retire / Dispose Asset</DialogTitle>
           <DialogDescription>
             Submit a retirement request for{" "}
-            <span className="font-semibold">{currentAsset.nama_asset}</span>.
+            <span className="font-semibold">{currentAsset.item?.name}</span>.
             This action requires admin approval.
           </DialogDescription>
         </DialogHeader>

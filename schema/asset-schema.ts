@@ -1,23 +1,20 @@
 import { z } from "zod";
 
 export const assetFormSchema = z.object({
-  kode_asset: z.string().min(1, "Asset code is required"),
-  nama_asset: z.string().min(1, "Asset name is required"),
-
+  // Direct input fields replacing itemId
+  assetName: z.string().min(1, "Name is required"),
   categoryId: z.string().min(1, "Category is required"),
+  brand: z.string().nullable().optional(),
+  model: z.string().nullable().optional(),
 
   department_id: z.string().min(1, "Department is required"),
-
   divisi_id: z.string().nullable().optional(),
   karyawan_id: z.string().nullable().optional(),
 
-  brand: z.string().nullable().optional(),
-  model: z.string().nullable().optional(),
   serial_number: z.string().nullable().optional(),
+  barcode: z.string().nullable().optional(),
 
   tgl_pembelian: z.date().nullable().optional(),
-  harga: z.number().nullable().optional(),
-  vendor: z.string().nullable().optional(),
 
   kondisi: z.string().optional(),
   lokasi: z.string().nullable().optional(),

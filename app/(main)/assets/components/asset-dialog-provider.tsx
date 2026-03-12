@@ -1,12 +1,23 @@
 "use client";
 
-import { Asset, Department, Divisi, Karyawan } from "@/generated/prisma/client";
+import {
+  Asset,
+  Department,
+  Divisi,
+  Karyawan,
+  Category,
+  AssetLocation,
+  Item,
+} from "@/generated/prisma/client";
 import { createContext, useContext, useState } from "react";
 
-type AssetWithRelations = Asset & {
+export type AssetWithRelations = Asset & {
   department_fk: Department;
   divisi_fk?: Divisi | null;
   karyawan_fk?: Karyawan | null;
+  assetCategory?: Category | null;
+  assetLocation?: AssetLocation | null;
+  item?: Item | null;
 };
 
 type AssetDialogContextType = {

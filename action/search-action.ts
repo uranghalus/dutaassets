@@ -21,8 +21,8 @@ export async function globalSearch(query: string) {
       where: {
         organization_id: organizationId,
         OR: [
-          { nama_asset: { contains: query } },
-          { kode_asset: { contains: query } },
+          { item: { name: { contains: query } } },
+          { item: { code: { contains: query } } },
           { serial_number: { contains: query } },
         ],
       },
@@ -52,8 +52,8 @@ export async function globalSearch(query: string) {
     ...assets.map((a) => ({
       id: a.id_barang,
       type: "ASSET" as const,
-      title: a.nama_asset,
-      subtitle: a.kode_asset,
+      title: a.item.name,
+      subtitle: a.item.code,
       url: `/assets`, // ideally /assets/[id] but listing is fine for now
     })),
     ...items.map((i) => ({

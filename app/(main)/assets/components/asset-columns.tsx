@@ -13,24 +13,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
-import { useAssetDialog } from "./asset-dialog-provider";
+import { useAssetDialog, AssetWithRelations } from "./asset-dialog-provider";
 import {
-  Asset,
   Department,
   Divisi,
   Karyawan,
   Category,
   AssetLocation,
+  Item,
 } from "@/generated/prisma/client";
 import Link from "next/link";
-
-type AssetWithRelations = Asset & {
-  department_fk: Department;
-  divisi_fk?: Divisi | null;
-  karyawan_fk?: Karyawan | null;
-  assetCategory?: Category | null;
-  assetLocation?: AssetLocation | null;
-};
 
 const ActionCell = ({ row }: { row: AssetWithRelations }) => {
   const { setOpen, setCurrentAsset } = useAssetDialog();
@@ -100,17 +92,17 @@ export const assetColumns: ColumnDef<AssetWithRelations>[] = [
     size: 40,
   },
   {
-    accessorKey: "kode_asset",
+    accessorKey: "item.code",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Code" />
     ),
-    cell: ({ cell }) => (
-      <div className="font-mono">{cell.getValue() as string}</div>
+    cell: ({ row }) => (
+      <div className="font-mono">{row.original.item?.code || "-"}</div>
     ),
     size: 100,
   },
   {
-    accessorKey: "nama_asset",
+    accessorKey: "item.name",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Name" />
     ),
@@ -119,29 +111,30 @@ export const assetColumns: ColumnDef<AssetWithRelations>[] = [
         href={`/assets/${row.original.id_barang}`}
         className="font-medium hover:underline text-primary"
       >
-        {row.original.item?.name}
+        {row.original.item?.name || "-"}
       </Link>
     ),
   },
   {
-    accessorKey: "assetCategory.name",
+    accessorKey: "item.category.name",
     id: "category",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Category" />
     ),
     cell: ({ row }) => {
-      return row.original.assetCategory?.name || "-";
+      // @ts-ignore
+      return row.original.item?.category?.name || "-";
     },
     size: 150,
   },
   {
-    accessorKey: "brand",
+    id: "brand_model",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Brand/Model" />
     ),
     cell: ({ row }) => {
-      const brand = row.original.brand;
-      const model = row.original.model;
+      const brand = row.original.item?.brand;
+      const model = row.original.item?.model;
       if (!brand && !model) return "-";
       return (
         <div className="flex flex-col text-xs">

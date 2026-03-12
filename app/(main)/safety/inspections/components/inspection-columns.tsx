@@ -5,6 +5,7 @@ import {
   SafetyInspection,
   SafetyEquipment,
   Asset,
+  Item,
   SafetyInspectionItem,
   User,
 } from "@/generated/prisma/client";
@@ -13,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 
 type SafetyInspectionWithRelations = SafetyInspection & {
   equipment: SafetyEquipment & {
-    asset: Pick<Asset, "nama_asset" | "kode_asset">;
+    asset: Asset & { item: Pick<Item, "name" | "code"> };
   };
   inspector: Pick<User, "id" | "name"> | null;
   items: SafetyInspectionItem[];
@@ -30,7 +31,7 @@ export const inspectionColumns: ColumnDef<SafetyInspectionWithRelations>[] = [
     ),
   },
   {
-    id: "asset_name",
+    id: "nama_asset",
     accessorFn: (row) => row.equipment?.asset?.item?.name,
     header: "Equipment",
     cell: ({ row }) => (

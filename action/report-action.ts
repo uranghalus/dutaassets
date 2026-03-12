@@ -12,10 +12,14 @@ export async function getAssetReportData() {
       organization_id: organizationId,
     },
     select: {
-      harga: true,
       status: true,
-      assetCategory: {
-        select: { name: true },
+      item: {
+        select: {
+          purchaseValue: true,
+          category: {
+            select: { name: true },
+          },
+        },
       },
     },
   });

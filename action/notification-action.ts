@@ -78,7 +78,7 @@ export async function getPendingNotifications() {
         id: true,
         createdAt: true,
         asset: {
-          select: { nama_asset: true },
+          select: { item: { select: { name: true } } },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -105,7 +105,7 @@ export async function getPendingNotifications() {
         id: true,
         createdAt: true,
         asset: {
-          select: { nama_asset: true },
+          select: { item: { select: { name: true } } },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -140,7 +140,7 @@ export async function getPendingNotifications() {
         nextDueDate: true,
         title: true,
         asset: {
-          select: { nama_asset: true },
+          select: { item: { select: { name: true } } },
         },
       },
       orderBy: { nextDueDate: "asc" },

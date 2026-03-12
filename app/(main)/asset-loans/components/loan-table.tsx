@@ -7,11 +7,7 @@ import { loanColumns } from "./loan-columns";
 import { DataTable } from "@/components/datatable/data-table";
 import { DataTablePagination } from "@/components/datatable/datatable-pagination";
 import { Asset, AssetLoan, Karyawan } from "@/generated/prisma/client";
-
-type LoanWithRelations = AssetLoan & {
-  asset: Asset;
-  employee: Karyawan;
-};
+import { LoanWithRelations } from "./loan-dialog-provider";
 
 export function LoanTable() {
   const [pagination, setPagination] = useState({

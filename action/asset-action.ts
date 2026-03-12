@@ -194,15 +194,51 @@ export async function createAsset(formData: FormData) {
     );
 
     try {
+      // 1. Find or Create the Master Item silently
+      let item = await prisma.item.findFirst({
+        where: {
+          name: validatedFields.data.assetName,
+          categoryId: validatedFields.data.categoryId,
+          type: "ASSET",
+        },
+      });
+
+      if (!item) {
+        // Auto-generate code if none exist
+        const count = await prisma.item.count({ where: { type: "ASSET" } });
+        const autoCode = `AST-${String(count + 1).padStart(4, "0")}`;
+
+        item = await prisma.item.create({
+          data: {
+            organizationId: organizationId,
+            name: validatedFields.data.assetName,
+            code: autoCode,
+            type: "ASSET",
+            categoryId: validatedFields.data.categoryId,
+            brand: validatedFields.data.brand || null,
+            model: validatedFields.data.model || null,
+            unit: "UNIT",
+            minStock: 0,
+          },
+        });
+      }
+
+      // 2. Create the Physical Asset Instance
       const asset = await prisma.asset.create({
         data: {
-          ...validatedFields.data,
           organization_id: organizationId,
+          itemId: item.id, // Link to the auto-handled Item
+          department_id: validatedFields.data.department_id,
           divisi_id: validatedFields.data.divisi_id || null,
           karyawan_id: validatedFields.data.karyawan_id || null,
           locationId: validatedFields.data.locationId || null,
           lokasi: validatedFields.data.lokasi || null,
-          categoryId: validatedFields.data.categoryId,
+          serial_number: validatedFields.data.serial_number || null,
+          barcode: validatedFields.data.barcode || null,
+          tgl_pembelian: validatedFields.data.tgl_pembelian || null,
+          garansi_exp: validatedFields.data.garansi_exp || null,
+          kondisi: validatedFields.data.kondisi || "GOOD",
+          status: validatedFields.data.status,
         },
       });
 
@@ -328,15 +364,50 @@ export async function updateAsset(id: string, formData: FormData) {
     }
 
     try {
+      // 1. Find or Create the Master Item silently
+      let item = await prisma.item.findFirst({
+        where: {
+          name: validatedFields.data.assetName,
+          categoryId: validatedFields.data.categoryId,
+          type: "ASSET",
+        },
+      });
+
+      if (!item) {
+        // Auto-generate code if none exist
+        const count = await prisma.item.count({ where: { type: "ASSET" } });
+        const autoCode = `AST-${String(count + 1).padStart(4, "0")}`;
+
+        item = await prisma.item.create({
+          data: {
+            organizationId: organizationId,
+            name: validatedFields.data.assetName,
+            code: autoCode,
+            type: "ASSET",
+            categoryId: validatedFields.data.categoryId,
+            brand: validatedFields.data.brand || null,
+            model: validatedFields.data.model || null,
+            unit: "UNIT",
+            minStock: 0,
+          },
+        });
+      }
+
       await prisma.asset.update({
         where: { id_barang: id, organization_id: organizationId },
         data: {
-          ...validatedFields.data,
+          itemId: item.id,
+          department_id: validatedFields.data.department_id,
           divisi_id: validatedFields.data.divisi_id || null,
           karyawan_id: validatedFields.data.karyawan_id || null,
           locationId: validatedFields.data.locationId || null,
           lokasi: validatedFields.data.lokasi || null,
-          categoryId: validatedFields.data.categoryId,
+          serial_number: validatedFields.data.serial_number || null,
+          barcode: validatedFields.data.barcode || null,
+          tgl_pembelian: validatedFields.data.tgl_pembelian || null,
+          garansi_exp: validatedFields.data.garansi_exp || null,
+          kondisi: validatedFields.data.kondisi || "GOOD",
+          status: validatedFields.data.status,
         },
       });
 

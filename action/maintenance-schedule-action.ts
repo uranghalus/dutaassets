@@ -68,8 +68,7 @@ export async function getActiveMaintenanceSchedules() {
         asset: {
           select: {
             id_barang: true,
-            kode_asset: true,
-            nama_asset: true,
+            item: { select: { name: true, code: true } },
           },
         },
       },

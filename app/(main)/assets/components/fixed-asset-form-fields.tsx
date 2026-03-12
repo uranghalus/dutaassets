@@ -34,7 +34,7 @@ import { AssetForm, assetFormSchema } from "@/schema/asset-schema";
 import { useDepartmentsSimple } from "@/hooks/use-departments";
 import { useDivisionOptions } from "@/hooks/use-divisions";
 import { useEmployeeOptions } from "@/hooks/use-employee";
-import { useAllAssetCategories } from "@/hooks/use-asset-category";
+import { useAllItemCategories } from "@/hooks/use-item-category";
 import { useAllAssetLocations } from "@/hooks/use-asset-location";
 
 interface FixedAssetFormFieldsProps {
@@ -45,7 +45,7 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
   const { data: departments } = useDepartmentsSimple();
   const { data: allDivisions } = useDivisionOptions();
   const { data: allEmployees } = useEmployeeOptions();
-  const { data: categories } = useAllAssetCategories();
+  const { data: categories } = useAllItemCategories();
   const { data: locations } = useAllAssetLocations();
 
   const selectedDepartmentId = form.watch("department_id");
@@ -88,61 +88,45 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
       {/* BASIC INFORMATION */}
       <div className="rounded-xl border bg-card p-6 shadow-sm space-y-6">
         <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-          Basic Information
+          Informasi Utama Aset
         </h3>
 
         <div className="grid md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="kode_asset"
-            render={({ field }) => (
-              <FormItem className="space-y-2">
-                <FormLabel className="text-xs text-muted-foreground">
-                  Asset Code *
-                </FormLabel>
-                <FormControl>
-                  <Input {...field} value={field.value || ""} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="nama_asset"
-            render={({ field }) => (
-              <FormItem className="space-y-2">
-                <FormLabel className="text-xs text-muted-foreground">
-                  Asset Name *
-                </FormLabel>
-                <FormControl>
-                  <Input {...field} value={field.value || ""} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="col-span-full">
+            <FormField
+              control={form.control}
+              name="assetName"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel>Nama Aset (Contoh: Laptop, Mobil, AC) *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ketik nama aset..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <FormField
             control={form.control}
             name="categoryId"
             render={({ field }) => (
               <FormItem className="space-y-2">
-                <FormLabel>Category *</FormLabel>
+                <FormLabel>Kategori Aset *</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  value={field.value || ""}
+                  defaultValue={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select Category" />
+                      <SelectValue placeholder="Pilih Kategori" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {categories?.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
+                    {categories?.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -154,11 +138,47 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
 
           <FormField
             control={form.control}
+            name="brand"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel>Merk (Contoh: Lenovo, Toyota) (Opsional)</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Merk aset..."
+                    {...field}
+                    value={field.value || ""}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="model"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel>Tipe / Model (Opsional)</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Tipe / Model aset..."
+                    {...field}
+                    value={field.value || ""}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
             name="status"
             render={({ field }) => (
               <FormItem className="space-y-2">
                 <FormLabel className="text-xs text-muted-foreground">
-                  Status
+                  Status Ketersediaan
                 </FormLabel>
                 <Select
                   onValueChange={field.onChange}
@@ -166,19 +186,24 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue placeholder="Pilih status" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="AVAILABLE">Available</SelectItem>
-                    <SelectItem value="IN_USE">In Use</SelectItem>
-                    <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-                    <SelectItem value="UNDER_MAINTENANCE">
-                      Under Maintenance
+                    <SelectItem value="AVAILABLE">
+                      Tesedia (Bisa dipakai/dipinjam)
                     </SelectItem>
-                    <SelectItem value="LOANED">Loaned</SelectItem>
-                    <SelectItem value="DISPOSED">Disposed</SelectItem>
-                    <SelectItem value="LOST">Lost</SelectItem>
+                    <SelectItem value="IN_USE">Sedang Dipakai</SelectItem>
+                    <SelectItem value="MAINTENANCE">
+                      Perlu Diperbaiki
+                    </SelectItem>
+                    <SelectItem value="UNDER_MAINTENANCE">
+                      Sedang Dalam Perbaikan
+                    </SelectItem>
+                    <SelectItem value="LOANED">Sedang Dipinjam</SelectItem>
+                    <SelectItem value="DISPOSED">
+                      Sudah Dihapus/Dibuang
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -221,28 +246,75 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
       {/* DETAILS */}
       <div className="rounded-xl border bg-card p-6 shadow-sm space-y-6">
         <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-          Asset Details
+          Identifikasi & Lokasi Aset
         </h3>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {(["brand", "model", "serial_number"] as const).map((name) => (
-            <FormField
-              key={name}
-              control={form.control}
-              name={name}
-              render={({ field }) => (
-                <FormItem className="space-y-2">
-                  <FormLabel className="text-xs text-muted-foreground capitalize">
-                    {name.replace("_", " ")}
-                  </FormLabel>
+          <FormField
+            control={form.control}
+            name="serial_number"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className="text-xs text-muted-foreground">
+                  Nomor Seri (S/N) Fisik
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    value={field.value || ""}
+                    placeholder="Masukkan S/N unik benda ini"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="barcode"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className="text-xs text-muted-foreground">
+                  Kode Barcode Internal (Opsional)
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value ?? ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="locationId"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className="text-xs text-muted-foreground">
+                  Lokasi Tempat Aset Ditaruh
+                </FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value || ""}
+                >
                   <FormControl>
-                    <Input {...field} value={field.value || ""} />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih Lokasi" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          ))}
+                  <SelectContent>
+                    {locations?.map((loc) => (
+                      <SelectItem key={loc.id} value={loc.id}>
+                        {loc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
@@ -250,21 +322,28 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
             render={({ field }) => (
               <FormItem className="space-y-2">
                 <FormLabel className="text-xs text-muted-foreground">
-                  Condition
+                  Kondisi Fisik
                 </FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value || ""}
+                  defaultValue={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Pilih kondisi" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="GOOD">Good</SelectItem>
-                    <SelectItem value="MINOR_DAMAGE">Minor Damage</SelectItem>
-                    <SelectItem value="MAJOR_DAMAGE">Major Damage</SelectItem>
+                    <SelectItem value="GOOD">Bagus (Mulus)</SelectItem>
+                    <SelectItem value="FAIR">
+                      Cukup (Lecet Pemakaian)
+                    </SelectItem>
+                    <SelectItem value="POOR">
+                      Jelek (Banyak Kerusakan Fisik)
+                    </SelectItem>
+                    <SelectItem value="BROKEN">
+                      Rusak (Tidak Bisa Dipakai)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -277,7 +356,7 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
       {/* LOCATION & ASSIGNMENT */}
       <div className="rounded-xl border bg-card p-6 shadow-sm space-y-6">
         <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-          Location & Assignment
+          Alokasi Departemen & Karyawan
         </h3>
 
         <div className="grid md:grid-cols-2 gap-6">
@@ -287,7 +366,7 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
             render={({ field }) => (
               <FormItem className="space-y-2">
                 <FormLabel className="text-xs text-muted-foreground">
-                  Department *
+                  Departemen *
                 </FormLabel>
                 <Select
                   onValueChange={field.onChange}
@@ -295,7 +374,7 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select Department" />
+                      <SelectValue placeholder="Pilih Departemen" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -320,7 +399,7 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
             render={({ field }) => (
               <FormItem className="space-y-2">
                 <FormLabel className="text-xs text-muted-foreground">
-                  Division
+                  Divisi (Opsional)
                 </FormLabel>
                 <Select
                   onValueChange={field.onChange}
@@ -332,8 +411,8 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
                       <SelectValue
                         placeholder={
                           selectedDepartmentId
-                            ? "Select Division"
-                            : "Select a department first"
+                            ? "Pilih Divisi"
+                            : "Pilih departemen terlebih dahulu"
                         }
                       />
                     </SelectTrigger>
@@ -341,7 +420,7 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
                   <SelectContent>
                     {filteredDivisions.length === 0 ? (
                       <div className="py-2 px-3 text-sm text-muted-foreground">
-                        No divisions in this department
+                        Tidak ada divisi di departemen ini
                       </div>
                     ) : (
                       filteredDivisions.map((div: any) => (
@@ -363,7 +442,7 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
             render={({ field }) => (
               <FormItem className="space-y-2">
                 <FormLabel className="text-xs text-muted-foreground">
-                  Assign to Employee
+                  Alokasikan ke Karyawan (Opsional)
                 </FormLabel>
                 <Select
                   onValueChange={field.onChange}
@@ -375,10 +454,10 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
                       <SelectValue
                         placeholder={
                           !selectedDepartmentId
-                            ? "Select a department first"
+                            ? "Pilih departemen terlebih dahulu"
                             : filteredEmployees.length === 0
-                              ? "No employees found"
-                              : "Select Employee"
+                              ? "Tidak ada karyawan"
+                              : "Pilih Karyawan (Pengguna Aset)"
                         }
                       />
                     </SelectTrigger>
@@ -387,8 +466,8 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
                     {filteredEmployees.length === 0 ? (
                       <div className="py-2 px-3 text-sm text-muted-foreground">
                         {selectedDivisiId
-                          ? "No employees in this division"
-                          : "No employees in this department"}
+                          ? "Karyawan kosong di divisi ini"
+                          : "Karyawan kosong di departemen ini"}
                       </div>
                     ) : (
                       filteredEmployees.map((emp: any) => (
@@ -414,10 +493,14 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
             render={({ field }) => (
               <FormItem className="space-y-2">
                 <FormLabel className="text-xs text-muted-foreground">
-                  Location
+                  Catatan Lokasi / Meja Detail
                 </FormLabel>
                 <FormControl>
-                  <Input {...field} value={field.value || ""} />
+                  <Input
+                    {...field}
+                    value={field.value || ""}
+                    placeholder="Contoh: Meja sudut, Laci 2"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -429,7 +512,7 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
       {/* PURCHASE */}
       <div className="rounded-xl border bg-card p-6 shadow-sm space-y-6">
         <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-          Purchase Information
+          Informasi Pembelian & Garansi
         </h3>
 
         <div className="grid md:grid-cols-3 gap-6">
@@ -439,7 +522,7 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
             render={({ field }) => (
               <FormItem className="space-y-2 flex flex-col">
                 <FormLabel className="text-xs text-muted-foreground">
-                  Purchase Date
+                  Tanggal Pembelian Aset
                 </FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -453,7 +536,7 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
                       >
                         {field.value
                           ? format(field.value, "PPP")
-                          : "Pick a date"}
+                          : "Pilih Tanggal"}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
@@ -477,7 +560,7 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
             render={({ field }) => (
               <FormItem className="space-y-2 flex flex-col">
                 <FormLabel className="text-xs text-muted-foreground">
-                  Warranty Expiration
+                  Batas Akhir Garansi
                 </FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -491,7 +574,7 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
                       >
                         {field.value
                           ? format(field.value, "PPP")
-                          : "Pick a date"}
+                          : "Pilih Tanggal"}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
@@ -508,46 +591,7 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
               </FormItem>
             )}
           />
-
-          <FormField
-            control={form.control}
-            name="harga"
-            render={({ field }) => (
-              <FormItem className="space-y-2">
-                <FormLabel className="text-xs text-muted-foreground">
-                  Price (Rp)
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    {...field}
-                    value={field.value ?? ""}
-                    onChange={(e) =>
-                      field.onChange(e.target.valueAsNumber || 0)
-                    }
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
-
-        <FormField
-          control={form.control}
-          name="vendor"
-          render={({ field }) => (
-            <FormItem className="space-y-2">
-              <FormLabel className="text-xs text-muted-foreground">
-                Vendor
-              </FormLabel>
-              <FormControl>
-                <Input {...field} value={field.value || ""} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
       </div>
 
       {/* DESCRIPTION */}
@@ -558,10 +602,11 @@ export function FixedAssetFormFields({ form }: FixedAssetFormFieldsProps) {
           render={({ field }) => (
             <FormItem className="space-y-2">
               <FormLabel className="text-xs text-muted-foreground">
-                Description / Notes
+                Catatan Tambahan / Deskripsi
               </FormLabel>
               <FormControl>
                 <Textarea
+                  placeholder="Tambahkan info extra mengenai unit ini..."
                   className="resize-none min-h-[100px]"
                   {...field}
                   value={field.value || ""}

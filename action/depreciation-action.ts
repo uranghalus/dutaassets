@@ -9,6 +9,7 @@ export async function calculateDepreciation(assetId: string) {
 
   const asset = await prisma.asset.findUnique({
     where: { id_barang: assetId, organization_id: organizationId },
+    include: { item: true },
   });
 
   if (!asset) {

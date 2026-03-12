@@ -111,8 +111,7 @@ export async function getAssetsForSafetySelect() {
     },
     select: {
       id_barang: true,
-      kode_asset: true,
-      nama_asset: true,
+      item: { select: { code: true, name: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -161,7 +160,7 @@ export async function createSafetyEquipment(formData: FormData) {
       // Get the asset code to be used as QR Code
       const asset = await prisma.asset.findUnique({
         where: { id_barang: assetId },
-        select: { kode_asset: true },
+        select: { item: { select: { code: true } } },
       });
 
       if (!asset) {
@@ -246,7 +245,7 @@ export async function updateSafetyEquipment(id: string, formData: FormData) {
       // Get the asset code to be used as QR Code
       const asset = await prisma.asset.findUnique({
         where: { id_barang: assetId },
-        select: { kode_asset: true },
+        select: { item: { select: { code: true } } },
       });
 
       if (!asset) {

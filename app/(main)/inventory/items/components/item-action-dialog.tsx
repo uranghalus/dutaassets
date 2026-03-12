@@ -52,7 +52,7 @@ export function ItemActionDialog({ open, onOpenChange, currentRow }: Props) {
         name: currentRow.name,
         unit: currentRow.unit,
         categoryId: currentRow.categoryId ?? "",
-        category: currentRow.category ?? "",
+        category: "",
         minStock: currentRow.minStock,
         description: currentRow.description ?? "",
         image: currentRow.image ?? "",

@@ -101,7 +101,7 @@ export function LowStockReport() {
                 <TableCell className="text-xs">{item.code}</TableCell>
                 <TableCell>
                   <Badge variant="outline" className="font-normal">
-                    {item.itemCategory?.name || "Uncategorized"}
+                    {item.category?.name || "Uncategorized"}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">

@@ -8,7 +8,7 @@ import { ItemRowActions } from "./item-row-action";
 import { Item, Category } from "@/generated/prisma/client";
 
 export const itemColumns: ColumnDef<
-  Item & { itemCategory?: Category | null }
+  Item & { category?: Category | null }
 >[] = [
   /* =====================
      * SELECT
@@ -77,7 +77,7 @@ export const itemColumns: ColumnDef<
     ),
     cell: ({ row }) => (
       <div className="ps-2">
-        {row.original.itemCategory?.name ||
+        {row.original.category?.name ||
           (row.getValue("category") as string) ||
           "-"}
       </div>

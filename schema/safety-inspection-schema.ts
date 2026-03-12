@@ -3,7 +3,7 @@ import { z } from "zod";
 export const safetyInspectionFormSchema = z.object({
   equipmentId: z.string().min(1, "Equipment is required"),
   shift: z.enum(["PAGI", "SIANG", "MALAM", "MIDDLE"], {
-    required_error: "Shift is required",
+    message: "Shift is required",
   }),
   inspectionDate: z.string().min(1, "Inspection date is required"),
   notes: z.string().optional(),

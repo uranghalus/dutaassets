@@ -1,10 +1,10 @@
 "use client";
 
-import { Asset, AssetLoan, Karyawan } from "@/generated/prisma/client";
+import { Asset, AssetLoan, Karyawan, Item } from "@/generated/prisma/client";
 import { createContext, useContext, useState } from "react";
 
-type LoanWithRelations = AssetLoan & {
-  asset: Asset;
+export type LoanWithRelations = AssetLoan & {
+  asset: Asset & { item: Pick<Item, "name" | "code"> | null };
   employee: Karyawan;
 };
 

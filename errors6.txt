@@ -1,0 +1,18 @@
+schema/asset-schema.ts(6,28): error TS1005: ':' expected.
+schema/asset-schema.ts(7,28): error TS1005: ';' expected.
+schema/asset-schema.ts(7,29): error TS1128: Declaration or statement expected.
+schema/asset-schema.ts(9,26): error TS1005: ';' expected.
+schema/asset-schema.ts(9,27): error TS1128: Declaration or statement expected.
+schema/asset-schema.ts(13,12): error TS1005: ';' expected.
+schema/asset-schema.ts(14,14): error TS1005: ';' expected.
+schema/asset-schema.ts(18,16): error TS1005: ';' expected.
+schema/asset-schema.ts(20,16): error TS1005: ';' expected.
+schema/asset-schema.ts(21,8): error TS1005: ';' expected.
+schema/asset-schema.ts(24,10): error TS1005: ';' expected.
+schema/asset-schema.ts(25,9): error TS1005: ';' expected.
+schema/asset-schema.ts(26,13): error TS1005: ';' expected.
+schema/asset-schema.ts(28,14): error TS1005: ';' expected.
+schema/asset-schema.ts(30,9): error TS1005: ';' expected.
+schema/asset-schema.ts(39,12): error TS1005: ';' expected.
+schema/asset-schema.ts(40,1): error TS1109: Expression expected.
+schema/asset-schema.ts(40,2): error TS1128: Declaration or statement expected.

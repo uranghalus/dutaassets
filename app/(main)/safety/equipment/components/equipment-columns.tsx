@@ -4,6 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import {
   SafetyEquipment,
   Asset,
+  Item,
   SafetyInspection,
 } from "@/generated/prisma/client";
 import { Badge } from "@/components/ui/badge";
@@ -51,13 +52,13 @@ const QrCodeCell = ({
 };
 
 type SafetyEquipmentWithRelations = SafetyEquipment & {
-  asset: Asset;
+  asset: Asset & { item: Pick<Item, "code" | "name"> | null };
   inspections: { id: string }[];
 };
 
 export const equipmentColumns: ColumnDef<SafetyEquipmentWithRelations>[] = [
   {
-    id: "asset_name",
+    id: "nama_asset",
     accessorFn: (row) => row.asset?.item?.name,
     header: "Asset Name",
     cell: ({ row }) => (

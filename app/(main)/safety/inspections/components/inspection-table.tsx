@@ -11,13 +11,13 @@ import {
   SafetyInspection,
   SafetyEquipment,
   Asset,
+  Item,
   SafetyInspectionItem,
   User,
 } from "@/generated/prisma/client";
-
 type SafetyInspectionWithRelations = SafetyInspection & {
   equipment: SafetyEquipment & {
-    asset: Pick<Asset, "nama_asset" | "kode_asset">;
+    asset: Asset & { item: Pick<Item, "name" | "code"> | null };
   };
   inspector: Pick<User, "id" | "name"> | null;
   items: SafetyInspectionItem[];
@@ -35,8 +35,8 @@ export function InspectionTable() {
   });
 
   const { table } = useDataTable({
-    data: (data?.data ?? []) as unknown as SafetyInspectionWithRelations[],
-    columns: inspectionColumns,
+    data: data?.data ?? [],
+    columns: inspectionColumns as any,
     columnResizeMode: "onEnd",
 
     pageCount: data?.pageCount ?? 0,
@@ -48,7 +48,7 @@ export function InspectionTable() {
     <div className="p-3 rounded-md border space-y-4">
       <DataTableToolbar
         table={table}
-        searchKey="asset_name"
+        searchKey="nama_asset"
         searchPlaceholder="Search equipment..."
       />
 

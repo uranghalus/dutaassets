@@ -13,13 +13,13 @@ export default function ItemPrimaryButtons() {
   const searchParams = useSearchParams();
 
   const search = searchParams.get("search") || "";
-  const categoryId = searchParams.get("categoryId") || "";
+  const itemId = searchParams.get("categoryId") || "";
 
   const itemHeaders = [
     { label: "Item Code", key: "code" },
     { label: "Item Name", key: "name" },
     { label: "Unit", key: "unit" },
-    { label: "Category", key: "itemCategory.name" },
+    { label: "Category", key: "category.name" },
     { label: "Min Stock", key: "minStock" },
     { label: "Description", key: "description" },
   ];
@@ -29,8 +29,8 @@ export default function ItemPrimaryButtons() {
       <ExportButton
         fileName="items_export"
         headers={itemHeaders}
-        onExportCurrentPage={() => getItemsForExport({ search, categoryId })}
-        onExportAll={() => getItemsForExport({ search, categoryId })}
+        onExportCurrentPage={() => getItemsForExport({ search, itemId })}
+        onExportAll={() => getItemsForExport({ search, itemId })}
       />
       <ImportButton
         title="Import Items"

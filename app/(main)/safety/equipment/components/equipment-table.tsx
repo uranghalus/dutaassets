@@ -7,10 +7,10 @@ import { DataTableToolbar } from "@/components/datatable/datatable-toolbar";
 import { useDataTable } from "@/hooks/use-data-table";
 import { equipmentColumns } from "./equipment-columns";
 import { useSafetyEquipments } from "@/hooks/use-safety-equipment";
-import { SafetyEquipment, Asset } from "@/generated/prisma/client";
+import { SafetyEquipment, Asset, Item } from "@/generated/prisma/client";
 
 type SafetyEquipmentWithRelations = SafetyEquipment & {
-  asset: Asset;
+  asset: Asset & { item: Pick<Item, "code" | "name"> | null };
   inspections: { id: string }[];
 };
 
@@ -26,8 +26,8 @@ export function EquipmentTable() {
   });
 
   const { table } = useDataTable({
-    data: (data?.data ?? []) as unknown as SafetyEquipmentWithRelations[],
-    columns: equipmentColumns,
+    data: data?.data ?? [],
+    columns: equipmentColumns as any,
     columnResizeMode: "onEnd",
 
     pageCount: data?.pageCount ?? 0,
@@ -39,7 +39,7 @@ export function EquipmentTable() {
     <div className="p-3 rounded-md border space-y-4">
       <DataTableToolbar
         table={table}
-        searchKey="asset_name"
+        searchKey="nama_asset"
         searchPlaceholder="Search equipment..."
       />
 
